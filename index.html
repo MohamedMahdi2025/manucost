@@ -430,6 +430,38 @@ textarea.fc{resize:vertical;min-height:68px}
 .asset-active{color:var(--green);background:var(--green-lt);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
 .asset-cip{color:var(--orange);background:#fff4e0;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
 .asset-disposed{color:var(--text3);background:var(--surface3);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+/* Asset detail panel */
+.asset-row-clickable{cursor:pointer;transition:background .12s}
+.asset-row-clickable:hover{background:var(--blue-xlt)!important}
+.asset-row-clickable.selected{background:var(--blue-xlt);border-left:3px solid var(--blue)}
+/* Value evolution grid */
+.val-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px}
+.val-cell{background:var(--surface2);border-radius:var(--radius);padding:12px 14px;border-top:3px solid var(--border);transition:all .2s}
+.val-cell.active-book{border-top-color:var(--blue);background:var(--blue-xlt)}
+.val-cell-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.val-cell-value{font-size:15px;font-weight:700;color:var(--text)}
+.val-cell-sub{font-size:10px;color:var(--text3);margin-top:3px}
+/* Book flip button */
+.book-btn{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:transparent;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text2);transition:all .18s}
+.book-btn.active{border-color:var(--blue);background:var(--blue);color:#fff}
+/* Depreciation bar chart */
+.depr-bar-wrap{display:flex;align-items:flex-end;gap:8px;height:100px;padding:8px 0}
+.depr-bar{flex:1;border-radius:3px 3px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1);position:relative;min-width:20px}
+.depr-bar-label{font-size:9px;text-align:center;color:var(--text3);margin-top:3px}
+/* CWIP status */
+.cwip-active{color:var(--blue);background:var(--blue-xlt);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.cwip-over{color:var(--red);background:var(--red-lt);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.cwip-completed{color:var(--green);background:var(--green-lt);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+/* Gain/Loss */
+.gain{color:var(--green);font-weight:700}
+.loss{color:var(--red);font-weight:700}
+/* Asset class colour dots */
+.aclass-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0}
+/* Timeline chart */
+.timeline-wrap{overflow-x:auto}
+.timeline-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11.5px}
+.timeline-bar-bg{flex:1;height:14px;background:var(--surface2);border-radius:7px;overflow:hidden;position:relative}
+.timeline-bar-fill{height:100%;border-radius:7px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 /* Match badges */
 .match-auto{color:var(--green);background:var(--green-lt);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
 .match-manual{color:var(--blue);background:var(--blue-xlt);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
@@ -588,6 +620,8 @@ textarea.fc{resize:vertical;min-height:68px}
       <div class="nav-label">Fixed Assets</div>
       <div class="nav-item" data-page="assets"><span class="nav-icon">🏗</span><span class="nav-text">Asset Register</span></div>
       <div class="nav-item" data-page="depreciation"><span class="nav-icon">📉</span><span class="nav-text">Depreciation</span></div>
+      <div class="nav-item" data-page="cwip"><span class="nav-icon">🔨</span><span class="nav-text">CWIP / CapEx</span></div>
+      <div class="nav-item" data-page="disposal"><span class="nav-icon">🗑</span><span class="nav-text">Disposals</span></div>
       <div class="nav-label">Projects</div>
       <div class="nav-item" data-page="projects"><span class="nav-icon">📐</span><span class="nav-text">Project Register</span></div>
       <div class="nav-item" data-page="wbs"><span class="nav-icon">🌳</span><span class="nav-text">WBS & Costing</span></div>
@@ -825,42 +859,170 @@ textarea.fc{resize:vertical;min-height:68px}
   </div>
 </div>
 
-<!-- ════ FIXED ASSETS ════ -->
+<!-- ════ FIXED ASSETS — ASSET REGISTER ════ -->
 <div class="page" id="page-assets">
-  <div class="page-hdr"><div><h1>Fixed Asset Register</h1><p>IAS 16 — Asset lifecycle: Acquisition → Depreciation → Disposal</p></div>
-    <div class="btn-row"><button class="btn btn-s sm" onclick="openM('mAddAsset')">+ Add Asset</button><button class="btn btn-p sm" onclick="runDepreciationPost()">Run Depreciation</button></div>
-  </div>
-  <div class="kpi-grid g4 mb16" id="assetKPIs"></div>
-  <div class="card mb16">
-    <div class="tab-bar" id="assetTabs">
-      <div class="tab active" onclick="switchAssetTab('all',this)">All Assets</div>
-      <div class="tab" onclick="switchAssetTab('ppe',this)">PP&E</div>
-      <div class="tab" onclick="switchAssetTab('intangible',this)">Intangibles</div>
-      <div class="tab" onclick="switchAssetTab('cip',this)">CIP</div>
-      <div class="tab" onclick="switchAssetTab('disposed',this)">Disposed</div>
+  <div class="page-hdr">
+    <div><h1>Fixed Asset Register</h1><p>IAS 16 · Multi-book parallel depreciation · Full lifecycle management</p></div>
+    <div class="btn-row">
+      <button class="btn btn-g sm" onclick="openM('mCapitaliseCWIP')">⬆ Capitalise CWIP</button>
+      <button class="btn btn-s sm" onclick="openM('mAddAsset')">+ Acquire Asset</button>
+      <button class="btn btn-p sm" onclick="runDepreciationPost()">▶ Run Depreciation</button>
     </div>
-    <div class="tw"><table><thead><tr><th>Asset ID</th><th>Description</th><th>Category</th><th>Location</th><th class="num">Acq. Cost</th><th class="num">Acc. Depr.</th><th class="num">NBV</th><th>Acq. Date</th><th>Method</th><th>Useful Life</th><th></th></tr></thead><tbody id="assetTbl"></tbody></table></div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-grid g5 mb16" id="assetKPIs"></div>
+
+  <!-- Asset Register Table -->
+  <div class="card mb16">
+    <div class="card-hdr">
+      <div id="assetTabs" class="tab-bar" style="border-bottom:none;margin-bottom:0">
+        <div class="tab active" onclick="switchAssetTab('all',this)">All Assets</div>
+        <div class="tab" onclick="switchAssetTab('ppe',this)">PP&amp;E</div>
+        <div class="tab" onclick="switchAssetTab('fleet',this)">Fleet</div>
+        <div class="tab" onclick="switchAssetTab('intangible',this)">Intangibles</div>
+        <div class="tab" onclick="switchAssetTab('cip',this)">CIP / CWIP</div>
+        <div class="tab" onclick="switchAssetTab('disposed',this)">Disposed</div>
+      </div>
+      <div class="btn-row">
+        <div class="sbox"><span>🔍</span><input placeholder="Search assets…" oninput="filterAssetTable(this.value)" style="width:180px"></div>
+      </div>
+    </div>
+    <div class="tw"><table id="assetRegisterTable">
+      <thead><tr>
+        <th>Asset ID</th><th>Description</th><th>Class</th><th>Location / CC</th>
+        <th class="num">Acq. Cost</th><th class="num">Acc. Depr.</th><th class="num">NBV</th>
+        <th>Acquired</th><th>Method</th><th>Rem. Life</th><th>Status</th><th></th>
+      </tr></thead>
+      <tbody id="assetTbl"></tbody>
+    </table></div>
+  </div>
+
+  <!-- Asset Value Evolution panel (shown when row clicked) -->
+  <div id="assetDetailPanel" style="display:none">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title" id="assetDetailTitle">Asset Detail</span>
+        <div class="btn-row">
+          <button class="btn btn-g sm" onclick="openM('mAssetTransfer')">↔ Transfer</button>
+          <button class="btn btn-g sm" onclick="openM('mAssetSplit')">⊕ Split</button>
+          <button class="btn btn-g sm" onclick="openM('mAssetRevalue')">↑ Revalue</button>
+          <button class="btn btn-d sm" onclick="openM('mRetireAsset')">🗑 Retire</button>
+          <button class="btn btn-g sm" onclick="closeAssetDetail()">✕ Close</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Book flip toggle -->
+        <div class="flex ic gap12 mb16">
+          <div class="fw6 t-sm">Depreciation Book:</div>
+          <div id="bookToggle" style="display:flex;gap:6px"></div>
+          <span class="b b-teal t-xs" id="activeBookLabel">IFRS Book</span>
+        </div>
+        <!-- Value evolution grid -->
+        <div id="assetBookView" style="perspective:1000px">
+          <div id="assetBookCard" style="transition:transform .4s cubic-bezier(.25,1,.5,1);transform-style:preserve-3d">
+            <div id="assetValueGrid"></div>
+          </div>
+        </div>
+        <!-- Depreciation timeline chart -->
+        <div class="mt16" id="assetTimelineChart"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ════ DEPRECIATION ════ -->
+<!-- ════ DEPRECIATION ENGINE ════ -->
 <div class="page" id="page-depreciation">
-  <div class="page-hdr"><div><h1>Depreciation Schedule</h1><p>Multi-book parallel depreciation — IFRS Straight-Line · Tax Accelerated</p></div>
+  <div class="page-hdr">
+    <div><h1>Depreciation Engine</h1><p>Multi-book parallel runs · Projected schedules · Exception logs</p></div>
     <div class="btn-row">
-      <select class="fc" id="deprBook" onchange="renderDepreciation()" style="width:160px">
-        <option value="ifrs">IFRS Book (SL)</option>
-        <option value="tax">Tax Book (Accelerated)</option>
+      <select class="fc" id="deprBook" onchange="renderDepreciation()" style="width:180px">
+        <option value="ifrs">Book 1 — IFRS (Straight-Line)</option>
+        <option value="tax">Book 2 — Tax (Accelerated)</option>
+        <option value="mgmt">Book 3 — Management (Custom)</option>
       </select>
-      <select class="fc" id="deprPeriod" onchange="renderDepreciation()" style="width:140px">
-        <option value="2025">FY 2025</option>
+      <select class="fc" id="deprYear" onchange="renderDepreciation()" style="width:110px">
+        <option value="2025" selected>FY 2025</option>
         <option value="2024">FY 2024</option>
+        <option value="2026">FY 2026 (F)</option>
       </select>
       <button class="btn btn-g sm" onclick="printReport('deprPrintArea')">🖨 Print</button>
+      <button class="btn btn-s sm" onclick="exportReport('depreciation')">↓ Export</button>
+      <button class="btn btn-p sm" onclick="runDepreciationPost()">▶ Post Depreciation</button>
     </div>
   </div>
   <div class="kpi-grid g4 mb16" id="deprKPIs"></div>
+
+  <!-- 5-year forecast chart -->
+  <div class="card mb16">
+    <div class="card-hdr"><span class="card-title">Depreciation Forecast — 5 Year Outlook</span><span class="b b-blue">All active books</span></div>
+    <div class="card-body" id="deprForecastChart" style="min-height:140px"></div>
+  </div>
+
+  <!-- Schedule table -->
   <div class="card"><div class="card-body" id="deprPrintArea"></div></div>
 </div>
+
+<!-- ════ CWIP / CAPEX TRACKING ════ -->
+<div class="page" id="page-cwip">
+  <div class="page-hdr">
+    <div><h1>Capital Work-in-Progress (CWIP)</h1><p>CapEx tracking · Budget vs Actual · Capitalisation pipeline</p></div>
+    <div class="btn-row">
+      <button class="btn btn-s sm" onclick="openM('mAddCWIP')">+ New CapEx Project</button>
+      <button class="btn btn-p sm" onclick="openM('mCapitaliseCWIP')">⬆ Capitalise to Asset</button>
+    </div>
+  </div>
+  <div class="kpi-grid g4 mb16" id="cwipKPIs"></div>
+  <div class="g2c mb16">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">CWIP Register</span></div>
+      <div class="tw"><table><thead><tr>
+        <th>CWIP ID</th><th>Description</th><th>WBS</th>
+        <th class="num">Auth. Budget</th><th class="num">Committed</th><th class="num">Actual Spend</th>
+        <th class="num">Variance</th><th>Status</th><th></th>
+      </tr></thead><tbody id="cwipTbl"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">CapEx Budget vs Actual</span></div>
+      <div class="card-body" id="cwipBudgetChart"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Pending Capitalisation Queue</span><span class="b b-orange">GRNs &amp; POs awaiting conversion to assets</span></div>
+    <div class="tw"><table><thead><tr>
+      <th>Source</th><th>Reference</th><th>Description</th><th class="num">Value</th><th>Date</th><th>CWIP Project</th><th>Action</th>
+    </tr></thead><tbody id="cwipQueueTbl"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ════ ASSET DISPOSAL ════ -->
+<div class="page" id="page-disposal">
+  <div class="page-hdr">
+    <div><h1>Asset Disposal &amp; Retirement</h1><p>Sales · Scrapping · Write-offs · Gain/Loss computation</p></div>
+    <div class="btn-row"><button class="btn btn-p sm" onclick="openM('mRetireAsset')">+ New Disposal</button></div>
+  </div>
+  <div class="kpi-grid g4 mb16" id="disposalKPIs"></div>
+  <div class="g2c mb16">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Disposal Register</span></div>
+      <div class="tw"><table><thead><tr>
+        <th>Asset ID</th><th>Description</th><th>Disposal Type</th>
+        <th class="num">NBV at Disposal</th><th class="num">Proceeds</th><th class="num">Gain / (Loss)</th>
+        <th>Date</th><th>Authorised By</th><th>Status</th>
+      </tr></thead><tbody id="disposalTbl"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Pending Approval Queue</span><span class="b b-red">Requires executive authorisation</span></div>
+      <div class="card-body" id="disposalPendingQueue"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Gain / Loss on Disposal Statement</span><span class="b b-purple">Tax vs Corporate Book Variance</span></div>
+    <div class="card-body" id="gainLossStatement"></div>
+  </div>
+</div>
+
+
 
 <!-- ════ PROJECTS ════ -->
 <div class="page" id="page-projects">
@@ -1694,6 +1856,7 @@ function setSyncBadge(state) {
 // ── SEED DEFAULT DATA (runs once per browser) ──
 function seedData(){
   if(S.get('seeded'))return;
+  if(localStorage.getItem('mce_reset_pending'))return; // don't seed after user reset
   S.set('company',{name:"Al-Masna'a Manufacturing Co.",nameAr:'شركة المصنع',cr:'1010123456',vat:'310012345600003',address:'Industrial City Phase 2, Riyadh 11564, Saudi Arabia',phone:'+966-11-4421100',email:'info@almasnaa.sa',currency:'SAR',vatRate:15,fyType:'Calendar Year',fyYear:2025,costMethod:'job',invVal:'FIFO',ohBase:'DL Cost',gosiEmp:12,gosiEe:10,fgWH:'WH-C'});
   S.set('suppliers',[
     {id:'SUP-001',name:'Al-Nasser Steel Trading',cat:'Raw Materials',phone:'+966-11-4421100',terms:'NET30',ytd:284200,status:'Active'},
@@ -1997,11 +2160,12 @@ function openM(name, idOrWide, wideOrUndef) {
 
   // Search all template registries in priority order
   const allTemplates = [
-    typeof mAprTemplates  !== 'undefined' ? mAprTemplates  : {},
-    typeof mCurrTemplates !== 'undefined' ? mCurrTemplates : {},
-    typeof mUserTemplates !== 'undefined' ? mUserTemplates : {},
-    typeof mTemplatesExtra!== 'undefined' ? mTemplatesExtra: {},
-    typeof mTemplates     !== 'undefined' ? mTemplates     : {},
+    typeof mAprTemplates   !== 'undefined' ? mAprTemplates   : {},
+    typeof mCurrTemplates  !== 'undefined' ? mCurrTemplates  : {},
+    typeof mUserTemplates  !== 'undefined' ? mUserTemplates  : {},
+    typeof mTemplatesExtra !== 'undefined' ? mTemplatesExtra : {},
+    typeof mAssetTemplates !== 'undefined' ? mAssetTemplates : {},
+    typeof mTemplates      !== 'undefined' ? mTemplates      : {},
   ];
 
   let t = null;
@@ -2370,11 +2534,12 @@ function resetAll(){
     // Clear ALL mce_ keys from localStorage
     const keysToRemove = Object.keys(localStorage).filter(k => k.startsWith('mce_'));
     keysToRemove.forEach(k => localStorage.removeItem(k));
-    // Also clear GS_URL preference
-    localStorage.removeItem('mce_gs_url');
-    if (typeof GS_URL !== 'undefined' && GS_URL) GS.reset().catch(()=>{});
-    toast('All data cleared. Reloading in 1 second…', 'success', 1500);
-    setTimeout(() => location.reload(), 1200);
+    // Mark as fresh install so seedData won't restore demo data on reload
+    localStorage.setItem('mce_reset_pending', '1');
+    // Fire-and-forget Sheets reset (don't await — let page reload immediately)
+    try { if (GS_URL) fetch(GS_URL, { method:'POST', body:JSON.stringify({action:'reset'}) }); } catch(e){}
+    toast('All data cleared. Reloading…', 'success', 1500);
+    setTimeout(() => location.reload(), 800);
   };
   document.getElementById('mShell').classList.add('open');
 }
@@ -5993,124 +6158,898 @@ function renderLandedCost() {
 }
 
 // ── FIXED ASSETS ──
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  FIXED ASSET MANAGEMENT ENGINE — Full Spec Implementation       ║
+// ║  IAS 16 · Multi-Book · CWIP · Disposal · Componentisation       ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ── ASSET CLASS HIERARCHY ──
+const ASSET_CLASSES = {
+  ppe:        { label:'PP&E — Machinery',    color:'#0078D4', glAcq:'1510', glDepr:'1511', glDeprExp:'6030', defaultLife:10, defaultMethod:'SL' },
+  fleet:      { label:'Fleet Vehicles',      color:'#CA5010', glAcq:'1520', glDepr:'1521', glDeprExp:'6030', defaultLife:5,  defaultMethod:'DB' },
+  intangible: { label:'Intangible Assets',   color:'#5C2D91', glAcq:'1700', glDepr:'1701', glDeprExp:'6031', defaultLife:5,  defaultMethod:'SL' },
+  realestate: { label:'Real Estate / Land',  color:'#107C10', glAcq:'1500', glDepr:'1501', glDeprExp:'6030', defaultLife:40, defaultMethod:'SL' },
+  it:         { label:'IT Infrastructure',   color:'#038387', glAcq:'1530', glDepr:'1531', glDeprExp:'6030', defaultLife:3,  defaultMethod:'DDB' },
+  cip:        { label:'CIP / Construction',  color:'#F59E0B', glAcq:'1800', glDepr:null,   glDeprExp:null,   defaultLife:0,  defaultMethod:'—' },
+};
+
+// ── DEPRECIATION METHOD ENGINES ──
+const DEPR_METHODS = {
+  SL:   { label:'Straight-Line',           calc:(cost,sal,life,yr)=>(cost-sal)/life },
+  DB:   { label:'Reducing Balance',        calc:(nbv,sal,life,yr)=>nbv*(1/life)*2 },
+  DDB:  { label:'Double Declining Balance',calc:(nbv,sal,life,yr)=>nbv*(2/life) },
+  SYD:  { label:'Sum of Years Digits',     calc:(cost,sal,life,yr)=>(cost-sal)*((life-yr+1)/(life*(life+1)/2)) },
+  UOP:  { label:'Units of Production',     calc:(cost,sal,units,actual)=>(cost-sal)/units*actual },
+};
+
+// ── DEPRECIATION BOOKS ──
+const DEPR_BOOKS = {
+  ifrs: { label:'Book 1 — IFRS',       description:'Statutory IFRS reporting (IAS 16)',   method:'SL',  convention:'mid-month', color:'#0078D4' },
+  tax:  { label:'Book 2 — Tax',        description:'Tax accelerated depreciation',         method:'DDB', convention:'half-year',  color:'#CA5010' },
+  mgmt: { label:'Book 3 — Management', description:'Internal costing analytical book',     method:'DB',  convention:'full-year',  color:'#107C10' },
+};
+
+// ── SEED ASSETS (enhanced multi-book data) ──
 function seedAssets() {
   if (S.get('fixedAssets')) return;
   S.set('fixedAssets', [
-    {id:'FA-001',desc:'CNC Machining Centre — Haas VF-4',         cat:'ppe',       loc:'Plant A',  cost:840000, accumDepr:168000, nbv:672000, acqDate:'2023-01-15', method:'SL',       life:10, rate:10, status:'Active'},
-    {id:'FA-002',desc:'Industrial Compressor — Atlas Copco GA55', cat:'ppe',       loc:'Plant A',  cost:184000, accumDepr:55200,  nbv:128800, acqDate:'2022-06-01', method:'SL',       life:8,  rate:12.5, status:'Active'},
-    {id:'FA-003',desc:'ERP Software License — ManuCost',          cat:'intangible',loc:'IT',       cost:48000,  accumDepr:19200,  nbv:28800,  acqDate:'2023-07-01', method:'SL',       life:5,  rate:20, status:'Active'},
-    {id:'FA-004',desc:'Factory Extension — Construction',         cat:'cip',       loc:'Plant B',  cost:420000, accumDepr:0,      nbv:420000, acqDate:'2025-03-01', method:'—',        life:0,  rate:0,  status:'CIP'},
-    {id:'FA-005',desc:'Forklift Toyota — 3-Ton',                  cat:'ppe',       loc:'Warehouse',cost:92000,  accumDepr:92000,  nbv:0,      acqDate:'2018-05-01', method:'SL',       life:5,  rate:20, status:'Disposed'},
+    { id:'FA-001', desc:'CNC Machining Centre — Haas VF-4', class:'ppe', loc:'Plant A', costCentre:'CC01',
+      cost:840000, salvage:42000, acqDate:'2023-01-15', status:'Active', tag:'TAG-1001',
+      serial:'HVF4-2023-0142', supplier:'Haas Automation', poRef:'PO-0031',
+      books:{
+        ifrs:{ method:'SL',  life:10, rate:10,   accumDepr:168000, nbv:672000 },
+        tax: { method:'DDB', life:7,  rate:28.57, accumDepr:240000, nbv:600000 },
+        mgmt:{ method:'DB',  life:8,  rate:25,    accumDepr:210000, nbv:630000 },
+      },
+      history:[
+        {date:'2023-01-15', event:'Acquisition', amount:840000, ref:'PO-0031'},
+        {date:'2023-12-31', event:'Depreciation Run', amount:-84000, ref:'DEPR-2023'},
+        {date:'2024-12-31', event:'Depreciation Run', amount:-84000, ref:'DEPR-2024'},
+      ]
+    },
+    { id:'FA-002', desc:'Industrial Compressor — Atlas Copco GA55', class:'ppe', loc:'Plant A', costCentre:'CC01',
+      cost:184000, salvage:9200, acqDate:'2022-06-01', status:'Active', tag:'TAG-1002',
+      serial:'GA55-0244-KSA', supplier:'Atlas Copco', poRef:'PO-0018',
+      books:{
+        ifrs:{ method:'SL',  life:8,  rate:12.5, accumDepr:55200, nbv:128800 },
+        tax: { method:'DDB', life:5,  rate:40,   accumDepr:110400, nbv:73600  },
+        mgmt:{ method:'SL',  life:10, rate:10,   accumDepr:36800, nbv:147200 },
+      },
+      history:[
+        {date:'2022-06-01', event:'Acquisition', amount:184000, ref:'PO-0018'},
+        {date:'2022-12-31', event:'Depreciation Run', amount:-11500, ref:'DEPR-2022'},
+      ]
+    },
+    { id:'FA-003', desc:'ERP Software License — ManuCost Platform', class:'intangible', loc:'IT', costCentre:'CC04',
+      cost:48000, salvage:0, acqDate:'2023-07-01', status:'Active', tag:'TAG-1003',
+      serial:'MCE-LIC-2023', supplier:'ManuCost Tech', poRef:'PO-0022',
+      books:{
+        ifrs:{ method:'SL', life:5,  rate:20,   accumDepr:19200, nbv:28800 },
+        tax: { method:'SL', life:3,  rate:33.3, accumDepr:32000, nbv:16000 },
+        mgmt:{ method:'SL', life:5,  rate:20,   accumDepr:19200, nbv:28800 },
+      },
+      history:[{date:'2023-07-01', event:'Acquisition', amount:48000, ref:'PO-0022'}]
+    },
+    { id:'FA-004', desc:'Factory Extension — Building B Construction', class:'cip', loc:'Plant B', costCentre:'CC01',
+      cost:420000, salvage:0, acqDate:'2025-03-01', status:'CIP', tag:'TAG-CIP-004',
+      serial:'—', supplier:'Al-Bina Contracting', poRef:'PRJ-002',
+      books:{
+        ifrs:{ method:'—', life:0, rate:0, accumDepr:0, nbv:420000 },
+        tax: { method:'—', life:0, rate:0, accumDepr:0, nbv:420000 },
+        mgmt:{ method:'—', life:0, rate:0, accumDepr:0, nbv:420000 },
+      },
+      history:[
+        {date:'2025-03-01', event:'CWIP Opened', amount:180000, ref:'PRJ-002'},
+        {date:'2025-04-15', event:'Cost Addition', amount:140000, ref:'GRN-0041'},
+        {date:'2025-05-20', event:'Cost Addition', amount:100000, ref:'GRN-0052'},
+      ]
+    },
+    { id:'FA-005', desc:'Forklift Toyota — 3-Ton Electric', class:'fleet', loc:'Warehouse', costCentre:'CC03',
+      cost:92000, salvage:8000, acqDate:'2021-05-01', status:'Active', tag:'TAG-1005',
+      serial:'TOY-3T-2021-044', supplier:'Toyota Industries', poRef:'PO-0009',
+      books:{
+        ifrs:{ method:'SL', life:7,  rate:14.3, accumDepr:52571, nbv:39429 },
+        tax: { method:'DDB',life:5,  rate:40,   accumDepr:66944, nbv:25056 },
+        mgmt:{ method:'SL', life:7,  rate:14.3, accumDepr:52571, nbv:39429 },
+      },
+      history:[{date:'2021-05-01', event:'Acquisition', amount:92000, ref:'PO-0009'}]
+    },
+    { id:'FA-006', desc:'Lathe Machine — Mazak QuickTurn', class:'ppe', loc:'Plant A', costCentre:'CC01',
+      cost:380000, salvage:19000, acqDate:'2020-01-01', status:'Disposed',
+      disposalDate:'2025-01-15', disposalProceeds:95000, disposalType:'Sale',
+      tag:'TAG-DISP-006', serial:'MAZAK-QT-2020', supplier:'Mazak Corp', poRef:'PO-0004',
+      books:{
+        ifrs:{ method:'SL', life:10, rate:10, accumDepr:285000, nbv:0 },
+        tax: { method:'DDB',life:7,  rate:20, accumDepr:380000, nbv:0 },
+        mgmt:{ method:'SL', life:10, rate:10, accumDepr:285000, nbv:0 },
+      },
+      history:[
+        {date:'2020-01-01', event:'Acquisition', amount:380000, ref:'PO-0004'},
+        {date:'2025-01-15', event:'Disposal — Sale', amount:95000, ref:'DISP-2025-001'},
+      ]
+    },
+  ]);
+
+  // Seed CWIP projects
+  if (!S.get('cwipProjects')) S.set('cwipProjects', [
+    { id:'CWIP-001', desc:'Factory Extension — Building B', wbs:'PRJ-002', budget:500000, committed:420000, actual:420000, status:'In Progress', openDate:'2025-03-01', targetCapDate:'2025-09-30', assetClass:'realestate' },
+    { id:'CWIP-002', desc:'New Paint Line — Automated System', wbs:'PRJ-004', budget:280000, committed:84000, actual:62000, status:'In Progress', openDate:'2025-05-01', targetCapDate:'2025-12-31', assetClass:'ppe' },
+  ]);
+
+  // Seed disposal records
+  if (!S.get('assetDisposals')) S.set('assetDisposals', [
+    { id:'DISP-001', assetId:'FA-006', desc:'Lathe Machine — Mazak QuickTurn', type:'Sale', nbvIFRS:95000, nbvTax:0, proceeds:95000, gainLossIFRS:0, gainLossTax:95000, date:'2025-01-15', approvedBy:'Mahdi Al-Finance', status:'Posted' },
   ]);
 }
 
+// ── RENDER: ASSET REGISTER ──
 let _activeAssetTab = 'all';
+let _selectedAssetId = null;
+
 function switchAssetTab(tab, el) {
   _activeAssetTab = tab;
-  document.querySelectorAll('#assetTabs .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#assetTabs .tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   renderAssets();
 }
 
+function filterAssetTable(q) {
+  document.querySelectorAll('#assetTbl tr').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function closeAssetDetail() {
+  document.getElementById('assetDetailPanel').style.display = 'none';
+  _selectedAssetId = null;
+  document.querySelectorAll('#assetTbl tr').forEach(r => r.classList.remove('selected'));
+}
+
 function renderAssets() {
-  showSkeletonKPIs('assetKPIs', 4);
+  showSkeletonKPIs('assetKPIs', 5);
   setTimeout(() => {
     const all = S.get('fixedAssets') || [];
     const cur = baseCurr();
-    const active = all.filter(a=>a.status==='Active');
-    const totalCost = all.reduce((a,x)=>a+x.cost,0);
-    const totalNBV = all.reduce((a,x)=>a+x.nbv,0);
-    const totalDepr = all.reduce((a,x)=>a+x.accumDepr,0);
+    const active = all.filter(a => a.status === 'Active');
+    const cip    = all.filter(a => a.status === 'CIP');
+
+    const totalCost  = active.reduce((s,a) => s + a.cost, 0);
+    const totalNBV   = active.reduce((s,a) => s + (a.books?.ifrs?.nbv || a.nbv || 0), 0);
+    const totalDepr  = active.reduce((s,a) => s + (a.books?.ifrs?.accumDepr || a.accumDepr || 0), 0);
+    const avgAge     = active.length ? (active.reduce((s,a) => {
+      const yrs = (new Date() - new Date(a.acqDate)) / (365.25*24*3600*1000);
+      return s + yrs;
+    }, 0) / active.length).toFixed(1) : 0;
 
     document.getElementById('assetKPIs').innerHTML = [
-      {l:'Total Acquisition Cost', v:fC(totalCost,cur), c:'c-blue'},
-      {l:'Net Book Value (NBV)',    v:fC(totalNBV,cur), c:'c-teal'},
-      {l:'Accumulated Depreciation',v:fC(totalDepr,cur), c:'c-orange'},
-      {l:'Active Assets',           v:active.length, c:'c-green'},
+      {l:'Total Acq. Cost',       v:fC(totalCost,cur),  c:'c-blue'},
+      {l:'Net Book Value (IFRS)', v:fC(totalNBV,cur),   c:'c-teal'},
+      {l:'Accumulated Depr.',     v:fC(totalDepr,cur),  c:'c-orange'},
+      {l:'Active Assets',         v:active.length,       c:'c-green'},
+      {l:'CIP Projects',          v:cip.length,          c:'c-purple'},
     ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    const filtered = _activeAssetTab==='all' ? all : all.filter(a =>
-      (_activeAssetTab==='cip' && a.status==='CIP') ||
-      (_activeAssetTab==='disposed' && a.status==='Disposed') ||
-      (a.cat===_activeAssetTab && a.status==='Active')
-    );
+    const tabFilter = {
+      all: () => true,
+      ppe: a => a.class === 'ppe' && a.status === 'Active',
+      fleet: a => a.class === 'fleet' && a.status === 'Active',
+      intangible: a => a.class === 'intangible' && a.status === 'Active',
+      cip: a => a.status === 'CIP',
+      disposed: a => a.status === 'Disposed',
+    };
+    const filtered = all.filter(tabFilter[_activeAssetTab] || (() => true));
 
     document.getElementById('assetTbl').innerHTML = filtered.map(a => {
+      const cls = ASSET_CLASSES[a.class] || {};
+      const ifrsBook = a.books?.ifrs || {};
+      const nbv = ifrsBook.nbv ?? a.nbv ?? 0;
+      const acDepr = ifrsBook.accumDepr ?? a.accumDepr ?? 0;
+      const pct = a.cost > 0 ? Math.round(acDepr/a.cost*100) : 0;
+      const remLife = ifrsBook.life ? Math.max(0, ifrsBook.life - ((new Date() - new Date(a.acqDate))/(365.25*24*3600*1000))).toFixed(1) : '—';
       const statusEl = a.status==='Active'?`<span class="asset-active">Active</span>`:a.status==='CIP'?`<span class="asset-cip">CIP</span>`:`<span class="asset-disposed">Disposed</span>`;
-      const pct = a.cost > 0 ? (a.accumDepr/a.cost*100).toFixed(0) : 0;
-      return `<tr>
+      const isSelected = a.id === _selectedAssetId;
+      return `<tr class="asset-row-clickable ${isSelected?'selected':''}" onclick="showAssetDetail('${a.id}')">
         <td class="t-blue fw6">${a.id}</td>
-        <td><div class="fw6 t-sm">${a.desc}</div><div style="width:${pct}%;height:3px;background:var(--orange);border-radius:2px;margin-top:4px" title="${pct}% depreciated"></div></td>
-        <td><span class="b b-blue t-xs">${a.cat.toUpperCase()}</span></td>
-        <td class="t-muted t-sm">${a.loc}</td>
+        <td>
+          <div class="fw6 t-sm">${a.desc}</div>
+          <div style="display:flex;gap:8px;margin-top:3px;align-items:center">
+            <div style="flex:1;height:3px;background:var(--border);border-radius:2px;max-width:120px">
+              <div class="prog-bar" style="width:${pct}%;height:100%;background:${pct>=100?'var(--red)':pct>=75?'var(--orange)':'var(--blue)'};border-radius:2px"></div>
+            </div>
+            <span class="t-xs t-muted">${pct}% depreciated</span>
+          </div>
+        </td>
+        <td><span class="b" style="background:${cls.color}22;color:${cls.color};font-size:10px">${cls.label||a.class}</span></td>
+        <td class="t-muted t-sm">${a.loc} · ${a.costCentre||'—'}</td>
         <td class="num">${fC(a.cost,cur)}</td>
-        <td class="num t-orange">${a.accumDepr?fC(a.accumDepr,cur):'—'}</td>
-        <td class="num fw6 t-blue">${fC(a.nbv,cur)}</td>
+        <td class="num t-orange">${acDepr?fC(acDepr,cur):'—'}</td>
+        <td class="num fw6 t-blue">${fC(nbv,cur)}</td>
         <td class="t-muted t-sm">${a.acqDate}</td>
-        <td>${a.method}</td>
-        <td>${a.life?a.life+' yrs':'—'}</td>
+        <td class="t-sm">${ifrsBook.method||a.method||'—'}</td>
+        <td class="t-sm">${a.status==='Active'?remLife+' yrs':'—'}</td>
         <td>${statusEl}</td>
+        <td>
+          <div class="btn-row">
+            <button class="btn btn-g xs" onclick="event.stopPropagation();showAssetDetail('${a.id}')">Detail</button>
+          </div>
+        </td>
       </tr>`;
     }).join('');
-  }, 400);
+
+    animateBars();
+  }, 350);
 }
 
+// ── ASSET DETAIL PANEL — Shared Element Expansion ──
+let _activeBook = 'ifrs';
+
+function showAssetDetail(id) {
+  const assets = S.get('fixedAssets') || [];
+  const a = assets.find(x => x.id === id);
+  if (!a) return;
+  audioTick();
+  _selectedAssetId = id;
+
+  // Highlight selected row
+  document.querySelectorAll('#assetTbl tr').forEach(r => r.classList.remove('selected'));
+  const rows = document.querySelectorAll('#assetTbl tr');
+  rows.forEach(r => { if (r.textContent.includes(id)) r.classList.add('selected'); });
+
+  // Show panel with animation
+  const panel = document.getElementById('assetDetailPanel');
+  panel.style.display = 'block';
+  panel.style.opacity = '0';
+  panel.style.transform = 'translateY(12px)';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      panel.style.transition = 'opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1)';
+      panel.style.opacity = '1';
+      panel.style.transform = 'translateY(0)';
+    });
+  });
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  document.getElementById('assetDetailTitle').textContent = `${a.id} — ${a.desc}`;
+  renderBookToggle(a);
+  renderAssetBookView(a, _activeBook);
+  renderAssetTimeline(a);
+}
+
+function renderBookToggle(a) {
+  const container = document.getElementById('bookToggle');
+  container.innerHTML = Object.entries(DEPR_BOOKS).map(([key, book]) => `
+    <button class="book-btn ${key === _activeBook ? 'active' : ''}"
+      onclick="switchAssetBook('${a.id}','${key}')" style="${key===_activeBook?`background:${book.color};border-color:${book.color}`:''}">
+      ${book.label}
+    </button>`).join('');
+  document.getElementById('activeBookLabel').textContent = DEPR_BOOKS[_activeBook]?.description || '';
+}
+
+function switchAssetBook(assetId, book) {
+  const card = document.getElementById('assetBookCard');
+  if (!card) return;
+  // 3D flip animation
+  card.style.transform = 'rotateY(90deg)';
+  setTimeout(() => {
+    _activeBook = book;
+    const assets = S.get('fixedAssets') || [];
+    const a = assets.find(x => x.id === assetId);
+    if (a) { renderAssetBookView(a, book); renderBookToggle(a); }
+    card.style.transform = 'rotateY(0deg)';
+  }, 200);
+  audioTick();
+}
+
+function renderAssetBookView(a, bookKey) {
+  const cur = baseCurr();
+  const book = a.books?.[bookKey] || {};
+  const bookDef = DEPR_BOOKS[bookKey] || {};
+  const cls = ASSET_CLASSES[a.class] || {};
+  const acqYear = new Date(a.acqDate).getFullYear();
+  const curYear = new Date().getFullYear();
+  const yearsHeld = curYear - acqYear;
+  const annual = book.life > 0 ? (a.cost - (a.salvage||0)) / book.life : 0;
+
+  document.getElementById('assetValueGrid').innerHTML = `
+    <div class="val-grid">
+      <div class="val-cell active-book">
+        <div class="val-cell-label">Acquisition Cost</div>
+        <div class="val-cell-value">${fC(a.cost,cur)}</div>
+        <div class="val-cell-sub">Acquired ${a.acqDate}</div>
+      </div>
+      <div class="val-cell">
+        <div class="val-cell-label">Salvage Value</div>
+        <div class="val-cell-value">${fC(a.salvage||0,cur)}</div>
+        <div class="val-cell-sub">Residual estimate</div>
+      </div>
+      <div class="val-cell">
+        <div class="val-cell-label">Depreciable Amount</div>
+        <div class="val-cell-value">${fC(a.cost-(a.salvage||0),cur)}</div>
+        <div class="val-cell-sub">Cost − Salvage</div>
+      </div>
+      <div class="val-cell" style="border-top-color:var(--orange)">
+        <div class="val-cell-label">Accumulated Depr.</div>
+        <div class="val-cell-value t-orange">${fC(book.accumDepr||0,cur)}</div>
+        <div class="val-cell-sub">${book.method} · ${book.rate||0}% p.a.</div>
+      </div>
+      <div class="val-cell" style="border-top-color:var(--blue)">
+        <div class="val-cell-label">Net Book Value</div>
+        <div class="val-cell-value t-blue">${fC(book.nbv||0,cur)}</div>
+        <div class="val-cell-sub">As of ${today()}</div>
+      </div>
+      <div class="val-cell" style="border-top-color:var(--green)">
+        <div class="val-cell-label">Annual Charge (${bookKey.toUpperCase()})</div>
+        <div class="val-cell-value t-green">${fC(annual,cur)}</div>
+        <div class="val-cell-sub">${book.life||0} yr useful life</div>
+      </div>
+    </div>
+    <div class="g2c">
+      <div>
+        <div class="fsec-t mb8">Asset Information</div>
+        ${[
+          ['Asset Class', cls.label||a.class],
+          ['Location', a.loc], ['Cost Centre', a.costCentre||'—'],
+          ['Tag Number', a.tag||'—'], ['Serial Number', a.serial||'—'],
+          ['Supplier', a.supplier||'—'], ['PO Reference', a.poRef||'—'],
+          ['GL — Acquisition', cls.glAcq], ['GL — Acc. Depr.', cls.glDepr||'—'],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
+      </div>
+      <div>
+        <div class="fsec-t mb8">Book Comparison</div>
+        <div class="tw"><table style="font-size:12px">
+          <thead><tr><th>Book</th><th>Method</th><th class="num">Annual</th><th class="num">NBV</th></tr></thead>
+          <tbody>${Object.entries(DEPR_BOOKS).map(([bk, bd]) => {
+            const b = a.books?.[bk] || {};
+            const ann = b.life > 0 ? (a.cost-(a.salvage||0))/b.life : 0;
+            return `<tr style="${bk===bookKey?'background:var(--blue-xlt)':''}">
+              <td class="fw6" style="color:${bd.color}">${bd.label}</td>
+              <td>${b.method||'—'}</td>
+              <td class="num">${b.life?fC(ann,cur):'—'}</td>
+              <td class="num fw6">${fC(b.nbv||0,cur)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+        <div class="fsec-t mt12 mb8">Transaction History</div>
+        ${(a.history||[]).slice(-4).map(h=>`
+          <div class="cs-row">
+            <span class="t-muted t-xs">${h.date} · ${h.event}</span>
+            <span class="fw6 t-sm ${h.amount<0?'t-red':'t-green'}">${h.amount>0?'+':''}${fC(h.amount,cur)}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderAssetTimeline(a) {
+  const cur = baseCurr();
+  const bookKey = _activeBook;
+  const book = a.books?.[bookKey] || {};
+  if (!book.life || a.status !== 'Active') {
+    document.getElementById('assetTimelineChart').innerHTML = '';
+    return;
+  }
+  const acqYear = new Date(a.acqDate).getFullYear();
+  const totalYears = book.life;
+  const currentYear = new Date().getFullYear();
+  const yearsHeld = Math.min(currentYear - acqYear, totalYears);
+  const annual = (a.cost - (a.salvage||0)) / totalYears;
+
+  let runningNBV = a.cost;
+  const years = Array.from({length: Math.min(totalYears, 15)}, (_, i) => {
+    const yr = acqYear + i;
+    const depr = Math.min(annual, runningNBV - (a.salvage||0));
+    runningNBV -= depr;
+    return { yr, depr, nbv: runningNBV, isPast: yr <= currentYear };
+  });
+
+  const maxNBV = a.cost;
+  document.getElementById('assetTimelineChart').innerHTML = `
+    <div class="fsec-t mb8">NBV Timeline — ${DEPR_BOOKS[bookKey]?.label}</div>
+    <div class="timeline-wrap">
+      ${years.map(y => `<div class="timeline-row">
+        <span style="width:36px;font-size:10px;color:var(--text3)">${y.yr}</span>
+        <div class="timeline-bar-bg">
+          <div class="timeline-bar-fill" style="width:${(y.nbv/maxNBV*100).toFixed(1)}%;background:${y.isPast?'var(--blue)':'var(--border2)'}"></div>
+        </div>
+        <span style="width:90px;text-align:right;font-size:11px;font-weight:600;color:${y.isPast?'var(--blue)':'var(--text3)'}">${fC(y.nbv,cur)}</span>
+        <span style="width:80px;text-align:right;font-size:10px;color:var(--text3)">−${fC(y.depr,cur)}</span>
+      </div>`).join('')}
+    </div>`;
+  setTimeout(animateBars, 100);
+}
+
+// ── RENDER: DEPRECIATION ENGINE ──
 function renderDepreciation() {
   showSkeletonKPIs('deprKPIs', 4);
-  const book = document.getElementById('deprBook')?.value || 'ifrs';
+  const bookKey = document.getElementById('deprBook')?.value || 'ifrs';
+  const year = parseInt(document.getElementById('deprYear')?.value || 2025);
+  const bookDef = DEPR_BOOKS[bookKey] || {};
   setTimeout(() => {
-    const assets = (S.get('fixedAssets')||[]).filter(a=>a.status==='Active'&&a.method!=='—');
+    const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'Active');
     const cur = baseCurr();
-    const annualDepr = assets.reduce((a,x)=>a+(x.cost*x.rate/100),0);
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    document.getElementById('deprKPIs').innerHTML = [
-      {l:'Assets in Schedule',  v:assets.length, c:'c-blue'},
-      {l:'Annual Depreciation', v:fC(annualDepr,cur), c:'c-orange'},
-      {l:'Monthly Charge',      v:fC(annualDepr/12,cur), c:'c-teal'},
-      {l:'Book',                v:book==='ifrs'?'IFRS (Straight-Line)':'Tax (Accelerated)', c:'c-green'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+    const bookAssets = assets.map(a => {
+      const b = a.books?.[bookKey] || {};
+      const annual = b.life > 0 ? (a.cost - (a.salvage||0)) / b.life : 0;
+      return { ...a, book: b, annual, monthly: annual/12 };
+    }).filter(a => a.annual > 0);
 
+    const totalAnnual = bookAssets.reduce((s,a) => s+a.annual, 0);
+
+    document.getElementById('deprKPIs').innerHTML = [
+      {l:'Assets in Schedule',   v:bookAssets.length, c:'c-blue'},
+      {l:'Annual Charge',        v:fC(totalAnnual,cur), c:'c-orange'},
+      {l:'Monthly Charge',       v:fC(totalAnnual/12,cur), c:'c-teal'},
+      {l:'Active Book',          v:bookDef.label, c:'c-green'},
+    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:${typeof k.v === 'number' || k.v.length < 12 ? '18':'13'}px">${k.v}</div></div>`).join('');
+
+    // 5-year forecast chart
+    const forecastYears = [year, year+1, year+2, year+3, year+4];
+    const forecastAmts = bookAssets.reduce((totals, a) => {
+      const remainingLife = a.book.life || 0;
+      forecastYears.forEach((fy, i) => {
+        const elapsed = fy - new Date(a.acqDate).getFullYear();
+        if (elapsed >= 0 && elapsed < remainingLife) totals[i] += a.annual;
+      });
+      return totals;
+    }, [0,0,0,0,0]);
+    const maxF = Math.max(...forecastAmts) || 1;
+
+    document.getElementById('deprForecastChart').innerHTML = `
+      <div style="display:flex;align-items:flex-end;gap:16px;height:120px;padding:8px 0">
+        ${forecastYears.map((fy,i) => {
+          const h = Math.round(forecastAmts[i]/maxF*90);
+          const isCurrentYear = fy === new Date().getFullYear();
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="t-xs fw6" style="color:${isCurrentYear?bookDef.color:'var(--text3)'}">${fCM(forecastAmts[i],cur)}</div>
+            <div class="depr-bar prog-bar" style="width:100%;height:${h}px;background:${isCurrentYear?bookDef.color:'var(--border2)'};border-radius:3px 3px 0 0"></div>
+            <div class="depr-bar-label ${isCurrentYear?'fw6':''}">${fy}${fy===year?' ●':''}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="t-xs t-muted" style="text-align:center">Projected annual depreciation charge · ${bookDef.description}</div>`;
+
+    // Full schedule table
     document.getElementById('deprPrintArea').innerHTML = `
       <div id="deprReport">
-        ${rptLetterhead('Depreciation Schedule', 'FY 2025', `${book==='ifrs'?'IFRS Straight-Line':'Tax Accelerated'} · IAS 16`)}
+        ${rptLetterhead('Depreciation Schedule', `FY ${year}`, `${bookDef.label} · ${bookDef.description}`)}
         <div class="tw"><table>
-          <thead><tr><th>Asset ID</th><th>Description</th><th>Acq. Cost</th><th>Method</th><th>Rate</th><th>Annual Charge</th>
-            ${months.map(m=>`<th class="num" style="font-size:10px">${m}</th>`).join('')}
-          <th class="num">YTD Charge</th><th class="num">Closing NBV</th></tr></thead>
-          <tbody>${assets.map(a => {
-            const annual = a.cost * a.rate / 100;
-            const monthly = annual / 12;
-            const ytd = monthly * 6; // Jan–Jun
+          <thead><tr>
+            <th>Asset ID</th><th>Description</th><th>Class</th>
+            <th class="num">Acq. Cost</th><th class="num">Salvage</th>
+            <th>Method</th><th class="num">Rate</th><th class="num">Life</th>
+            <th class="num">Annual Charge</th>
+            ${months.map(m=>`<th class="num" style="font-size:9px">${m}</th>`).join('')}
+            <th class="num">Closing NBV</th>
+          </tr></thead>
+          <tbody>${bookAssets.map(a => {
+            const cls = ASSET_CLASSES[a.class] || {};
+            const ytdMonths = a.book.life ? 6 : 0;
             return `<tr>
               <td class="t-blue fw6">${a.id}</td>
-              <td>${a.desc.slice(0,30)}${a.desc.length>30?'…':''}</td>
+              <td class="t-sm">${a.desc.slice(0,28)}…</td>
+              <td><span class="b" style="font-size:9px;background:${cls.color}22;color:${cls.color}">${cls.label?.split('—')[0].trim()||a.class}</span></td>
               <td class="num">${fC(a.cost,cur)}</td>
-              <td>${a.method}</td><td class="num">${a.rate}%</td>
-              <td class="num fw6 t-orange">${fC(annual,cur)}</td>
-              ${months.map(()=>`<td class="num" style="font-size:11px">${fC(monthly,cur)}</td>`).join('')}
-              <td class="num fw6">${fC(ytd,cur)}</td>
-              <td class="num t-blue fw6">${fC(a.nbv,cur)}</td>
+              <td class="num">${fC(a.salvage||0,cur)}</td>
+              <td>${a.book.method}</td>
+              <td class="num">${a.book.rate||0}%</td>
+              <td class="num">${a.book.life}y</td>
+              <td class="num fw6 t-orange">${fC(a.annual,cur)}</td>
+              ${months.map(()=>`<td class="num" style="font-size:10px">${fC(a.monthly,cur)}</td>`).join('')}
+              <td class="num t-blue fw6">${fC(a.book.nbv||0,cur)}</td>
             </tr>`;
-          }).join('')}
-          </tbody>
+          }).join('')}</tbody>
           <tfoot><tr style="font-weight:700;background:var(--surface2)">
-            <td colspan="5">TOTAL</td>
-            <td class="num t-orange">${fC(annualDepr,cur)}</td>
-            ${months.map(()=>`<td class="num">${fC(annualDepr/12,cur)}</td>`).join('')}
-            <td class="num">${fC(annualDepr/2,cur)}</td>
-            <td></td>
+            <td colspan="8">TOTAL — ${bookDef.label}</td>
+            <td class="num t-orange">${fC(totalAnnual,cur)}</td>
+            ${months.map(()=>`<td class="num">${fC(totalAnnual/12,cur)}</td>`).join('')}
+            <td class="num">—</td>
           </tr></tfoot>
         </table></div>
+        <div class="fs-note">Depreciation schedule prepared per ${bookDef.description}. Method: ${DEPR_METHODS[bookDef.method]?.label||bookDef.method}.</div>
       </div>`;
+
+    setTimeout(animateBars, 100);
   }, 400);
 }
 
 function runDepreciationPost() {
-  appendAuditLog('assets','DEPRECIATION_POST','DEPR-JUN25',{period:'June 2025',amount:12400});
+  const bookKey = document.getElementById('deprBook')?.value || 'ifrs';
+  const bookDef = DEPR_BOOKS[bookKey] || {};
+  const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'Active');
+  const cur = baseCurr();
+  const total = assets.reduce((s,a) => {
+    const b = a.books?.[bookKey] || {};
+    return s + (b.life > 0 ? (a.cost-(a.salvage||0))/b.life/12 : 0);
+  }, 0);
+
+  appendAuditLog('assets','DEPRECIATION_POST',`DEPR-${today()}-${bookKey.toUpperCase()}`,{
+    book: bookDef.label, period: today(), amount: total, assets: assets.length
+  });
   audioPostSuccess();
-  toast('Depreciation journal posted for June 2025. GL entries created.', 'success');
+  toast(`✓ ${bookDef.label} depreciation posted — ${fC(total,cur)} across ${assets.length} assets. GL entries created.`, 'success', 4000);
 }
+
+// ── RENDER: CWIP / CAPEX ──
+function renderCWIP() {
+  showSkeletonKPIs('cwipKPIs', 4);
+  setTimeout(() => {
+    const projects = S.get('cwipProjects') || [];
+    const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'CIP');
+    const cur = baseCurr();
+    const totalBudget = projects.reduce((s,p) => s+p.budget, 0);
+    const totalActual = projects.reduce((s,p) => s+p.actual, 0);
+
+    document.getElementById('cwipKPIs').innerHTML = [
+      {l:'CWIP Projects',       v:projects.length, c:'c-blue'},
+      {l:'Total Authorised Budget', v:fC(totalBudget,cur), c:'c-teal'},
+      {l:'Total Actual Spend',  v:fC(totalActual,cur), c:'c-orange'},
+      {l:'Budget Remaining',    v:fC(totalBudget-totalActual,cur), c:totalBudget>totalActual?'c-green':'c-red'},
+    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+    document.getElementById('cwipTbl').innerHTML = projects.map(p => {
+      const variance = p.budget - p.actual;
+      const pct = p.budget > 0 ? (p.actual/p.budget*100).toFixed(0) : 0;
+      const isOver = p.actual > p.budget * 1.05;
+      const cls = ASSET_CLASSES[p.assetClass] || {};
+      return `<tr>
+        <td class="t-blue fw6">${p.id}</td>
+        <td>
+          <div class="fw6 t-sm">${p.desc}</div>
+          <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px;width:120px">
+            <div class="prog-bar" style="width:${Math.min(pct,100)}%;height:100%;background:${isOver?'var(--red)':'var(--blue)'};border-radius:2px"></div>
+          </div>
+        </td>
+        <td class="t-muted t-sm">${p.wbs}</td>
+        <td class="num">${fC(p.budget,cur)}</td>
+        <td class="num">${fC(p.committed,cur)}</td>
+        <td class="num fw6">${fC(p.actual,cur)}</td>
+        <td class="num ${variance>=0?'t-green':'t-red'} fw6">${variance>=0?'+':''}${fC(variance,cur)}</td>
+        <td><span class="${isOver?'cwip-over':'cwip-active'}">${p.status}</span></td>
+        <td><button class="btn btn-p xs" onclick="openM('mCapitaliseCWIP','${p.id}')">Capitalise →</button></td>
+      </tr>`;
+    }).join('');
+
+    // Budget vs Actual chart
+    const maxVal = Math.max(...projects.map(p => Math.max(p.budget,p.actual)));
+    document.getElementById('cwipBudgetChart').innerHTML = projects.length ? `
+      <div style="display:flex;align-items:flex-end;gap:20px;height:120px;padding:8px 0">
+        ${projects.map(p => {
+          const bh = Math.round(p.budget/maxVal*90);
+          const ah = Math.round(p.actual/maxVal*90);
+          const isOver = p.actual > p.budget*1.05;
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="display:flex;gap:4px;align-items:flex-end;height:90px">
+              <div class="prog-bar" title="Budget" style="width:20px;height:${bh}px;background:var(--blue);border-radius:3px 3px 0 0;opacity:.5"></div>
+              <div class="prog-bar" title="Actual" style="width:20px;height:${ah}px;background:${isOver?'var(--red)':'var(--teal)'};border-radius:3px 3px 0 0"></div>
+            </div>
+            <div class="t-xs t-muted" style="text-align:center;max-width:80px;word-break:break-word">${p.id}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="flex ic gap12 t-xs t-muted">
+        <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--blue);opacity:.5;border-radius:2px"></span>Budget</span>
+        <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--teal);border-radius:2px"></span>Actual</span>
+      </div>` : '<div class="t-muted t-sm">No CWIP projects</div>';
+
+    // Pending capitalisation queue (GRNs)
+    const grns = (S.get('grns')||[]).filter(g => !g.capitalised);
+    document.getElementById('cwipQueueTbl').innerHTML = grns.slice(0,5).map(g =>
+      `<tr><td><span class="b b-blue t-xs">GRN</span></td><td class="t-blue fw6">${g.id||'GRN-0041'}</td>
+       <td>${g.supplier||'Al-Nasser Steel'}</td><td class="num fw6">${fC(g.total||84200,cur)}</td>
+       <td class="t-muted">${g.date||today()}</td><td>—</td>
+       <td><button class="btn btn-s xs" onclick="openM('mCapitaliseCWIP')">→ Capitalise</button></td></tr>`
+    ).join('') || `<tr><td colspan="7" class="t-muted" style="text-align:center;padding:16px">No pending capitalisation items</td></tr>`;
+
+    animateBars();
+  }, 400);
+}
+
+// ── RENDER: DISPOSALS ──
+function renderDisposals() {
+  showSkeletonKPIs('disposalKPIs', 4);
+  setTimeout(() => {
+    const disposals = S.get('assetDisposals') || [];
+    const cur = baseCurr();
+    const totalGain  = disposals.filter(d=>d.gainLossIFRS>0).reduce((s,d)=>s+d.gainLossIFRS,0);
+    const totalLoss  = disposals.filter(d=>d.gainLossIFRS<0).reduce((s,d)=>s+Math.abs(d.gainLossIFRS),0);
+    const totalProc  = disposals.reduce((s,d)=>s+d.proceeds,0);
+
+    document.getElementById('disposalKPIs').innerHTML = [
+      {l:'Total Disposals', v:disposals.length, c:'c-blue'},
+      {l:'Total Proceeds',  v:fC(totalProc,cur), c:'c-teal'},
+      {l:'Total Gains',     v:fC(totalGain,cur), c:'c-green'},
+      {l:'Total Losses',    v:fC(totalLoss,cur), c:'c-red'},
+    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+    document.getElementById('disposalTbl').innerHTML = disposals.map(d => {
+      const gl = d.gainLossIFRS;
+      return `<tr>
+        <td class="t-blue fw6">${d.assetId}</td>
+        <td class="fw6 t-sm">${d.desc}</td>
+        <td><span class="b ${d.type==='Sale'?'b-blue':d.type==='Scrap'?'b-red':'b-orange'}">${d.type}</span></td>
+        <td class="num">${fC(d.nbvIFRS,cur)}</td>
+        <td class="num">${fC(d.proceeds,cur)}</td>
+        <td class="num ${gl>0?'gain':gl<0?'loss':''}">${gl>=0?'+':''}${fC(gl,cur)}</td>
+        <td class="t-muted">${d.date}</td>
+        <td class="t-muted t-sm">${d.approvedBy}</td>
+        <td><span class="b b-green">${d.status}</span></td>
+      </tr>`;
+    }).join('');
+
+    // Pending queue
+    const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'Active' && (a.books?.ifrs?.nbv||0) < 50000);
+    document.getElementById('disposalPendingQueue').innerHTML = assets.length ? assets.slice(0,3).map(a => `
+      <div class="fsec mb8">
+        <div class="fw6 t-sm">${a.id} — ${a.desc}</div>
+        <div class="t-xs t-muted">NBV: ${fC(a.books?.ifrs?.nbv||0,cur)} · Location: ${a.loc}</div>
+        <div class="btn-row mt8">
+          <button class="btn btn-g xs" onclick="openM('mRetireAsset','${a.id}')">Retire</button>
+          <button class="btn btn-g xs">Request Approval</button>
+        </div>
+      </div>`) .join('') : '<div class="t-muted t-sm">No assets pending disposal review</div>';
+
+    // Gain/Loss Statement
+    document.getElementById('gainLossStatement').innerHTML = `
+      ${rptLetterhead('Gain/Loss on Asset Disposal Statement', 'YTD 2025', 'IAS 16 — Corporate vs Tax Book Comparison')}
+      <div class="tw"><table>
+        <thead><tr>
+          <th>Asset</th><th>Type</th><th>Date</th>
+          <th class="num">Proceeds</th>
+          <th class="num">NBV (IFRS)</th><th class="num">G/(L) IFRS</th>
+          <th class="num">NBV (Tax)</th><th class="num">G/(L) Tax</th>
+          <th class="num">Book Diff.</th>
+        </tr></thead>
+        <tbody>${disposals.map(d=>`<tr>
+          <td class="t-blue fw6">${d.assetId}</td>
+          <td>${d.type}</td><td class="t-muted">${d.date}</td>
+          <td class="num">${fC(d.proceeds,cur)}</td>
+          <td class="num">${fC(d.nbvIFRS,cur)}</td>
+          <td class="num ${d.gainLossIFRS>=0?'gain':'loss'}">${d.gainLossIFRS>=0?'+':''}${fC(d.gainLossIFRS,cur)}</td>
+          <td class="num">${fC(d.nbvTax,cur)}</td>
+          <td class="num ${d.gainLossTax>=0?'gain':'loss'}">${d.gainLossTax>=0?'+':''}${fC(d.gainLossTax,cur)}</td>
+          <td class="num fw6 t-orange">${fC(Math.abs(d.gainLossIFRS-d.gainLossTax),cur)}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr style="font-weight:700;background:var(--surface2)">
+          <td colspan="3">TOTAL</td>
+          <td class="num">${fC(totalProc,cur)}</td>
+          <td></td>
+          <td class="num ${totalGain-totalLoss>=0?'gain':'loss'}">${totalGain-totalLoss>=0?'+':''}${fC(totalGain-totalLoss,cur)}</td>
+          <td></td><td></td><td></td>
+        </tr></tfoot>
+      </table></div>`;
+  }, 400);
+}
+
+// ── ASSET MODALS ──
+const mAssetTemplates = {
+  mAddAsset: {
+    title:'Acquire Fixed Asset', saveLabel:'Save & Create Asset',
+    body:()=>`
+      <div class="fr fr2">${inp('Asset Description','aa_desc','text','Full asset description',undefined,true)}${sel('Asset Class','aa_class',Object.entries(ASSET_CLASSES).map(([k,v])=>k+'|'+v.label),true)}</div>
+      <div class="fr fr2">${inp('Acquisition Cost','aa_cost','number','0',undefined,true)}${inp('Salvage Value','aa_salvage','number','0','0')}</div>
+      <div class="fr fr2">${inp('Acquisition Date','aa_date','date','',today(),true)}${inp('Useful Life (years)','aa_life','number','','10',true)}</div>
+      <div class="fr fr2">${inp('Location / Site','aa_loc','text','','Plant A')}${inp('Cost Centre','aa_cc','text','','CC01')}</div>
+      <div class="fr fr2">${inp('Serial Number','aa_serial','text','')}${inp('Supplier','aa_sup','text','')}</div>
+      <div class="fr fr2">${inp('Asset Tag','aa_tag','text','e.g. TAG-1006')}${inp('PO / Source Reference','aa_po','text','')}</div>
+      <div class="fsec mt12"><div class="fsec-t">Depreciation Method per Book</div>
+        <div class="g3c" style="gap:10px">
+          ${Object.entries(DEPR_BOOKS).map(([k,b])=>`
+            <div class="fsec" style="padding:10px;background:var(--surface2);border-radius:var(--radius);border-top:3px solid ${b.color}">
+              <div class="fw6 t-xs mb8" style="color:${b.color}">${b.label}</div>
+              ${sel('Method','aa_m_'+k,Object.entries(DEPR_METHODS).map(([mk,mv])=>mk+'|'+mv.label))}
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="alert a-info mt12">Asset will be created and GL acquisition journal posted automatically.</div>`,
+    save:()=>{
+      const desc = gv('aa_desc'), cost = parseFloat(gv('aa_cost'));
+      if (!desc || !cost) { toast('Description and cost required','error'); return; }
+      const assets = S.get('fixedAssets')||[];
+      const id = 'FA-' + String(assets.length+1).padStart(3,'0');
+      const cls = gv('aa_class').split('|')[0];
+      const life = parseInt(gv('aa_life'))||10;
+      const salvage = parseFloat(gv('aa_salvage'))||0;
+      const rate = (1/life*100).toFixed(1);
+      const newAsset = {
+        id, desc, class:cls, loc:gv('aa_loc')||'', costCentre:gv('aa_cc')||'',
+        cost, salvage, acqDate:gv('aa_date')||today(), status:'Active',
+        tag:gv('aa_tag'), serial:gv('aa_serial'), supplier:gv('aa_sup'), poRef:gv('aa_po'),
+        books:{
+          ifrs:{ method:gv('aa_m_ifrs').split('|')[0]||'SL', life, rate:parseFloat(rate), accumDepr:0, nbv:cost },
+          tax: { method:gv('aa_m_tax').split('|')[0]||'DDB', life:Math.round(life*0.7), rate:parseFloat((1/(life*0.7)*100).toFixed(1)), accumDepr:0, nbv:cost },
+          mgmt:{ method:gv('aa_m_mgmt').split('|')[0]||'SL', life, rate:parseFloat(rate), accumDepr:0, nbv:cost },
+        },
+        history:[{date:gv('aa_date')||today(), event:'Acquisition', amount:cost, ref:gv('aa_po')||'Manual'}]
+      };
+      assets.push(newAsset);
+      S.set('fixedAssets', assets);
+      appendAuditLog('assets','ACQUISITION', id, {cost, desc});
+      closeM(); renderAssets();
+      audioPostSuccess();
+      toast(`Asset ${id} created. Acquisition journal posted to GL.`, 'success');
+    }
+  },
+  mCapitaliseCWIP: {
+    title:'Capitalise CWIP to Fixed Asset', saveLabel:'Capitalise Now',
+    body:(id)=>{
+      const projects = S.get('cwipProjects')||[];
+      const p = projects.find(x=>x.id===id)||{};
+      const cur = baseCurr();
+      return `<div class="alert a-info mb12">Transfer accumulated CWIP costs into a capitalised Fixed Asset record. The CWIP account will be credited and the Asset account debited.</div>
+        ${inp('CWIP Project ID','cap_proj','text','',p.id||'')}
+        <div class="fr fr2">${inp('Asset Description','cap_desc','text','',p.desc||'')}${sel('Asset Class','cap_class',Object.entries(ASSET_CLASSES).filter(([k])=>k!=='cip').map(([k,v])=>k+'|'+v.label))}</div>
+        <div class="fr fr2">${inp('Capitalisation Date','cap_date','date','',today())}${inp('Total Cost to Capitalise','cap_cost','number','',p.actual||'')}</div>
+        <div class="fr fr2">${inp('Useful Life (years)','cap_life','number','','10')}${inp('Salvage Value','cap_salvage','number','','0')}</div>
+        <div class="alert a-ok mt12">Estimated annual depreciation: <strong id="capDeprPreview">—</strong></div>`;
+    },
+    save:()=>{
+      const cost = parseFloat(gv('cap_cost')), life = parseInt(gv('cap_life'))||10;
+      const cur = baseCurr();
+      if (!cost||!gv('cap_desc')) { toast('Description and cost required','error'); return; }
+      const assets = S.get('fixedAssets')||[];
+      const id = 'FA-' + String(assets.length+1).padStart(3,'0');
+      const cls = gv('cap_class').split('|')[0];
+      const salvage = parseFloat(gv('cap_salvage'))||0;
+      const rate = (1/life*100).toFixed(1);
+      assets.push({
+        id, desc:gv('cap_desc'), class:cls, loc:'', costCentre:'CC01',
+        cost, salvage, acqDate:gv('cap_date')||today(), status:'Active', tag:'', serial:'',
+        books:{
+          ifrs:{ method:'SL', life, rate:parseFloat(rate), accumDepr:0, nbv:cost },
+          tax: { method:'DDB',life:Math.round(life*.7), rate:parseFloat((1/(life*.7)*100).toFixed(1)), accumDepr:0, nbv:cost },
+          mgmt:{ method:'SL', life, rate:parseFloat(rate), accumDepr:0, nbv:cost },
+        },
+        history:[{date:gv('cap_date')||today(), event:'Capitalised from CWIP', amount:cost, ref:gv('cap_proj')||'CWIP'}]
+      });
+      S.set('fixedAssets', assets);
+      appendAuditLog('assets','CWIP_CAPITALISATION', id, {cost, cwip:gv('cap_proj')});
+      closeM(); renderAssets();
+      audioPostSuccess();
+      toast(`Asset ${id} capitalised from CWIP. Accumulated cost ${fC(cost,cur)} transferred to Fixed Asset sub-ledger.`, 'success', 5000);
+    }
+  },
+  mRetireAsset: {
+    title:'Asset Retirement / Disposal', saveLabel:'Process Disposal',
+    body:(id)=>{
+      const a = id ? (S.get('fixedAssets')||[]).find(x=>x.id===id) : null;
+      const cur = baseCurr();
+      const nbv = a?.books?.ifrs?.nbv || 0;
+      return `
+        ${a ? `<div class="kpi c-blue mb12" style="padding:10px 14px"><div class="kpi-lbl">${a.id} — ${a.desc}</div><div class="kpi-val" style="font-size:16px">IFRS NBV: ${fC(nbv,cur)}</div></div>` : ''}
+        <input type="hidden" id="ret_id" value="${id||''}">
+        <div class="fr fr2">${sel('Disposal Type','ret_type',['Sale|Revenue-Generating Sale','Scrap|Scrapping / Write-Off','Donation|Charitable Donation','Transfer|Intercompany Transfer'],true)}${inp('Disposal Date','ret_date','date','',today())}</div>
+        <div class="fr fr2">${inp('Sale Proceeds (if applicable)','ret_proceeds','number','0','0')}${inp('Disposal Reference','ret_ref','text','Invoice/doc number')}</div>
+        <div class="fg mb12"><label class="fl req">Disposal Reason</label><textarea class="fc" id="ret_reason" rows="2" placeholder="Explain reason for disposal…"></textarea></div>
+        <div class="fg"><label class="fl req">Authorised By</label><select class="fc" id="ret_auth">${(S.get('users')||[]).map(u=>`<option>${u.name}</option>`).join('')}</select></div>
+        ${nbv > 50000 ? '<div class="alert a-warn mt12">⚠ This asset has NBV > 50,000. Executive dual-authorisation required before posting.</div>' : ''}`;
+    },
+    save:()=>{
+      const id = gv('ret_id');
+      const proceeds = parseFloat(gv('ret_proceeds'))||0;
+      const type = gv('ret_type').split('|')[0];
+      if (!gv('ret_reason').trim()) { toast('Disposal reason required','error'); return; }
+      const assets = S.get('fixedAssets')||[];
+      const a = assets.find(x=>x.id===id);
+      const nbvIFRS = a?.books?.ifrs?.nbv||0, nbvTax = a?.books?.tax?.nbv||0;
+      const gainIFRS = proceeds - nbvIFRS, gainTax = proceeds - nbvTax;
+      if (a) {
+        a.status = 'Disposed'; a.disposalDate = gv('ret_date')||today();
+        a.disposalProceeds = proceeds; a.disposalType = type;
+        if (a.books) Object.keys(a.books).forEach(bk => { if(a.books[bk]){a.books[bk].nbv=0; a.books[bk].accumDepr=a.cost;} });
+      }
+      S.set('fixedAssets', assets);
+      const disposals = S.get('assetDisposals')||[];
+      disposals.push({ id:`DISP-${String(disposals.length+1).padStart(3,'0')}`, assetId:id, desc:a?.desc||'', type, nbvIFRS, nbvTax, proceeds, gainLossIFRS:gainIFRS, gainLossTax:gainTax, date:gv('ret_date')||today(), approvedBy:gv('ret_auth'), status:'Posted', reason:gv('ret_reason') });
+      S.set('assetDisposals', disposals);
+      appendAuditLog('assets','DISPOSAL', id, {type, proceeds, gainLossIFRS:gainIFRS});
+      closeM(); renderAssets(); renderDisposals();
+      audioPostSuccess();
+      const cur = baseCurr();
+      toast(`${id} retired. Gain/(Loss): ${fC(gainIFRS,cur)} IFRS · ${fC(gainTax,cur)} Tax.`, gainIFRS>=0?'success':'warn', 5000);
+    }
+  },
+  mAssetTransfer: {
+    title:'Asset Transfer / Relocation', saveLabel:'Process Transfer',
+    body:()=>`
+      <div class="alert a-info mb12">Transfer updates the asset's cost centre, location, and generates intercompany journals if crossing legal entities.</div>
+      <div class="fr fr2">${inp('Asset ID','trn_id','text','e.g. FA-001',undefined,true)}${inp('Transfer Date','trn_date','date','',today())}</div>
+      <div class="fr fr2">${inp('From Location','trn_from','text','')}${inp('To Location','trn_to','text','',undefined,true)}</div>
+      <div class="fr fr2">${inp('From Cost Centre','trn_fromcc','text','')}${inp('To Cost Centre','trn_tocc','text','',undefined,true)}</div>
+      <div class="fg mb12"><label class="fl">Transfer Reason</label><textarea class="fc" id="trn_reason" rows="2" placeholder="e.g. Department reorganisation…"></textarea></div>`,
+    save:()=>{
+      const id = gv('trn_id'), toCC = gv('trn_tocc'), toLoc = gv('trn_to');
+      if (!id||!toCC||!toLoc) { toast('Asset ID, target location and cost centre required','error'); return; }
+      const assets = S.get('fixedAssets')||[];
+      const a = assets.find(x=>x.id===id);
+      if (!a) { toast('Asset not found','error'); return; }
+      const from = `${a.loc} / ${a.costCentre}`;
+      a.loc = toLoc; a.costCentre = toCC;
+      a.history = [...(a.history||[]), {date:gv('trn_date')||today(), event:`Transfer: ${from} → ${toLoc}/${toCC}`, amount:0, ref:'TRF-'+today()}];
+      S.set('fixedAssets', assets);
+      appendAuditLog('assets','TRANSFER', id, {from, to:`${toLoc}/${toCC}`});
+      closeM(); renderAssets();
+      audioPostSuccess();
+      toast(`${id} transferred to ${toLoc} / ${toCC}.`, 'success');
+    }
+  },
+  mAssetSplit: {
+    title:'Asset Componentisation / Split', saveLabel:'Execute Split',
+    body:()=>`
+      <div class="alert a-info mb12">Split a master asset into sub-components. Proportional costs and accumulated depreciation will be automatically migrated.</div>
+      <div class="fr">${inp('Master Asset ID to Split','spl_id','text','e.g. FA-001',undefined,true)}</div>
+      <div class="fsec-t mt12 mb8">Component Breakdown (must total 100%)</div>
+      ${[1,2,3].map(i=>`
+        <div class="fr fr2 mb6">
+          ${inp('Component '+i+' Description','spl_desc'+i,'text','')}
+          ${inp('Weight %','spl_pct'+i,'number','0','${i===1?60:i===2?30:10}')}
+        </div>`).join('')}
+      <div class="alert a-warn mt8">Each component will receive its own asset ID and GL sub-ledger line.</div>`,
+    save:()=>{
+      const masterId = gv('spl_id');
+      const assets = S.get('fixedAssets')||[];
+      const master = assets.find(x=>x.id===masterId);
+      if (!master) { toast('Master asset not found','error'); return; }
+      const comps = [1,2,3].map(i=>({desc:gv('spl_desc'+i), pct:parseFloat(gv('spl_pct'+i))||0})).filter(c=>c.desc&&c.pct>0);
+      const totalPct = comps.reduce((s,c)=>s+c.pct,0);
+      if (Math.abs(totalPct-100)>0.1) { toast(`Percentages must total 100% (currently ${totalPct}%)`,'error'); return; }
+      master.status = 'Disposed';
+      master.history = [...(master.history||[]), {date:today(), event:'Split into components', amount:0, ref:'SPLIT-'+today()}];
+      comps.forEach((c,i) => {
+        const newId = masterId+'-'+String.fromCharCode(65+i);
+        const pct = c.pct/100;
+        assets.push({
+          ...master, id:newId, desc:c.desc, status:'Active',
+          cost:Math.round(master.cost*pct),
+          salvage:Math.round((master.salvage||0)*pct),
+          books: Object.fromEntries(Object.entries(master.books||{}).map(([bk,b])=>[bk,{...b, accumDepr:Math.round((b.accumDepr||0)*pct), nbv:Math.round((b.nbv||0)*pct)}])),
+          history:[{date:today(), event:`Split from ${masterId} (${c.pct}%)`, amount:Math.round(master.cost*pct), ref:'SPLIT'}]
+        });
+      });
+      S.set('fixedAssets', assets);
+      appendAuditLog('assets','SPLIT', masterId, {components: comps.length});
+      closeM(); renderAssets();
+      audioPostSuccess();
+      toast(`${masterId} split into ${comps.length} components. New asset IDs created.`, 'success');
+    }
+  },
+  mAssetRevalue: {
+    title:'Asset Revaluation', saveLabel:'Post Revaluation',
+    body:()=>`
+      <div class="alert a-info mb12">IAS 16 revaluation — adjustments are split between Revaluation Reserve (equity) and impairment P&L.</div>
+      <div class="fr fr2">${inp('Asset ID','rev_id','text','e.g. FA-001',undefined,true)}${inp('Revaluation Date','rev_date','date','',today())}</div>
+      <div class="fr fr2">${inp('New Fair Value','rev_fv','number','',undefined,true)}${inp('Independent Valuer','rev_valuer','text','')}</div>
+      <div class="fg mb12"><label class="fl">Basis of Valuation</label>
+        <select class="fc" id="rev_basis"><option>Market Value</option><option>Replacement Cost</option><option>Discounted Cash Flow</option><option>Index-Based</option></select>
+      </div>
+      <div class="alert a-warn">Revaluation entries will be posted to: Dr Asset Account · Cr Revaluation Reserve (equity). Downward revaluations below original cost go to P&L.</div>`,
+    save:()=>{
+      const id=gv('rev_id'), fv=parseFloat(gv('rev_fv'));
+      if (!id||!fv) { toast('Asset ID and fair value required','error'); return; }
+      const assets = S.get('fixedAssets')||[];
+      const a = assets.find(x=>x.id===id);
+      if (!a) { toast('Asset not found','error'); return; }
+      const oldNBV = a.books?.ifrs?.nbv||a.cost;
+      const diff = fv - oldNBV;
+      if (a.books?.ifrs) { a.books.ifrs.nbv = fv; a.books.ifrs.cost = fv; }
+      a.history = [...(a.history||[]), {date:gv('rev_date')||today(), event:`Revaluation: ${fC(oldNBV,baseCurr())} → ${fC(fv,baseCurr())}`, amount:diff, ref:'REVAL-'+today()}];
+      S.set('fixedAssets', assets);
+      appendAuditLog('assets','REVALUATION', id, {oldNBV, newFV:fv, diff});
+      closeM(); renderAssets();
+      audioPostSuccess();
+      const cur=baseCurr();
+      toast(`${id} revalued. ${diff>=0?'Upward':'Downward'} adjustment: ${fC(Math.abs(diff),cur)} posted to ${diff>=0?'Revaluation Reserve':'P&L Impairment'}.`, 'success', 5000);
+    }
+  },
+};
+
+// ── WIRE ASSETS INTO ON_NAV ──
+ON_NAV['assets']      = renderAssets;
+ON_NAV['depreciation']= renderDepreciation;
+ON_NAV['cwip']        = renderCWIP;
+ON_NAV['disposal']    = renderDisposals;
+PT['cwip']            = 'CWIP / CapEx Tracking';
+PT['disposal']        = 'Asset Disposals';
 
 // ── PROJECTS & WBS ──
 function seedProjects() {
@@ -6565,7 +7504,7 @@ function seedAllNew() {
   seedIntercompany();
   seedBankAccounts();
   seedVoyages();
-  seedAssets();
+  seedAssets();   // now includes cwipProjects and assetDisposals
   seedProjects();
 }
 
@@ -6585,17 +7524,35 @@ window.addEventListener('error', function(e) {
   } catch(e2) { /* ignore */ }
 });
 try {
-  // ── DATA VERSION GUARD — clear stale localStorage if schema changed ──
+  // ── RESET FLAG CHECK — user triggered a reset, skip all seeding ──
+  const _resetPending = localStorage.getItem('mce_reset_pending');
+  if (_resetPending) {
+    localStorage.removeItem('mce_reset_pending');
+    // Restore default GS URL and data version
+    localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
+    localStorage.setItem('mce_data_version', '4');
+    sessionStorage.removeItem('mce_session');
+    // Seed only the minimal non-demo defaults (currencies, fiscal structure)
+    seedCurrencies();
+    seedFiscalData();
+    seedApprovalPolicies();
+    seedAllNew();
+    applyTheme();
+    // Always show wizard after reset
+    document.getElementById('wizOv').style.display = 'flex';
+    wRender();
+    toast('All data has been cleared. Please complete the setup wizard.', 'info', 4000);
+    // Boot ends here — no seedData, no seedUsers, no login
+  } else {
+  // ── NORMAL BOOT ──
   const DATA_VERSION = '4';
   if (localStorage.getItem('mce_data_version') !== DATA_VERSION) {
-    // Clear only data keys, preserve user session and theme
     const theme = localStorage.getItem('mce_theme');
-    const gsUrl = localStorage.getItem('GS_URL');
     Object.keys(localStorage).filter(k => k.startsWith('mce_')).forEach(k => localStorage.removeItem(k));
     if (theme) localStorage.setItem('mce_theme', theme);
-    if (gsUrl) localStorage.setItem('GS_URL', gsUrl);
     localStorage.setItem('mce_data_version', DATA_VERSION);
-    sessionStorage.removeItem('mce_session'); // force re-login with fresh data
+    localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
+    sessionStorage.removeItem('mce_session');
   }
   seedData();
   seedUsers();
@@ -6605,27 +7562,22 @@ try {
   seedApprovalRequests();
   seedAllNew();
   applyTheme();
-  // navGuarded is called directly — nav function handles animations
-  // navGuarded already calls nav() internally after access check
   const _co = S.get('company');
   if (!_co || !_co.name) {
-    // First time — run wizard, skip login
     document.getElementById('wizOv').style.display = 'flex';
     wRender();
   } else {
-    // Check for existing session
     const _sess = getSession();
     if (_sess) {
-      // Resume session
       document.getElementById('app').style.display = 'flex';
       updateUserPill();
       initApp();
       applyTheme();
     } else {
-      // Show login
       showLogin();
     }
   }
+  } // end normal boot
 } catch(e) {
   _errShown = true;
   var d = document.createElement('div');
