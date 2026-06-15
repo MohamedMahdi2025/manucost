@@ -2409,6 +2409,9 @@ function updateAprBell() {
 function seedData(){
   if(S.get('seeded'))return;
   if(localStorage.getItem('mce_reset_pending'))return; // don't seed after user reset
+  // Don't overwrite data the wizard already set up
+  const existingCo = S.get('company');
+  if(existingCo && existingCo.name && existingCo._wizardComplete) return;
   S.set('company',{name:"Al-Masna'a Manufacturing Co.",nameAr:'شركة المصنع',cr:'1010123456',vat:'310012345600003',address:'Industrial City Phase 2, Riyadh 11564, Saudi Arabia',phone:'+966-11-4421100',email:'info@almasnaa.sa',currency:'SAR',vatRate:15,fyType:'Calendar Year',fyYear:2025,costMethod:'job',invVal:'FIFO',ohBase:'DL Cost',gosiEmp:12,gosiEe:10,fgWH:'WH-C'});
   S.set('suppliers',[
     {id:'SUP-001',name:'Al-Nasser Steel Trading',cat:'Raw Materials',phone:'+966-11-4421100',terms:'NET30',ytd:284200,status:'Active'},
@@ -2584,7 +2587,19 @@ function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchA
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
 function launchApp(){
-  document.getElementById('wizOv').style.display='none';
+  // Mark company as wizard-configured so seedData won't overwrite it
+  const co = S.get('company') || {};
+  co._wizardComplete = true;
+  S.set('company', co);
+  // Mark seeded so seedData() guard fires immediately on next boot
+  S.set('seeded', true);
+  // Seed non-demo structural data (currencies, fiscal, approvals) if not already set
+  seedCurrencies();
+  seedFiscalData();
+  seedApprovalPolicies();
+  seedApprovalRequests();
+  seedAllNew();
+  document.getElementById('wizOv').style.display = 'none';
   showLogin();
 }
 
@@ -3472,30 +3487,52 @@ function renderCostVariance() {
 
 // ── REPORTS HUB SUMMARY ──
 function renderRptHub() {
-  const cur = baseCurr();
-  document.getElementById('rptHubSummary').innerHTML = `
-    <div class="cs-row fw6" style="background:var(--surface2);padding:8px 12px;border-radius:var(--radius);margin-bottom:8px">
-      <span>Key Financial Metrics — June 2025</span>
+  const t = _tb();
+  const cur = t.cur;
+  const f = (n) => t.isSeeded ? fC(Math.abs(n), cur) : '—';
+  const el = document.getElementById('rptHubSummary') || document.getElementById('rptHubBody');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="g2c mb16">
+      <div>
+        <div class="fsec-t mb8">Income Statement Highlights</div>
+        ${[
+          ['Revenue (YTD)',         f(t.rev)],
+          ['Gross Profit (YTD)',    f(t.grossProfit)],
+          ['Gross Margin',          t.isSeeded ? (t.grossMargin*100).toFixed(1)+'%' : '—'],
+          ['Operating Profit (EBIT)',f(t.ebit)],
+          ['Net Income',            f(t.netIncome)],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
+      </div>
+      <div>
+        <div class="fsec-t mb8">Balance Sheet Highlights</div>
+        ${[
+          ['Total Assets',      f(t.totalAssets)],
+          ['Total Liabilities', f(t.totalLiab)],
+          ['Total Equity',      f(t.totalEquity)],
+          ['Current Ratio',     t.isSeeded && t.totalCL>0 ? (t.totalCA/t.totalCL).toFixed(2) : '—'],
+          ['Cash Position',     f(t.cashBank)],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
+      </div>
     </div>
-    ${[
-      ['Revenue (YTD)', fC(448400,cur), ''],
-      ['Gross Profit (YTD)', fC(165200,cur), 't-green'],
-      ['Gross Margin', '36.8%', 't-green'],
-      ['Net Income (YTD)', fC(62800,cur), 't-green'],
-      ['Net Margin', '14.0%', 't-green'],
-      ['Total Assets', fC(1127291,cur), ''],
-      ['Total Liabilities', fC(550800,cur), 't-orange'],
-      ['Total Equity', fC(576491,cur), 't-blue'],
-      ['Current Ratio', '2.84', 't-green'],
-      ['Debt/Equity', '0.96', ''],
-      ['Total AR Outstanding', fC(456800,cur), 't-orange'],
-      ['Total AP Outstanding', fC(148400,cur), 't-red'],
-    ].map(([l,v,c])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6 ${c}">${v}</span></div>`).join('')}
-    <div class="btn-row" style="margin-top:14px;flex-direction:column">
-      ${['pnl','bs','cf','rpt-equity','rpt-ar-aging','rpt-ap-aging','rpt-budget','rpt-costvar'].map(p=>`
-        <button class="btn btn-g sm w100" style="justify-content:flex-start" onclick="navGuarded('${p}')">
-          → ${PT[p]||p}
-        </button>`).join('')}
+    <div class="g3c">
+      ${[
+        {title:'📊 Income Statement', desc:'P&L with segment analysis', page:'pnl', badge:'IAS 1'},
+        {title:'📋 Balance Sheet',    desc:'Financial position',         page:'bs',  badge:'IAS 1'},
+        {title:'💧 Cash Flow',        desc:'IAS 7 indirect method',     page:'cf',  badge:'IAS 7'},
+        {title:'📈 Equity Statement', desc:'Changes in equity',          page:'rpt-equity', badge:'IAS 1'},
+        {title:'👤 AR Aging',         desc:'Receivables analysis',      page:'rpt-ar-aging', badge:'IFRS 9'},
+        {title:'👥 AP Aging',         desc:'Payables analysis',         page:'rpt-ap-aging', badge:'IAS 37'},
+        {title:'📉 Budget vs Actual', desc:'Variance analysis',         page:'rpt-budget', badge:'IAS 1'},
+        {title:'🏭 Cost Variance',    desc:'Manufacturing analysis',    page:'rpt-costvar', badge:'IAS 2'},
+        {title:'📦 Inventory',        desc:'Stock analysis',            page:'invrpt', badge:'IAS 2'},
+      ].map(r=>`<div class="card" style="cursor:pointer" onclick="navGuarded('${r.page}')">
+        <div class="card-body">
+          <div class="fw6 mb4">${r.title}</div>
+          <div class="t-xs t-muted mb8">${r.desc}</div>
+          <span class="b b-blue t-xs">${r.badge}</span>
+        </div>
+      </div>`).join('')}
     </div>`;
 }
 
@@ -3708,6 +3745,7 @@ function renderFinDim() {
 // ── INTERCOMPANY ENGINE ──
 function seedIntercompany() {
   if (S.get('icTransactions')) return;
+  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
   S.set('icTransactions', [
     {id:'IC-001', from:'KSA-Main', to:'UAE-Branch', type:'Goods Sale', amount:284000, currency:'SAR', date:'2025-06-01', status:'Matched', dueFrom:'1410', dueTo:'2410'},
     {id:'IC-002', from:'KSA-Main', to:'EGY-Office', type:'Management Fee', amount:48000, currency:'SAR', date:'2025-06-05', status:'Open',    dueFrom:'1411', dueTo:'2411'},
@@ -3765,6 +3803,7 @@ function runICElimination() {
 // ── CASH POSITION ──
 function seedBankAccounts() {
   if (S.get('bankAccounts')) return;
+  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
   S.set('bankAccounts', [
     {id:'SNB-001', bank:'Saudi National Bank', name:'Main Operating Account', iban:'SA44 2000 0001 2345 6789 1234', currency:'SAR', balance:284291, signees:['Mahdi Al-Finance','Ahmed Al-Rashid'], status:'Active', type:'Current'},
     {id:'ANB-002', bank:'Arab National Bank',  name:'Payroll Account',         iban:'SA36 0500 0000 0608 0108 0011', currency:'SAR', balance:142000, signees:['Mahdi Al-Finance'], status:'Active', type:'Current'},
@@ -4012,6 +4051,7 @@ function renderCashForecast() {
 // ── LANDED COST ──
 function seedVoyages() {
   if (S.get('voyages')) return;
+  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
   S.set('voyages', [
     {id:'VOY-001', supplier:'China Steel Works', po:'PO-0044', origin:'Shanghai, CN', dest:'Dammam, SA', eta:'2025-07-15', freight:18400, customs:12200, insurance:2800, handling:1400, status:'In Transit', items:[{name:'Steel Plates 3mm',qty:500,weight:12500,vol:6.2},{name:'Angle Iron 50x50',qty:200,weight:3200,vol:1.8}]},
     {id:'VOY-002', supplier:'German Bearings GmbH', po:'PO-0045', origin:'Hamburg, DE', dest:'Dammam, SA', eta:'2025-07-22', freight:8200, customs:4400, insurance:1200, handling:600, status:'Loading', items:[{name:'Bearings SKF 6205',qty:1000,weight:480,vol:0.6}]},
@@ -4103,6 +4143,7 @@ const DEPR_BOOKS = {
 // ── SEED ASSETS (enhanced multi-book data) ──
 function seedAssets() {
   if (S.get('fixedAssets')) return;
+  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
   S.set('fixedAssets', [
     { id:'FA-001', desc:'CNC Machining Centre — Haas VF-4', class:'ppe', loc:'Plant A', costCentre:'CC01',
       cost:840000, salvage:42000, acqDate:'2023-01-15', status:'Active', tag:'TAG-1001',
@@ -4965,6 +5006,7 @@ PT['disposal']        = 'Asset Disposals';
 // ── PROJECTS & WBS ──
 function seedProjects() {
   if (S.get('projects')) return;
+  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
   S.set('projects', [
     {id:'PRJ-001', name:'Aramco Valve Assembly Contract', cust:'Saudi Aramco', type:'billable', value:1200000, actualCost:284000, pctComplete:28, revRecognised:336000, status:'Active', wbs:[
       {id:'1.0',level:1,name:'Project Management',budget:80000,actual:22400},{id:'1.1',level:2,name:'Planning & Design',budget:40000,actual:12000},{id:'1.2',level:2,name:'Reporting',budget:40000,actual:10400},
@@ -5142,192 +5184,81 @@ function renderExecDash() {
       <button class="btn btn-s sm mt12" onclick="_renderExecDashInner()">↻ Retry</button></div></div>`;
   }
 }
-function _renderExecDashInner() {
-  const cur = baseCurr();
-  const el = document.getElementById('page-dashboard');
-  if (!el) return;
 
-  // KPI Data
-  const cash = 284291, ar = 412000, ap = 198400, inv = 273000;
-  const rev = 448400, cogs = 283400, opex = 75200;
-  const grossProfit = rev - cogs;
-  const ebit = grossProfit - opex;
-  const ebitda = ebit + 12400; // + depreciation
-  const netIncome = 62800;
-  const currentRatio = (cash+ar+inv) / ap;
-  const quickRatio = (cash+ar) / ap;
-  const dso = (ar/rev*90).toFixed(0);
-  const dpo = (ap/cogs*90).toFixed(0);
-
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-
-  el.innerHTML = `
-  <div style="padding:20px 24px">
-    <!-- Executive Header -->
-    <div class="flex ic gap12 mb20" style="border-bottom:1px solid var(--border);padding-bottom:16px">
-      <div>
-        <h1 style="font-size:20px;font-weight:700;color:var(--text)">Executive Financial Dashboard</h1>
-        <div class="t-sm t-muted">As of ${today()} · ${(S.get('company')||{}).name||'ManuCost ERP'} · All amounts in ${cur}</div>
-      </div>
-      <div style="margin-left:auto" class="btn-row">
-        <button class="btn btn-g sm" onclick="toggleDarkMode()">🌙 Theme</button>
-        <button class="btn btn-s sm" onclick="printReport()">🖨 Print</button>
-      </div>
+// ── REPORT LETTERHEAD ──
+function rptLetterhead(title, period, standard) {
+  const co = S.get('company') || {};
+  return `<div class="fs-letterhead" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--blue)">
+    <div>
+      ${co.logo ? `<img src="${co.logo}" style="height:40px;margin-bottom:6px">` : `<div style="font-size:20px;font-weight:700;color:var(--blue)">${co.name||'Company'}</div>`}
+      <div style="font-size:11px;color:var(--text2)">${co.address||''}</div>
+      <div style="font-size:11px;color:var(--text2)">VAT: ${co.vat||'—'} · CR: ${co.cr||'—'}</div>
     </div>
-
-    <!-- Primary KPI Row — Glassmorphic tiles -->
-    <div class="exec-grid mb16">
-      ${[
-        {l:'Revenue (YTD)',      v:fC(rev,cur),          sub:'vs Budget: +2.8%', c:'--blue', icon:'📈'},
-        {l:'Gross Profit',       v:fC(grossProfit,cur),   sub:`Margin: ${(grossProfit/rev*100).toFixed(1)}%`, c:'--green', icon:'✦'},
-        {l:'EBITDA',             v:fC(ebitda,cur),        sub:`${(ebitda/rev*100).toFixed(1)}% of revenue`, c:'--teal', icon:'◎'},
-        {l:'Net Income',         v:fC(netIncome,cur),     sub:`Net margin: ${(netIncome/rev*100).toFixed(1)}%`, c:'--blue', icon:'▲'},
-      ].map(k=>`
-        <div class="${isDark?'kpi-glass':'kpi c-blue'}" style="${isDark?`border-left:3px solid var(${k.c})`:''}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-            <div class="kpi-lbl">${k.l}</div>
-            <span style="font-size:18px">${k.icon}</span>
-          </div>
-          <div class="kpi-val" style="font-size:20px;color:var(${k.c})">${k.v}</div>
-          <div class="t-xs t-muted mt8">${k.sub}</div>
-        </div>`).join('')}
-    </div>
-
-    <div class="exec-grid-2 mb16">
-      <!-- CASH RUNWAY CHART -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Cash Runway — 12-Week Projection</span><span class="b b-blue">Inflows vs Outflows</span></div>
-        <div class="card-body">
-          <div style="display:flex;align-items:flex-end;gap:6px;height:120px;padding:8px 0">
-            ${Array(12).fill(0).map((_,i) => {
-              const inf = 35000 + Math.sin(i*0.7)*12000 + Math.random()*8000;
-              const out = 28000 + Math.sin(i*0.5+1)*10000 + Math.random()*6000;
-              const maxV = 55000;
-              const ih = Math.round(inf/maxV*90);
-              const oh = Math.round(out/maxV*90);
-              const net = inf - out;
-              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-                <div style="font-size:8px;color:${net>0?'var(--green)':'var(--red)'}">W${i+1}</div>
-                <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:90px">
-                  <div class="runway-inflow" style="flex:1;height:${ih}px"></div>
-                  <div class="runway-outflow" style="flex:1;height:${oh}px"></div>
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="flex ic gap12 t-xs mt8">
-            <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--green);border-radius:2px"></span>AR Inflows</span>
-            <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--red);border-radius:2px"></span>AP Outflows</span>
-            <span class="t-muted" style="margin-left:auto">Liquid assets: <strong>${fC(cash,cur)}</strong></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- LIQUIDITY PANEL -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Liquidity & Working Capital</span></div>
-        <div class="card-body">
-          ${[
-            ['Current Ratio',   currentRatio.toFixed(2), currentRatio>=2?'t-green':currentRatio>=1?'t-orange':'t-red', 'Target ≥ 2.0'],
-            ['Quick Ratio',     quickRatio.toFixed(2),   quickRatio>=1?'t-green':quickRatio>=0.7?'t-orange':'t-red', 'Target ≥ 1.0'],
-            ['DSO (days)',      dso, parseInt(dso)<=45?'t-green':parseInt(dso)<=60?'t-orange':'t-red', 'Target ≤ 45 days'],
-            ['DPO (days)',      dpo, 't-blue', 'Supplier terms'],
-            ['Cash Position',  fC(cash,cur), 't-blue', 'Bank accounts'],
-            ['Net Working Cap.',fC(cash+ar+inv-ap,cur), 't-green', ''],
-          ].map(([l,v,c,note])=>`<div class="cs-row" style="padding:7px 8px">
-            <span class="t-muted">${l} <span class="t-xs" style="opacity:.6">${note}</span></span>
-            <span class="fw6 ${c}" style="font-size:13px">${v}</span>
-          </div>`).join('')}
-        </div>
-      </div>
-    </div>
-
-    <div class="exec-grid-3 mb16">
-      <!-- EXPENDITURE DONUT -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Cost Structure</span><span class="b b-blue">YTD 2025</span></div>
-        <div class="card-body">
-          ${buildDonutChart([
-            {l:'Direct Materials', v:285400, c:'#0078D4'},
-            {l:'Direct Labour',    v:112800, c:'#10B981'},
-            {l:'Mfg Overhead',     v:94200,  c:'#F59E0B'},
-            {l:'Selling Exp.',     v:34200,  c:'#EF4444'},
-            {l:'G&A Expenses',     v:28600,  c:'#A78BFA'},
-            {l:'Depreciation',     v:12400,  c:'#06B6D4'},
-          ], cur)}
-        </div>
-      </div>
-
-      <!-- BUDGET BULLET GRAPHS -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Budget Execution</span><span class="b b-orange">Utilisation %</span></div>
-        <div class="card-body">
-          ${[
-            {l:'Revenue',           actual:448400, budget:455000},
-            {l:'Direct Materials',  actual:285400, budget:275000},
-            {l:'Labour Cost',       actual:112800, budget:110000},
-            {l:'Overhead',          actual:94200,  budget:90000},
-            {l:'Selling Expenses',  actual:34200,  budget:32000},
-            {l:'G&A Expenses',      actual:28600,  budget:26000},
-          ].map(b => {
-            const pct = Math.round(b.actual/b.budget*100);
-            const color = pct <= 70 ? 'var(--green)' : pct <= 90 ? 'var(--orange)' : 'var(--red)';
-            return `<div class="mb10">
-              <div class="flex ic gap8 mb4">
-                <span class="t-xs fw6" style="flex:1">${b.l}</span>
-                <span class="t-xs fw6" style="color:${color}">${pct}%</span>
-              </div>
-              <div class="bullet-track">
-                <div class="bullet-budget prog-bar" style="width:${Math.min(pct,100)}%;background:${color}"></div>
-                <div class="bullet-marker" style="left:90%"></div>
-              </div>
-              <div class="flex ic t-xs t-muted mt2">
-                <span>${fCM(b.actual,cur)}</span><span style="margin-left:auto">${fCM(b.budget,cur)}</span>
-              </div>
-            </div>`;
-          }).join('')}
-          <div class="t-xs t-muted mt8">● Marker = 90% budget threshold</div>
-        </div>
-      </div>
-
-      <!-- PROFITABILITY HEATMAP -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Margin Heatmap</span><span class="b b-purple">Product × Customer Tier</span></div>
-        <div class="card-body">
-          ${buildHeatmap()}
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom row: alerts & quick actions -->
-    <div class="g2c">
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Pending Attention</span></div>
-        <div class="card-body">
-          ${[
-            {icon:'⚠',msg:`${(S.get('aprRequests')||[]).filter(r=>r.status==='pending').length} approval requests awaiting action`,cls:'t-orange',action:'myrequests'},
-            {icon:'💰',msg:'Bank reconciliation for June 2025 unsigned',cls:'t-red',action:'bankrcon'},
-            {icon:'📋',msg:'P06 period close checklist incomplete',cls:'t-orange',action:'periodclose'},
-            {icon:'🔔',msg:'3 overdue AR invoices > 60 days',cls:'t-red',action:'rpt-ar-aging'},
-            {icon:'📦',msg:'Voyage VOY-001 arriving July 15',cls:'t-blue',action:'landedcost'},
-          ].map(a=>`<div class="cs-row" style="cursor:pointer" onclick="navGuarded('${a.action}')">
-            <span>${a.icon} <span class="${a.cls}">${a.msg}</span></span>
-            <span class="t-xs t-blue">→</span>
-          </div>`).join('')}
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Performance Trends</span></div>
-        <div class="card-body">
-          ${buildSparklines(cur)}
-        </div>
-      </div>
+    <div style="text-align:right">
+      <div style="font-size:16px;font-weight:700;color:var(--text)">${title}</div>
+      <div style="font-size:12px;color:var(--blue);font-weight:600">${period}</div>
+      <div style="font-size:10px;color:var(--text3)">${standard}</div>
+      <div style="font-size:10px;color:var(--text3)">Prepared: ${today()} · Currency: ${baseCurr()}</div>
     </div>
   </div>`;
-
-  setTimeout(animateBars, 100);
 }
 
+// ── ANIMATION UTILITIES (must be defined before any render function that calls them) ──
+function animateBars() {
+  document.querySelectorAll('.prog-bar').forEach(bar => {
+    const w = bar.style.width;
+    if (w && w !== '0%') {
+      bar.style.width = '0%';
+      requestAnimationFrame(() => { bar.style.transition = 'width .7s cubic-bezier(.4,0,.2,1)'; bar.style.width = w; });
+    }
+  });
+}
+
+function staggerCards(pageEl) {
+  if (!pageEl) return;
+  const cards = pageEl.querySelectorAll('.card, .kpi');
+  cards.forEach((card, i) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(14px)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.transition = `opacity .22s ${i*0.04}s cubic-bezier(.4,0,.2,1), transform .22s ${i*0.04}s cubic-bezier(.4,0,.2,1)`;
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      });
+    });
+  });
+}
+
+function staggerRows(tableEl) {
+  if (!tableEl) return;
+  const rows = tableEl.querySelectorAll('tbody tr');
+  rows.forEach((row, i) => {
+    row.style.opacity = '0';
+    setTimeout(() => {
+      row.style.transition = 'opacity .15s ease';
+      row.style.opacity = '1';
+    }, i * 20);
+  });
+}
+
+function animateNavIndicator(page) {
+  const active = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (!active) return;
+  active.classList.add('active');
+  active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function runPageAnimations(page) {
+  setTimeout(() => {
+    const pg = document.getElementById('page-' + page);
+    if (pg) staggerCards(pg);
+    animateNavIndicator(page);
+    setTimeout(animateBars, 80);
+  }, 50);
+}
+
+// ── DASHBOARD CHART HELPERS (must be before renderExecDash) ──
 function buildDonutChart(segments, cur) {
   const total = segments.reduce((a,s)=>a+s.v,0);
   let offset = 0;
@@ -5409,6 +5340,175 @@ function buildSparklines(cur) {
     </div>`;
   }).join('');
 }
+
+function _renderExecDashInner() {
+  const t = _tb();          // reads from localStorage — zeros for new company
+  const cur = t.cur;
+  const co = S.get('company') || {};
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const el = document.getElementById('page-dashboard');
+  if (!el) return;
+
+  // Computed KPIs from single source of truth
+  const cash = t.cashBank, ar = t.ar, ap = t.ap, inv = t.rmInv + t.wipInv + t.fgInv;
+  const rev = t.rev, cogs = t.cogs, opex = t.totalOpEx;
+  const grossProfit = t.grossProfit;
+  const ebit = t.ebit;
+  const ebitda = ebit + t.deprExp;
+  const netIncome = t.netIncome;
+  const currentRatio = ap > 0 ? ((cash+ar+inv)/ap).toFixed(2) : '—';
+  const quickRatio   = ap > 0 ? ((cash+ar)/ap).toFixed(2)      : '—';
+  const dso = rev > 0 ? (ar/rev*90).toFixed(0) + 'd' : '—';
+  const dpo = cogs > 0 ? (ap/cogs*90).toFixed(0) + 'd' : '—';
+  const f = (n) => t.isSeeded ? fC(Math.abs(n), cur) : '—';
+
+  el.innerHTML = `
+  <div style="padding:16px 20px">
+    <!-- Header -->
+    <div class="flex ic gap12 mb16" style="border-bottom:1px solid var(--border);padding-bottom:12px">
+      <div>
+        <h1 style="font-size:18px;font-weight:700">${co.name || 'Executive Dashboard'}</h1>
+        <div class="t-sm t-muted">Real-time financial overview · ${today()} · ${cur}</div>
+      </div>
+      <div style="margin-left:auto" class="btn-row">
+        <button class="btn btn-g sm" onclick="toggleDarkMode()">🌙 Theme</button>
+      </div>
+    </div>
+
+    ${!t.isSeeded ? `<div class="alert a-info mb16">
+      📋 <strong>New company</strong> — No financial data yet. Start by posting journal entries or importing your opening balances from Trial Balance.
+      <div class="btn-row mt10">
+        <button class="btn btn-p sm" onclick="navGuarded('journal')">+ Journal Entry</button>
+        <button class="btn btn-s sm" onclick="navGuarded('tb')">Opening Balances</button>
+      </div>
+    </div>` : ''}
+
+    <!-- Primary KPIs -->
+    <div class="exec-grid mb16">
+      ${[
+        {l:'Revenue',        v:f(rev),         sub: rev>0 ? 'Gross: '+fCM(grossProfit,cur) : 'No data yet',  c:'--blue'},
+        {l:'Gross Profit',   v:f(grossProfit),  sub: rev>0 ? 'Margin: '+(t.grossMargin*100).toFixed(1)+'%' : '—', c:'--green'},
+        {l:'EBITDA',         v:f(ebitda),       sub: rev>0 ? (ebitda/rev*100).toFixed(1)+'% of revenue' : '—', c:'--teal'},
+        {l:'Net Income',     v:f(netIncome),    sub: rev>0 ? 'Net margin: '+(netIncome/rev*100).toFixed(1)+'%' : '—', c:'--blue'},
+      ].map(k=>`<div class="${isDark?'kpi-glass':'kpi c-blue'}" style="${isDark?'border-left:3px solid var('+k.c+')'  :''}">
+          <div class="kpi-lbl">${k.l}</div>
+          <div class="kpi-val" style="font-size:18px;color:var(${k.c})">${k.v}</div>
+          <div class="t-xs t-muted mt6">${k.sub}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="exec-grid-2 mb16">
+      <!-- Cash Runway Chart (from live getTBData) -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Cash Position</span><span class="b b-blue t-xs">Live data</span></div>
+        <div class="card-body">
+          ${t.isSeeded ? `
+          ${[
+            ['Cash & Bank',        fC(cash,cur), cash>0?'t-green':'t-muted'],
+            ['Trade Receivables',  fC(ar,cur),   ar>0?'t-blue':'t-muted'],
+            ['Trade Payables',     fC(ap,cur),   ap>0?'t-red':'t-muted'],
+            ['Net Working Capital',fC(cash+ar+inv-ap,cur), (cash+ar+inv-ap)>=0?'t-green':'t-red'],
+          ].map(([l,v,c])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6 ${c}">${v}</span></div>`).join('')}` :
+          `<div class="t-muted t-sm" style="padding:20px;text-align:center">No balance sheet data yet</div>`}
+        </div>
+      </div>
+
+      <!-- Liquidity Ratios -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Liquidity Ratios</span></div>
+        <div class="card-body">
+          ${[
+            ['Current Ratio',    currentRatio, 'Target ≥ 2.0'],
+            ['Quick Ratio',      quickRatio,   'Target ≥ 1.0'],
+            ['DSO',              dso,          'Days Sales Outstanding'],
+            ['DPO',              dpo,          'Days Payable Outstanding'],
+          ].map(([l,v,note])=>`<div class="cs-row">
+            <span class="t-muted">${l} <span class="t-xs" style="opacity:.6">${note}</span></span>
+            <span class="fw6">${v}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="exec-grid-3 mb16">
+      <!-- Cost Structure Donut -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Cost Structure</span></div>
+        <div class="card-body">
+          ${t.isSeeded ? buildDonutChart([
+            {l:'Direct Materials', v:t.rows.find(r=>r.c==='5010')?.dr||0, c:'#0078D4'},
+            {l:'Direct Labour',    v:t.rows.find(r=>r.c==='5020')?.dr||0, c:'#10B981'},
+            {l:'Mfg Overhead',     v:t.rows.find(r=>r.c==='5030')?.dr||0, c:'#F59E0B'},
+            {l:'Selling Exp.',     v:t.sellExp||0, c:'#EF4444'},
+            {l:'G&A Expenses',     v:t.gaExp||0,   c:'#A78BFA'},
+            {l:'Depreciation',     v:t.deprExp||0, c:'#06B6D4'},
+          ].filter(s=>s.v>0), cur) :
+          `<div class="t-muted t-sm" style="padding:20px;text-align:center">No cost data yet</div>`}
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Recent Transactions</span></div>
+        <div class="card-body">
+          ${(() => {
+            const journals = S.get('journals') || [];
+            const glLedger = S.get('glLedger') || [];
+            const recent = [...glLedger].sort((a,b)=>b.date?.localeCompare(a.date||'')||0).slice(0,5);
+            return recent.length ? recent.map(e=>`
+              <div class="cs-row" style="cursor:pointer" onclick="navGuarded('journal')">
+                <span class="t-blue fw6 t-xs">${e.jeId}</span>
+                <span class="t-sm" style="flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc||'—'}</span>
+                <span class="fw6 t-xs ${e.dr?'t-green':'t-red'}">${e.dr?'+':'−'}${fCM(e.dr||e.cr||0,cur)}</span>
+              </div>`).join('') :
+              `<div class="t-muted t-sm" style="padding:20px;text-align:center">No transactions yet<br><button class="btn btn-p sm mt10" onclick="navGuarded('journal')">+ New Entry</button></div>`;
+          })()}
+        </div>
+      </div>
+
+      <!-- Pending Approvals -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Pending Actions</span></div>
+        <div class="card-body">
+          ${(() => {
+            const pending = (S.get('aprRequests')||[]).filter(r=>r.status==='pending');
+            const openFY = (S.get('fiscalYears')||[]).find(y=>y.status==='Open');
+            const items = [
+              pending.length ? {icon:'🔔', msg:pending.length+' approval request'+(pending.length>1?'s':'')+' awaiting action', cls:'t-orange', action:'myrequests'} : null,
+              openFY ? {icon:'📅', msg:'FY '+openFY.year+' is open · '+openFY.year, cls:'t-blue', action:'fiscalyear'} : null,
+              {icon:'➕', msg:'Post opening balances to start', cls:'t-teal', action:'journal'},
+            ].filter(Boolean);
+            return items.map(a=>`<div class="cs-row" style="cursor:pointer" onclick="navGuarded('${a.action}')">
+              <span>${a.icon} <span class="${a.cls}">${a.msg}</span></span>
+              <span class="t-xs t-blue">→</span>
+            </div>`).join('');
+          })()}
+        </div>
+      </div>
+    </div>
+
+    <!-- Profitability (only shown if data exists) -->
+    ${t.isSeeded ? `
+    <div class="card mb16">
+      <div class="card-hdr"><span class="card-title">Profitability Heatmap</span><span class="b b-purple">Margin by Product × Customer Tier</span></div>
+      <div class="card-body">${buildHeatmap()}</div>
+    </div>` : ''}
+
+    <!-- Sparklines (only shown if data exists) -->
+    ${t.isSeeded ? `
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Performance Trends</span></div>
+      <div class="card-body">${buildSparklines(cur)}</div>
+    </div>` : ''}
+  </div>`;
+  setTimeout(animateBars, 100);
+}
+
+
+
+
+
+
 
 
 // ── USER / APPROVAL / CURRENCY RENDER FUNCTIONS ──
@@ -5867,6 +5967,9 @@ const COA_MASTER = [
 // Each entry has: txCurrency, txAmount, baseCurrAmt, bookAmts per ledger, dimensions, cryptoHash
 function seedGLData() {
   if (S.get('glLedger')) return;
+  // Don't seed demo GL data for a freshly wizard-configured company
+  const co = S.get('company');
+  if (co && co._wizardComplete) return;
   const prevHash = 'GENESIS-0000000000000000';
 
   const buildHash = (prev, entry) => {
@@ -6169,6 +6272,16 @@ function filterJETable(q) {
 }
 
 // ── RENDER: GENERAL LEDGER — Account Balance Analyzer ──
+
+function buildGLSel() {
+  const sel = document.getElementById('lgAccSel');
+  if (!sel) return;
+  sel.innerHTML = COA_MASTER
+    .filter(a => a.type === 'detail')
+    .map(a => `<option value="${a.code}">${a.code} — ${a.name}</option>`)
+    .join('');
+}
+
 function renderGL() {
   const accCode = document.getElementById('lgAccSel')?.value || '1010';
   const book = document.getElementById('lgBook')?.value || 'ifrs';
@@ -6359,7 +6472,9 @@ function renderTB() {
   }).join('');
 
   const grandDr = totalDr+totalPeriodDr, grandCr = totalCr+totalPeriodCr;
-  const balanced = Math.abs(grandDr-grandCr)<100;
+  // A new company with no seeded data will show zeros — that's correct, not "out of balance"
+  const hasData = grandDr > 0 || grandCr > 0;
+  const balanced = !hasData || Math.abs(grandDr-grandCr)<1;
   document.getElementById('tbFoot').innerHTML = `
     <tr style="font-weight:700;background:var(--surface2)">
       <td colspan="4">TOTAL — ${bookDef.label}</td>
@@ -6904,8 +7019,17 @@ try {
     localStorage.setItem('mce_data_version', DATA_VERSION);
     sessionStorage.clear();
   }
-  // Always ensure trialBalanceData exists (backfill for users who upgraded)
-  if (!S.get('trialBalanceData')) {
+  seedData();        // guarded: skips if seeded OR _wizardComplete
+  seedUsers();       // guarded: skips if users exist
+  seedCurrencies();  // guarded: skips if currencies exist
+  seedFiscalData();  // guarded: skips if fiscal data exists
+  seedApprovalPolicies();
+  seedApprovalRequests();
+  seedAllNew();      // each fn guarded: skips if _wizardComplete
+  applyTheme();
+  // Backfill trialBalanceData ONLY for demo mode (not wizard-configured companies)
+  const _coCheck = S.get('company');
+  if (!S.get('trialBalanceData') && !((_coCheck||{})._wizardComplete)) {
     const _tbSeed = tbRows_TEMPLATE.map(r => ({
       ...r,
       dr: Math.max(0,  DEMO_TB_BALANCES[r.c] || 0),
@@ -6913,14 +7037,6 @@ try {
     }));
     S.set('trialBalanceData', _tbSeed);
   }
-  seedData();
-  seedUsers();
-  seedCurrencies();
-  seedFiscalData();
-  seedApprovalPolicies();
-  seedApprovalRequests();
-  seedAllNew();
-  applyTheme();
   const _co = S.get('company');
   if (!_co || !_co.name) {
     document.getElementById('wizOv').style.display = 'flex';
