@@ -1504,11 +1504,11 @@ textarea.fc{resize:vertical;min-height:68px}
         <div class="fg" style="grid-column:1/-1">
           <label class="fl req">Apps Script Web App URL</label>
           <div style="display:flex;gap:8px">
-            <input class="fc" id="gsUrl" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1">
+            <input class="fc" id="gsUrl" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1" value="">
             <button class="btn btn-p" onclick="connectSheets()">Connect</button>
             <button class="btn btn-g" onclick="testSheets()">Test</button>
           </div>
-          <div class="fhint">This URL is saved in your browser and never leaves your device.</div>
+          <div class="fhint">Pre-configured with the default ManuCost Sheets backend. You can replace it with your own Apps Script URL at any time.</div>
         </div>
       </div>
 
@@ -1575,7 +1575,13 @@ const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea
 // ╚══════════════════════════════════════════════════════════════════╝
 
 // ── CONFIG — paste your Apps Script Web App URL here after deploy ──
-let GS_URL = localStorage.getItem('mce_gs_url') || '';
+// ── DEFAULT GOOGLE SHEETS URL — auto-connects if not overridden ──
+const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbxdVjPXXcXSTYM0hSsP6M24zveTpUuullBq2uI1J-mqa_t11n3j9ovltEe4VfAS-uYtBQ/exec';
+let GS_URL = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
+// Persist default if not already saved
+if (!localStorage.getItem('mce_gs_url')) {
+  localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
+}
 
 const GS = {
   // Save URL
@@ -1661,7 +1667,11 @@ const S = {
 // ── SYNC STATUS (shown in topbar) ──
 let _syncOK = null; // null=unknown, true=connected, false=offline
 async function checkSync() {
-  if (!GS_URL) { setSyncBadge('off'); return; }
+  // Always ensure GS_URL is set to at least the default
+  if (!GS_URL) {
+    GS_URL = DEFAULT_GS_URL;
+    localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
+  }
   setSyncBadge('checking');
   const ok = await GS.ping();
   _syncOK = ok;
@@ -1980,14 +1990,51 @@ function toast(msg,type='info',dur=3500){const ic={info:'ℹ',success:'✓',warn
 
 // ── MODAL ENGINE ──
 let mSaveFn=()=>{};
-function openM(name,wideClass){
-  const t=mTemplates[name]||(typeof mTemplatesExtra!=='undefined'?mTemplatesExtra[name]:null);if(!t)return;
-  document.getElementById('mBox').className='modal'+(wideClass?' '+wideClass:'');
-  document.getElementById('mTitle').textContent=t.title;
-  document.getElementById('mBody').innerHTML=t.body();
-  document.getElementById('mSaveBtn').textContent=t.saveLabel||'Save';
-  document.getElementById('mSaveBtn').style.display='flex';
-  mSaveFn=t.save;
+function openM(name, idOrWide, wideOrUndef) {
+  // Unified modal dispatcher — checks all template collections
+  const idOrClass = typeof idOrWide === 'string' ? idOrWide : undefined;
+  const wideClass = typeof idOrWide === 'string' ? wideOrUndef : idOrWide;
+
+  // Search all template registries in priority order
+  const allTemplates = [
+    typeof mAprTemplates  !== 'undefined' ? mAprTemplates  : {},
+    typeof mCurrTemplates !== 'undefined' ? mCurrTemplates : {},
+    typeof mUserTemplates !== 'undefined' ? mUserTemplates : {},
+    typeof mTemplatesExtra!== 'undefined' ? mTemplatesExtra: {},
+    typeof mTemplates     !== 'undefined' ? mTemplates     : {},
+  ];
+
+  let t = null;
+  for (const registry of allTemplates) {
+    if (registry[name]) { t = registry[name]; break; }
+  }
+  if (!t) return; // no template found
+
+  const isLg = ['mViewRequest','mAddPolicy','mJE','mPO','mGRN','mInvoice'].includes(name);
+  document.getElementById('mBox').className = 'modal' + (isLg ? ' modal-lg' : '') + (wideClass ? ' ' + wideClass : '');
+  document.getElementById('mTitle').textContent = t.title || '';
+  document.getElementById('mSaveBtn').style.display = 'flex';
+  document.getElementById('mSaveBtn').textContent = t.saveLabel || 'Save';
+
+  // Compute body argument
+  let bodyArg = idOrClass;
+  if (name === 'mActOnRequest' && idOrClass && wideOrUndef) {
+    bodyArg = idOrClass + '|' + wideOrUndef;
+  }
+
+  try {
+    document.getElementById('mBody').innerHTML = t.body ? t.body(bodyArg) : '';
+  } catch(e) {
+    document.getElementById('mBody').innerHTML = '<div class="alert a-warn">Error rendering modal: ' + e.message + '</div>';
+  }
+
+  if (t.saveLabel === 'Close') {
+    document.getElementById('mSaveBtn').style.display = 'none';
+    document.getElementById('mBody').insertAdjacentHTML('beforeend',
+      '<div class="btn-row" style="margin-top:16px"><button class="btn btn-p" onclick="closeM()">Close</button></div>');
+  }
+
+  mSaveFn = t.save || (() => closeM());
   document.getElementById('mShell').classList.add('open');
 }
 function closeM(){document.getElementById('mShell').classList.remove('open');}
@@ -2694,11 +2741,15 @@ function updateTopbarLock(){
 // ── GOOGLE SHEETS UI FUNCTIONS ──
 
 function connectSheets() {
-  const url = gv('gsUrl').trim();
+  const rawUrl = gv('gsUrl').trim();
+  const url = rawUrl || DEFAULT_GS_URL;
   if (!url.startsWith('https://script.google.com')) {
     showGSMsg('err', 'URL must start with https://script.google.com/macros/s/…');
     return;
   }
+  // Update the field to show what we're connecting to
+  const urlEl = document.getElementById('gsUrl');
+  if (urlEl) urlEl.value = url;
   GS.setURL(url);
   showGSMsg('ok', '↻ Testing connection…');
   GS.ping().then(ok => {
@@ -2804,23 +2855,24 @@ function renderSyncLog() {
 }
 
 function initGSUI() {
-  // Pre-fill saved URL if exists
-  const saved = localStorage.getItem('mce_gs_url') || '';
+  // Pre-fill URL — always show current (default or custom)
+  const saved = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
   const urlEl = document.getElementById('gsUrl');
-  if (urlEl && saved) {
+  if (urlEl) {
     urlEl.value = saved;
     document.getElementById('gsSyncActions').style.display = 'grid';
   }
   // Show connected status
-  if (saved) {
-    checkSync().then(() => {
-      if (_syncOK) {
-        document.getElementById('setupSyncBadge').textContent = '● Connected';
-        document.getElementById('setupSyncBadge').className = 'b b-green';
-        renderSyncLog();
-      }
-    });
-  }
+  checkSync().then(() => {
+    const badge = document.getElementById('setupSyncBadge');
+    if (!badge) return;
+    if (_syncOK) {
+      badge.textContent = '● Connected'; badge.className = 'b b-green';
+      renderSyncLog();
+    } else {
+      badge.textContent = '○ Not connected'; badge.className = 'b b-orange';
+    }
+  });
 }
 
 // Patch setupF4 to include GS reset
@@ -3206,22 +3258,7 @@ const mUserTemplates = {
 };
 
 // Override openM to handle user modals
-const _openMBase = openM;
-function openM(name, idOrClass, wideClass) {
-  // Check if it's a user modal
-  const umt = mUserTemplates[name];
-  if (umt) {
-    document.getElementById('mBox').className = 'modal';
-    document.getElementById('mTitle').textContent = umt.title;
-    document.getElementById('mBody').innerHTML = umt.body(idOrClass);
-    document.getElementById('mSaveBtn').textContent = umt.saveLabel || 'Save';
-    document.getElementById('mSaveBtn').style.display = 'flex';
-    mSaveFn = umt.save;
-    document.getElementById('mShell').classList.add('open');
-    return;
-  }
-  _openMBase(name, idOrClass, wideClass);
-}
+
 
 // ── EXTEND ON_NAV & PT FOR USERS ──
 PT['users'] = 'User Management';
@@ -3615,21 +3652,7 @@ const mCurrTemplates = {
 };
 
 // Extend openM for currency modals
-const _openMWithAuth = openM;
-function openM(name, idOrClass, wideClass) {
-  const ct = mCurrTemplates[name];
-  if (ct) {
-    document.getElementById('mBox').className = 'modal';
-    document.getElementById('mTitle').textContent = ct.title;
-    document.getElementById('mBody').innerHTML = ct.body(idOrClass);
-    document.getElementById('mSaveBtn').textContent = ct.saveLabel || 'Save';
-    document.getElementById('mSaveBtn').style.display = 'flex';
-    mSaveFn = ct.save;
-    document.getElementById('mShell').classList.add('open');
-    return;
-  }
-  _openMWithAuth(name, idOrClass, wideClass);
-}
+
 
 // ── PATCH fN to use fC when showing monetary values ──
 // fC is the new standard — fN still works for non-monetary numbers
@@ -4551,26 +4574,7 @@ function exportApprovalPolicy() {
 }
 
 // Extend openM for approval modals
-const _openMWithCurr = openM;
-function openM(name, idOrClass, wideClass) {
-  const at = mAprTemplates[name];
-  if (at) {
-    const isLg = name === 'mViewRequest' || name === 'mAddPolicy';
-    document.getElementById('mBox').className = 'modal' + (isLg ? ' modal-lg' : '');
-    document.getElementById('mTitle').textContent = at.title;
-    const bodyArg = name === 'mActOnRequest' ? (idOrClass + (wideClass ? '|' + wideClass : '')) : idOrClass;
-    document.getElementById('mBody').innerHTML = at.body(bodyArg);
-    document.getElementById('mSaveBtn').textContent = at.saveLabel || 'Save';
-    document.getElementById('mSaveBtn').style.display = at.saveLabel === 'Close' ? 'none' : 'flex';
-    if (at.saveLabel === 'Close') {
-      document.getElementById('mBody').insertAdjacentHTML('beforeend','<div class="btn-row" style="margin-top:16px"><button class="btn btn-p" onclick="closeM()">Close</button></div>');
-    }
-    mSaveFn = at.save;
-    document.getElementById('mShell').classList.add('open');
-    return;
-  }
-  _openMWithCurr(name, idOrClass, wideClass);
-}
+
 
 // ── WIRE APPROVAL INTO EXISTING SAVE FUNCTIONS ──
 // Patches the JE, Payroll, PO saves to route through approval engine
@@ -6280,6 +6284,15 @@ function renderWBS() {
 
 // ── EXECUTIVE C-SUITE DASHBOARD ──
 function renderExecDash() {
+  try {
+    _renderExecDashInner();
+  } catch(e) {
+    const el = document.getElementById('page-dashboard');
+    if (el) el.innerHTML = `<div style="padding:32px"><div class="alert a-warn">Dashboard failed to render: ${e.message}.<br>
+      <button class="btn btn-s sm mt12" onclick="_renderExecDashInner()">↻ Retry</button></div></div>`;
+  }
+}
+function _renderExecDashInner() {
   const cur = baseCurr();
   const el = document.getElementById('page-dashboard');
   if (!el) return;
@@ -6559,18 +6572,17 @@ function seedAllNew() {
 // ── BOOT ──
 var _errShown = false;
 window.addEventListener('error', function(e) {
-  if (_errShown) return; // prevent recursive firing
-  // Only show for actual boot/init errors, not runtime interaction errors
-  if (!e.filename && !e.lineno) return;
+  if (_errShown) return;
+  if (!e.message || e.message === 'Script error.') return; // cross-origin noise
   _errShown = true;
   try {
     var d = document.createElement('div');
-    d.style.cssText = 'font-family:monospace;padding:16px 20px;background:#FDE7E9;color:#A4262C;border-left:4px solid #A4262C;margin:12px;border-radius:4px;position:fixed;top:12px;left:12px;right:12px;z-index:99999;font-size:12px';
-    d.innerHTML = '<strong>ERP Error</strong> — ' + (e.message||'Unknown error') + ' · Line: ' + (e.lineno||'?') +
-      ' <button onclick="this.parentNode.remove();_errShown=false" style="float:right;border:none;background:none;color:#A4262C;cursor:pointer;font-size:16px">×</button>';
+    d.style.cssText = 'font-family:monospace;padding:12px 16px;background:#FDE7E9;color:#A4262C;border-left:4px solid #A4262C;font-size:12px;position:fixed;top:0;left:0;right:0;z-index:99999;display:flex;align-items:center;gap:12px';
+    d.innerHTML = '<span>⚠ ' + (e.message||'Error') + ' · Line: ' + (e.lineno||'?') + '</span>' +
+      '<button onclick="this.parentNode.remove();_errShown=false" style="margin-left:auto;border:none;background:none;color:#A4262C;cursor:pointer;font-size:18px;padding:0 4px">×</button>';
     document.body.appendChild(d);
-    setTimeout(function(){ if(d.parentNode){d.parentNode.removeChild(d); _errShown=false;} }, 8000);
-  } catch(e2) { /* ignore secondary errors */ }
+    setTimeout(function(){ if(d.parentNode){d.parentNode.removeChild(d); _errShown=false;} }, 6000);
+  } catch(e2) { /* ignore */ }
 });
 try {
   // ── DATA VERSION GUARD — clear stale localStorage if schema changed ──
