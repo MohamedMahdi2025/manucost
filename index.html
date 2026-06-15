@@ -1035,11 +1035,12 @@ function toast(msg,type='info',dur=3500){const ic={info:'ℹ',success:'✓',warn
 // ── MODAL ENGINE ──
 let mSaveFn=()=>{};
 function openM(name,wideClass){
-  const t=mTemplates[name];if(!t)return;
+  const t=mTemplates[name]||(typeof mTemplatesExtra!=='undefined'?mTemplatesExtra[name]:null);if(!t)return;
   document.getElementById('mBox').className='modal'+(wideClass?' '+wideClass:'');
   document.getElementById('mTitle').textContent=t.title;
   document.getElementById('mBody').innerHTML=t.body();
   document.getElementById('mSaveBtn').textContent=t.saveLabel||'Save';
+  document.getElementById('mSaveBtn').style.display='flex';
   mSaveFn=t.save;
   document.getElementById('mShell').classList.add('open');
 }
@@ -1238,6 +1239,7 @@ function runAH(){const s=document.getElementById('ahSubj').value,d=ahData[s];if(
 function buildAHTemplates(){document.getElementById('ahTemplates').innerHTML=[['Monthly Inventory Valuation','inv'],['AP Outstanding by Supplier','ap'],['AR Aging Summary','ar'],['Work Order Cost vs Budget','jobs'],['Payroll Cost by Job','payroll'],['Open Purchase Orders','po']].map(([n,k])=>`<div class="fsec flex ic jb mb8"><div><div class="fw6 t-sm mb8">${n}</div><div class="t-xs t-muted">${ahData[k]?.t}</div></div><button class="btn btn-s sm" onclick="document.getElementById('ahSubj').value='${k}';showAHFields();runAH()">Run</button></div>`).join('');}
 
 // ── COMPANY SETUP PAGE ──
+const mTemplatesExtra = {
   mFY:{title:'New Fiscal Year',saveLabel:'Create Fiscal Year',body:()=>`<div class="fr fr2">${inp('Year','mfy_y','number','','2026')}${sel('Type','mfy_t',['Calendar Year (Jan–Dec)','Hijri Year','Custom'])}</div><div class="fr fr2">${inp('Start Date','mfy_s','date','','2026-01-01')}${inp('End Date','mfy_e','date','','2026-12-31')}</div><div class="fr fr2">${sel('Period Length','mfy_pl',['Monthly (12 periods)','Quarterly (4 periods)'])}${sel('Carry Forward Method','mfy_cf',['Balance Sheet only','All Accounts'])}</div><div class="alert a-info" style="margin-top:8px">A new fiscal year will create 12 blank periods, all set to Future status until activated.</div>`,
     save:()=>{const y=parseInt(gv('mfy_y'))||2026;const fys=S.get('fiscalYears')||[];if(fys.find(f=>f.year===y)){toast(`FY ${y} already exists.`,'warn');return;}const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const periods=months.map((m,i)=>{const n=i+1,start=`${y}-${String(n).padStart(2,'0')}-01`,endD=new Date(y,n,0),end=`${y}-${String(n).padStart(2,'0')}-${String(endD.getDate()).padStart(2,'0')}`;return{period:`P${String(n).padStart(2,'0')}`,month:m,year:y,start,end,status:'Future',closedBy:'—',closedOn:'—',checklist:{trialBalance:false,bankRecon:false,arReconcile:false,apReconcile:false,inventoryCount:false,accrualsPosted:false,depreciationPosted:false,jeReviewed:false}};});periods[0].status='Open';fys.push({year:y,type:gv('mfy_t'),start:gv('mfy_s'),end:gv('mfy_e'),status:'Open',currentPeriod:'P01',periods});S.set('fiscalYears',fys);closeM();renderFiscalYear();toast(`FY ${y} created with 12 periods.`,'success');}},
   mOpenYear:{title:'Open / Activate Year',saveLabel:'Activate',body:()=>`<div class="fg mb12"><label class="fl">Select Year to Activate</label><select class="fc" id="moy_y">${(S.get('fiscalYears')||[]).filter(f=>f.status!=='Open').map(f=>`<option value="${f.year}">FY ${f.year} (${f.status})</option>`).join('')}</select></div><div class="fg"><label class="fl">Opening Balance Method</label><select class="fc"><option>Carry forward from previous year</option><option>Enter manually</option></select></div><div class="alert a-info" style="margin-top:8px">Activating a year sets P01 to Open status and makes it available for transactions.</div>`,
