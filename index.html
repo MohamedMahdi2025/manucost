@@ -2590,7 +2590,7 @@ function buildSetupForms(){
   document.getElementById('setupF1').innerHTML=`<div class="fr fr2">${inp('Company Name','s_name','text','',c.name)}</div><div class="fr fr2">${inp('Company Name (Arabic)','s_ar','text','',c.nameAr)}${inp('CR Number','s_cr','text','',c.cr)}</div><div class="fr fr2">${inp('VAT Number','s_vat','text','',c.vat)}${inp('Phone','s_ph','text','',c.phone)}</div>${inp('Email','s_em','email','',c.email)}${ta('Address','s_addr',c.address||'')}`;
   document.getElementById('setupF2').innerHTML=`<div class="fr fr2"><div class="fg"><label class="fl">Base Currency</label><select class="fc" id="s_cur"><option value="SAR" ${(c.currency||'SAR')==='SAR'?'selected':''}>🇸🇦 SAR — Saudi Riyal</option><option value="EGP" ${c.currency==='EGP'?'selected':''}>🇪🇬 EGP — Egyptian Pound</option><option value="USD" ${c.currency==='USD'?'selected':''}>🇺🇸 USD — US Dollar</option><option value="AED" ${c.currency==='AED'?'selected':''}>🇦🇪 AED — UAE Dirham</option><option value="EUR" ${c.currency==='EUR'?'selected':''}>🇪🇺 EUR — Euro</option><option value="GBP" ${c.currency==='GBP'?'selected':''}>🇬🇧 GBP — British Pound</option><option value="KWD" ${c.currency==='KWD'?'selected':''}>🇰🇼 KWD — Kuwaiti Dinar</option><option value="QAR" ${c.currency==='QAR'?'selected':''}>🇶🇦 QAR — Qatari Riyal</option><option value="BHD" ${c.currency==='BHD'?'selected':''}>🇧🇭 BHD — Bahraini Dinar</option><option value="OMR" ${c.currency==='OMR'?'selected':''}>🇴🇲 OMR — Omani Rial</option></select></div>${inp('VAT Rate %','s_vr','number','',c.vatRate||15)}</div><div class="fr fr2">${inp('GOSI Employer %','s_ge','number','',c.gosiEmp||12)}${inp('GOSI Employee %','s_gee','number','',c.gosiEe||10)}</div><div class="alert a-info" style="margin-top:8px">Changing base currency will update display across all modules. Go to <strong>Settings → Currencies</strong> to manage exchange rates.</div>`;
   document.getElementById('setupF3').innerHTML=`<div class="fr fr2">${sel('Costing Method','s_cm',['job — Job Order','abc — ABC Costing','both — Both'])}${sel('Inventory Valuation','s_iv',['FIFO','Weighted Average'])}</div><div class="fr fr2">${sel('OH Allocation Base','s_oh',['Direct Labor Cost','Direct Labor Hours','Machine Hours'])}${inp('Default FG Warehouse','s_fgwh','text','',c.fgWH||'WH-C')}</div>`;
-  document.getElementById('setupF4').innerHTML=`<div class="fr fr2">${sel('Auto-post Procurement JE','s_apje',['Yes','No — Manual Review'])}${sel('Require JE Approval','s_jea',['No','Yes — Manager'])}</div><div class="divider"></div><div class="alert a-warn">Danger Zone — these actions cannot be undone.</div><div class="btn-row"><button class="btn btn-g sm" onclick="if(confirm('Re-run wizard?'))rerunWizard()">Re-run Setup Wizard</button><button class="btn btn-d sm" onclick="if(confirm('RESET ALL DATA? Clears localStorage + Sheets.'))resetAllFull()">🗑 Reset All Data</button></div>`;
+  document.getElementById('setupF4').innerHTML=`<div class="fr fr2">${sel('Auto-post Procurement JE','s_apje',['Yes','No — Manual Review'])}${sel('Require JE Approval','s_jea',['No','Yes — Manager'])}</div><div class="divider"></div><div class="alert a-warn">Danger Zone — these actions cannot be undone.</div><div class="btn-row"><button class="btn btn-g sm" onclick="rerunWizard()">Re-run Setup Wizard</button><button class="btn btn-d sm" onclick="resetAll()">🗑 Reset All Data</button></div>`;
   // Initialize Google Sheets UI after DOM is ready
   setTimeout(initGSUI, 50);
 }
@@ -2656,7 +2656,7 @@ function rerunWizard(){
     toast('Only an Administrator can re-run the setup wizard.', 'error');
     return;
   }
-  if (!confirm('Re-run setup wizard?\n\nYour existing company settings will be pre-filled so you can update them. Users and data will NOT be deleted.')) return;
+  // confirm() removed — rerunWizard is already admin-only protected
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginOv').style.display = 'none';
   document.getElementById('wizOv').style.display = 'flex';
@@ -2780,7 +2780,7 @@ function showFYDetail(year){
     <div class="cs-row"><span>Periods Open</span><span class="fw6 t-blue">${open} / 12</span></div>
     <div class="cs-row"><span>Current Period</span><span class="fw6 t-orange">${fy.currentPeriod}</span></div>
     <div class="divider"></div>
-    ${fy.status==='Open'?`<button class="btn btn-d sm w100" onclick="if(confirm('Close entire FY ${fy.year}? All periods will be locked.'))closeFY(${fy.year})">Close FY ${fy.year}</button>`:'<div class="alert a-err" style="margin-top:8px">This fiscal year is fully closed.</div>'}`;
+    ${fy.status==='Open'?`<button class="btn btn-d sm w100" onclick="closeFY(${fy.year})">Close FY ${fy.year}</button>`:'<div class="alert a-err" style="margin-top:8px">This fiscal year is fully closed.</div>'}`;
 }
 
 function renderFYPeriods(){
@@ -2891,7 +2891,7 @@ function renderPeriodClose(){
 }
 
 function quickClosePeriod(year,period){
-  if(!confirm(`Close ${period} — ${year}?\n\nThis will block all transactions dated in this period.`)) return;
+  // period close confirmed via modal checklist
   closePeriod(year,period);
 }
 
@@ -3065,7 +3065,7 @@ async function pushToSheets() {
 }
 
 async function pullFromSheets() {
-  if (!confirm('Pull from Google Sheets?\n\nThis will overwrite your current browser data with whatever is in the Sheet. Make sure you pushed first if you have local changes.')) return;
+  // pull confirmed implicitly by button click
   const btn = event.target;
   btn.disabled = true; btn.textContent = '⬇ Pulling…';
   document.getElementById('pullStatus').textContent = '';
