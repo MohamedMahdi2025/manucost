@@ -28,30 +28,33 @@ body{font-family:'Calibri','Calibri Light',Calibri,-apple-system,BlinkMacSystemF
   --nav-bg:#0078D4;--nav-hover:#005A9E;
   --radius:4px;--shadow:0 2px 8px rgba(0,0,0,.12);--shadow-sm:0 1px 4px rgba(0,0,0,.08)
 }
-/* LAYOUT */
-.app{display:flex;height:100vh;overflow:hidden}
-.sidebar{width:240px;min-width:240px;background:var(--nav-bg);display:flex;flex-direction:column;overflow:hidden;transition:width .2s;flex-shrink:0}
+/* ══ LAYOUT ══ */
+.app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+.sidebar{width:240px;min-width:240px;background:var(--nav-bg);display:flex;flex-direction:column;overflow:hidden;transition:width .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1);flex-shrink:0;z-index:200}
 .sidebar.collapsed{width:48px}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-/* SIDEBAR */
+/* Sidebar overlay for mobile */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;backdrop-filter:blur(2px)}
+.sidebar-overlay.open{display:block}
+/* ══ SIDEBAR ══ */
 .sb-header{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.15);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .sb-logo{width:28px;height:28px;background:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--blue);flex-shrink:0}
 .sb-title{font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-sub{font-size:10px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden}
-.nav-scroll{overflow-y:auto;flex:1;padding-bottom:12px}
+.nav-scroll{overflow-y:auto;flex:1;padding-bottom:12px;-webkit-overflow-scrolling:touch}
 .nav-scroll::-webkit-scrollbar{width:4px}
 .nav-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:2px}
 .nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px 3px;white-space:nowrap;overflow:hidden}
-.nav-item{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,.85);font-size:12.5px;transition:background .1s;border-left:3px solid transparent;white-space:nowrap;overflow:hidden}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;color:rgba(255,255,255,.85);font-size:12.5px;transition:background .1s;border-left:3px solid transparent;white-space:nowrap;overflow:hidden;min-height:40px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .nav-item:hover{background:var(--nav-hover)}
 .nav-item.active{background:#fff;color:var(--blue);font-weight:600;border-left-color:var(--orange)}
-.nav-icon{width:15px;font-size:13px;flex-shrink:0;text-align:center}
+.nav-icon{width:18px;font-size:14px;flex-shrink:0;text-align:center}
 .nav-text{overflow:hidden;text-overflow:ellipsis}
-/* TOPBAR */
-.topbar{height:48px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;box-shadow:var(--shadow-sm);flex-shrink:0}
-.tb-company{font-size:13px;font-weight:600;color:var(--blue)}
-.tb-period{font-size:11px;color:var(--text2);background:var(--blue-xlt);border:1px solid var(--blue-lt);border-radius:var(--radius);padding:3px 9px}
-.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* ══ TOPBAR ══ */
+.topbar{height:52px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;box-shadow:var(--shadow-sm);flex-shrink:0}
+.tb-company{font-size:13px;font-weight:600;color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.tb-period{font-size:11px;color:var(--text2);background:var(--blue-xlt);border:1px solid var(--blue-lt);border-radius:var(--radius);padding:3px 9px;white-space:nowrap}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:6px}
 .mode-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .mode-btn{padding:5px 13px;font-size:11.5px;cursor:pointer;border:none;background:var(--surface2);color:var(--text2);font-family:inherit;font-weight:600;position:relative;overflow:hidden;transition:all .18s cubic-bezier(.4,0,.2,1)}
 .mode-btn.active{background:linear-gradient(135deg,#0082e0 0%,#0078D4 100%);color:#fff;box-shadow:inset 0 1px 3px rgba(0,0,0,.15)}
@@ -510,9 +513,101 @@ textarea.fc{resize:vertical;min-height:68px}
 .lock-open{background:var(--green-lt);color:var(--green);border:1px solid #A8D8A8}
 .lock-closed{background:var(--red-lt);color:var(--red);border:1px solid #F0B0B0}
 .lock-partial{background:var(--yellow-lt);color:var(--orange);border:1px solid #F0C080}
-</style>
+
+/* ══════════════════════════════════════════
+   RESPONSIVE / MOBILE — iOS & Android
+══════════════════════════════════════════ */
+@media (max-width:1024px){
+  .sidebar{width:200px;min-width:200px}
+  .exec-grid{grid-template-columns:1fr 1fr}
+  .exec-grid-3{grid-template-columns:1fr 1fr}
+  .kpi-grid.g4,.kpi-grid.g5{grid-template-columns:1fr 1fr}
+  .g3c{grid-template-columns:1fr 1fr}
+  .tb-period{display:none}
+  .mode-toggle{display:none}
+}
+@media (max-width:768px){
+  .app{position:relative}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:280px!important;min-width:280px!important;transform:translateX(-100%);z-index:300;box-shadow:4px 0 24px rgba(0,0,0,.3);transition:transform .24s cubic-bezier(.4,0,.2,1)}
+  .sidebar.mobile-open{transform:translateX(0)!important}
+  .topbar{height:56px;padding:0 10px;gap:6px}
+  .tb-company{font-size:14px;max-width:150px}
+  .tb-period{display:none}
+  .mode-toggle{display:none}
+  #syncBadge{display:none}
+  .tb-right .icon-btn:not(#themeToggleBtn):not(#aprBellBtn){display:none}
+  .content{padding:10px;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  .page-hdr{flex-direction:column;gap:8px;margin-bottom:10px}
+  .page-hdr .btn-row{flex-wrap:wrap}
+  .kpi-grid,.kpi-grid.g4,.kpi-grid.g5,.kpi-grid.g3{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .kpi{padding:10px 11px}.kpi-val{font-size:15px!important}
+  .g2c,.g3c,.exec-grid,.exec-grid-2,.exec-grid-3{grid-template-columns:1fr!important;gap:10px!important}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tw table{min-width:580px}
+  .tw th,.tw td{padding:7px 9px;font-size:12px;white-space:nowrap}
+  .fr.fr2,.fr.fr3{grid-template-columns:1fr!important}
+  .overlay{padding:0;align-items:flex-end}
+  .modal,.modal-lg{max-width:100%!important;width:100%!important;max-height:92vh;border-radius:16px 16px 0 0!important}
+  .card-hdr{flex-direction:column;gap:8px;align-items:flex-start}
+  .tab-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tab-bar::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;flex-shrink:0;font-size:12px}
+  .btn{padding:9px 14px;font-size:13px;min-height:40px}
+  .btn.sm,.btn-s.sm{padding:7px 12px;font-size:12px;min-height:36px}
+  .icon-btn{width:40px;height:40px}
+  .user-pill #userPillName{display:none}
+  .login-ov,.wiz-ov{align-items:flex-end;padding:0}
+  .login-card,.wiz-card{border-radius:16px 16px 0 0;width:100%!important;max-width:100%!important;margin:0}
+  .ws-lbl{display:none}
+  .val-grid{grid-template-columns:1fr 1fr 1fr!important}
+  .fs-letterhead{flex-direction:column;gap:8px}
+  .exec-grid{grid-template-columns:1fr 1fr!important}
+  .mobile-bottom-nav{display:flex!important}
+}
+@media (max-width:375px){
+  .topbar{padding:0 8px;gap:3px}
+  .tb-company{max-width:110px;font-size:13px}
+  .kpi-grid,.kpi-grid.g4,.kpi-grid.g5{grid-template-columns:1fr 1fr!important}
+  .kpi-val{font-size:13px!important}
+  .exec-grid{grid-template-columns:1fr!important}
+  .content{padding:8px;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+}
+/* Bottom nav — hidden on desktop */
+.mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -2px 12px rgba(0,0,0,.1);z-index:150;height:calc(56px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+.mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text3);font-size:9px;font-weight:600;padding:4px 2px;text-align:center;transition:color .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-height:44px}
+.mob-nav-item.active{color:var(--blue)}
+.mob-nav-item .mob-icon{font-size:18px;line-height:1;margin-bottom:1px}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:299;-webkit-tap-highlight-color:transparent}
+.sidebar-overlay.open{display:block}
+[data-theme="dark"] .mobile-bottom-nav{background:var(--surface);border-top-color:var(--border2)}
+[data-theme="dark"] .mob-nav-item.active{color:var(--blue)}
+@supports(padding:env(safe-area-inset-top)){
+  .topbar{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+}</style>
 </head>
 <body>
+<!-- Sidebar overlay (mobile tap-outside-to-close) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
+<!-- Mobile bottom navigation -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <div class="mob-nav-item active" id="mbn-dashboard" onclick="mobileNav('dashboard',this)">
+    <span class="mob-icon">🏠</span><span>Home</span>
+  </div>
+  <div class="mob-nav-item" id="mbn-menu" onclick="toggleMobileSidebar()">
+    <span class="mob-icon">☰</span><span>Menu</span>
+  </div>
+  <div class="mob-nav-item" id="mbn-myrequests" onclick="mobileNav('myrequests',this)">
+    <span class="mob-icon">📋</span><span>Approvals</span>
+  </div>
+  <div class="mob-nav-item" id="mbn-cashpos" onclick="mobileNav('cashpos',this)">
+    <span class="mob-icon">💰</span><span>Cash</span>
+  </div>
+  <div class="mob-nav-item" id="mbn-rpt-hub" onclick="mobileNav('rpt-hub',this)">
+    <span class="mob-icon">📊</span><span>Reports</span>
+  </div>
+</nav>
+
 <!-- ═══ LOGIN SCREEN ═══ -->
 <div class="login-ov" id="loginOv" style="display:none">
   <div class="login-card">
@@ -2103,7 +2198,12 @@ const PT_ALL = {
 };
 Object.assign(PT, PT_ALL);
 let curPage='dashboard';
-function setupNav(){document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>navGuarded(el.dataset.page)));}
+function setupNav(){
+  document.querySelectorAll('.nav-item[data-page]').forEach(el => el.addEventListener('click', () => {
+    navGuarded(el.dataset.page);
+    if (isMobile()) closeMobileSidebar();
+  }));
+}
 function nav(page){
   const prev = document.getElementById('page-' + curPage);
   const next = document.getElementById('page-' + page);
@@ -2144,7 +2244,13 @@ function nav(page){
   // Run post-render animations
   runPageAnimations(page);
 }
-function toggleSB(){document.getElementById('sidebar').classList.toggle('collapsed');}
+function toggleSB(){
+  if (isMobile()) {
+    toggleMobileSidebar();
+  } else {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+}
 let costMode='job';
 function setMode(m){costMode=m;document.getElementById('mJob').classList.toggle('active',m==='job');document.getElementById('mABC').classList.toggle('active',m==='abc');document.getElementById('modeBadge').textContent=m==='abc'?'ABC COSTING':'JOB ORDER';const co=S.get('company')||{};co.costMethod=m;S.set('company',co);}
 
@@ -7507,6 +7613,232 @@ function seedAllNew() {
   seedAssets();   // now includes cwipProjects and assetDisposals
   seedProjects();
 }
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  MOBILE SYSTEM — Responsive Navigation & Touch                  ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ── MOBILE DETECTION ──
+const isMobile = () => window.innerWidth <= 768;
+const isIOS    = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isAndroid= () => /Android/.test(navigator.userAgent);
+
+// ── MOBILE SIDEBAR ──
+function toggleMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sb.classList.contains('mobile-open');
+  if (isOpen) {
+    sb.classList.remove('mobile-open');
+    overlay.classList.remove('open');
+  } else {
+    sb.classList.add('mobile-open');
+    overlay.classList.add('open');
+  }
+  audioTick();
+}
+
+function closeMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sb.classList.remove('mobile-open');
+  overlay.classList.remove('open');
+}
+
+// Mobile nav — navigates and closes sidebar
+function mobileNav(page, el) {
+  navGuarded(page);
+  closeMobileSidebar();
+  // Update bottom nav active state
+  document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  audioTick();
+}
+
+// Update bottom nav when desktop nav changes page
+function syncMobileBottomNav(page) {
+  const mobileMap = {dashboard:'mbn-dashboard', myrequests:'mbn-myrequests', cashpos:'mbn-cashpos', 'rpt-hub':'mbn-rpt-hub'};
+  document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
+  const target = mobileMap[page];
+  if (target) document.getElementById(target)?.classList.add('active');
+}
+
+// ── RESIZE HANDLER ──
+window.addEventListener('resize', () => {
+  if (!isMobile()) closeMobileSidebar();
+});
+
+// ── SWIPE TO OPEN SIDEBAR (iOS/Android) ──
+(function() {
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    if (dy > 50) return; // mostly vertical — ignore
+    if (touchStartX < 24 && dx > 60) {
+      // Swipe right from left edge → open sidebar
+      const sb = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sb.classList.add('mobile-open');
+      overlay.classList.add('open');
+    } else if (dx < -60 && document.getElementById('sidebar').classList.contains('mobile-open')) {
+      // Swipe left → close sidebar
+      closeMobileSidebar();
+    }
+  }, { passive: true });
+})();
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  PROFESSIONAL CLICK SOUND SYSTEM — ERPNext-style               ║
+// ║  Every interactive element gets a tactile sound                 ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ── iOS AUDIO UNLOCK ──
+// iOS blocks Web Audio until first user gesture. We unlock on first touch.
+let _audioUnlocked = false;
+function unlockAudio() {
+  if (_audioUnlocked || !window.AudioContext && !window.webkitAudioContext) return;
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    // Play silent buffer to unlock
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    _audioUnlocked = true;
+  } catch(e) {}
+}
+document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+document.addEventListener('mousedown', unlockAudio, { once: true });
+
+// ── SOUND LIBRARY — Professional ERP-grade audio palette ──
+const SOUNDS = {
+  // Navigation click — short neutral tick (like ERPNext)
+  navClick:    () => { playTone(800, 'sine',     0.04, 0.06); },
+  // Button click — clean pop
+  btnClick:    () => { playTone(600, 'sine',     0.05, 0.08); playTone(900, 'sine', 0.04, 0.04, 0.03); },
+  // Primary action (save/post) — warm ascending chord
+  postSuccess: () => { playTone(523,'sine',.18,.09,0); playTone(659,'sine',.18,.07,.07); playTone(784,'sine',.22,.09,.14); },
+  // Tab switch — soft click
+  tabSwitch:   () => { playTone(700, 'sine',     0.04, 0.07); },
+  // Modal open — soft whoosh-pop
+  modalOpen:   () => { playTone(400, 'sine',     0.06, 0.06); playTone(700, 'sine', 0.05, 0.05, 0.05); },
+  // Modal close
+  modalClose:  () => { playTone(500, 'sine',     0.04, 0.05); },
+  // Input focus tick — very short, high freq (ERPNext style)
+  inputFocus:  () => { playTone(1100, 'square',  0.025, 0.035); },
+  // Toggle / checkbox
+  toggle:      () => { playTone(900, 'sine',     0.04, 0.05); },
+  // Error / warning — descending minor third (marimba-like)
+  alert:       () => { playTone(880,'triangle',.3,.08,0); playTone(740,'triangle',.4,.07,.1); },
+  // Success toast
+  toastSuccess:() => { playTone(660,'sine',.12,.08,0); playTone(880,'sine',.14,.07,.08); },
+  // Theme toggle
+  themeSwitch: () => { playTone(440,'sine',.1,.07,0); playTone(660,'sine',.12,.06,.06); },
+  // Data load complete
+  dataLoad:    () => { playTone(523,'sine',.08,.05,0); },
+  // Page scroll snap (subtle)
+  scroll:      () => { playTone(200,'sine',.05,.02); },
+  // Security / admin action
+  security:    () => audioSecurityOverride(),
+  // Depreciation run
+  deprRun:     () => audioPostSuccess(),
+};
+
+// ── GLOBAL CLICK SOUND DISPATCHER ──
+// Intercepts all clicks and plays the correct sound per element type
+document.addEventListener('click', function(e) {
+  if (!_audioUnlocked) { unlockAudio(); return; }
+  const el = e.target;
+
+  // Determine element type and play appropriate sound
+  if (el.closest('.nav-item'))            return SOUNDS.navClick();
+  if (el.closest('.mob-nav-item'))        return SOUNDS.navClick();
+  if (el.closest('.tab'))                 return SOUNDS.tabSwitch();
+  if (el.matches('input[type="checkbox"]')) return SOUNDS.toggle();
+  if (el.matches('input[type="radio"]'))  return SOUNDS.toggle();
+  if (el.closest('#mSaveBtn'))            return; // handled by mSave
+  if (el.closest('.btn-d'))               return SOUNDS.alert();
+  if (el.closest('.btn-p'))               return SOUNDS.btnClick();
+  if (el.closest('.btn-s'))               return SOUNDS.btnClick();
+  if (el.closest('.btn-ok'))              return SOUNDS.btnClick();
+  if (el.closest('.btn-g'))               return SOUNDS.navClick();
+  if (el.closest('.btn-w'))               return SOUNDS.alert();
+  if (el.closest('.icon-btn'))            return SOUNDS.navClick();
+  if (el.closest('.user-pill'))           return SOUNDS.navClick();
+  if (el.closest('.kpi'))                 return SOUNDS.tabSwitch();
+  if (el.closest('.wh-card'))             return SOUNDS.navClick();
+  if (el.closest('.cs-row[onclick]'))     return SOUNDS.navClick();
+  if (el.closest('.apr-matrix-row'))      return SOUNDS.navClick();
+  if (el.closest('.asset-row-clickable')) return SOUNDS.tabSwitch();
+  if (el.closest('.book-btn'))            return SOUNDS.tabSwitch();
+  if (el.closest('.ud-item'))             return SOUNDS.navClick();
+}, true); // useCapture for reliability
+
+// Sound on input focus (ERPNext-style tick on every field)
+document.addEventListener('focusin', function(e) {
+  if (!_audioUnlocked) return;
+  if (e.target.matches('input.fc, select.fc, textarea.fc')) {
+    SOUNDS.inputFocus();
+  }
+}, true);
+
+// Sound on modal open/close
+const _origOpenM = openM;
+openM = function(name, ...args) {
+  SOUNDS.modalOpen();
+  _origOpenM(name, ...args);
+};
+const _origCloseM = typeof closeM === 'function' ? closeM : null;
+if (_origCloseM) {
+  closeM = function() {
+    SOUNDS.modalClose();
+    _origCloseM();
+  };
+}
+
+// Sound on toast (override toast to add sounds)
+const _toastBase = toast;
+toast = function(msg, type='info', dur=3500) {
+  if (_audioUnlocked) {
+    if (type === 'success') SOUNDS.toastSuccess();
+    else if (type === 'error' || type === 'warn') SOUNDS.alert();
+  }
+  _toastBase(msg, type, dur);
+};
+
+// Sound on theme toggle
+const _origToggleDark = toggleDarkMode;
+toggleDarkMode = function() {
+  SOUNDS.themeSwitch();
+  _origToggleDark();
+};
+
+// Patch nav to sync mobile bottom nav
+const _navBeforeSync = nav;
+nav = function(page) {
+  _navBeforeSync(page);
+  syncMobileBottomNav(page);
+};
+
+// ── HAPTIC FEEDBACK (Android/iOS vibration API) ──
+function haptic(pattern) {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern || 10);
+  }
+}
+// Light haptic on nav clicks
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.nav-item, .mob-nav-item, .btn-p, .btn-d')) {
+    haptic(8);
+  }
+}, { passive: true });
 
 // ── BOOT ──
 var _errShown = false;
