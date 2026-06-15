@@ -2050,6 +2050,7 @@ textarea.fc{resize:vertical;min-height:68px}
 <script>
 // ── HELPER FUNCTIONS — must be first, used by wStepDefs below ──
 const gv=id=>{const el=document.getElementById(id);return el?el.value:''};
+const today=()=>new Date().toISOString().slice(0,10);
 const gSet=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined)el.value=v||''};
 const sel=(lbl,id,opts,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><select class="fc" id="${id}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
 const inp=(lbl,id,type,ph,val,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><input class="fc" id="${id}" type="${type||'text'}" placeholder="${ph||''}" ${val!==undefined?`value="${val}"`:''} ></div>`;
@@ -2181,6 +2182,228 @@ function setSyncBadge(state) {
   el.textContent = txt;
   el.style.cssText = `font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;${style}`;
 }
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  AUTH SYSTEM — hashPw · checkPw · Session · Login · Nav     ║
+// ║  seedUsers · seedCurrencies · seedApprovalPolicies           ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ── PASSWORD HASHING (FNV-style) ──
+function hashPw(pw) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < pw.length; i++) { h ^= pw.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return 'h' + h.toString(16).padStart(8,'0') + pw.length;
+}
+function checkPw(plain, hash) { return hashPw(plain) === hash; }
+
+// ── SESSION MANAGEMENT ──
+let SESSION = null;
+function getSession() {
+  if (SESSION) return SESSION;
+  try { const s = sessionStorage.getItem('mce_session'); if (s) SESSION = JSON.parse(s); } catch(e){}
+  return SESSION;
+}
+function setSession(user) {
+  SESSION = { userId:user.id, username:user.username, name:user.name, role:user.role, loginTime:new Date().toISOString() };
+  sessionStorage.setItem('mce_session', JSON.stringify(SESSION));
+}
+function clearSession() { SESSION = null; sessionStorage.removeItem('mce_session'); }
+
+// ── ROLE-BASED ACCESS ──
+const ROLES = { admin:5, manager:4, accountant:3, warehouse:2, viewer:1 };
+function canAccess(page) {
+  const s = getSession(); if (!s) return false;
+  const restricted = { users:['admin'], setup:['admin'], approvals:['admin','manager'], fiscalyear:['admin','accountant'] };
+  const req = restricted[page];
+  return !req || req.includes(s.role);
+}
+function canWrite() { const s = getSession(); return s && ['admin','manager','accountant'].includes(s.role); }
+
+// nav() and navGuarded() — nav is defined above; navGuarded adds access check
+function navGuarded(page) {
+  if (!canAccess(page)) { toast('Access denied — insufficient permissions.', 'error'); return; }
+  nav(page);
+}
+
+// ── LOGIN SCREEN ──
+function showLogin() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginOv').style.display = 'flex';
+  // Pre-fill company name
+  const co = S.get('company') || {};
+  const titleEl = document.querySelector('.login-title');
+  if (titleEl && co.name) titleEl.textContent = co.name;
+  setTimeout(() => { const el = document.getElementById('loginUser'); if (el) el.focus(); }, 100);
+}
+
+function doLogin() {
+  const username = (document.getElementById('loginUser')?.value || '').trim().toLowerCase();
+  const password = document.getElementById('loginPass')?.value || '';
+  if (!username || !password) { toast('Enter username and password.', 'error'); return; }
+  const users = S.get('users') || [];
+  const user = users.find(u => u.username?.toLowerCase() === username && u.status === 'Active');
+  if (!user || !checkPw(password, user.password)) {
+    toast('Invalid username or password.', 'error');
+    document.getElementById('loginPass').value = '';
+    if (typeof audioAlert === 'function') audioAlert();
+    return;
+  }
+  // Success
+  setSession(user);
+  user.lastLogin = new Date().toLocaleString();
+  S.set('users', users);
+  document.getElementById('loginOv').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateUserPill();
+  initApp();
+  applyTheme();
+  if (typeof audioPostSuccess === 'function') audioPostSuccess();
+  toast('Welcome back, ' + user.name + '.', 'success');
+}
+
+function updateUserPill() {
+  const s = getSession(); if (!s) return;
+  const nameEl = document.getElementById('userPillName');
+  const roleEl = document.getElementById('userPillRole');
+  const ddName = document.getElementById('ddUserName');
+  const ddRole = document.getElementById('ddUserRole');
+  const ddEmail = document.getElementById('ddUserEmail');
+  const users = S.get('users') || [];
+  const user = users.find(u => u.id === s.userId) || {};
+  if (nameEl) nameEl.textContent = s.name || s.username;
+  if (roleEl) roleEl.textContent = (s.role || '').charAt(0).toUpperCase() + (s.role || '').slice(1);
+  if (ddName) ddName.textContent = s.name;
+  if (ddRole) ddRole.textContent = (s.role || '').charAt(0).toUpperCase() + (s.role||'').slice(1);
+  if (ddEmail) ddEmail.textContent = user.email || '';
+}
+
+function logout() {
+  clearSession();
+  document.getElementById('app').style.display = 'none';
+  showLogin();
+  toast('Logged out.', 'info', 2000);
+}
+
+// ── SEED USERS ──
+function seedUsers() {
+  if (S.get('users')) return;
+  S.set('users', [
+    { id:'USR-001', name:'Mahdi Al-Finance',  username:'admin',   password:hashPw('Admin@1234'), role:'admin',      dept:'Finance',   email:'admin@company.sa',   status:'Active', lastLogin:'—', created:today() },
+    { id:'USR-002', name:'Ahmed Al-Rashid',   username:'ahmed',   password:hashPw('Ahmed@2025'), role:'accountant', dept:'Finance',   email:'ahmed@company.sa',   status:'Active', lastLogin:'—', created:today() },
+    { id:'USR-003', name:'Sara Mohammed',     username:'sara',    password:hashPw('Sara@2025'),  role:'accountant', dept:'Finance',   email:'sara@company.sa',    status:'Active', lastLogin:'—', created:today() },
+    { id:'USR-004', name:'Omar Al-Warehouse', username:'omar',    password:hashPw('Omar@2025'),  role:'warehouse',  dept:'Warehouse', email:'omar@company.sa',    status:'Active', lastLogin:'—', created:today() },
+    { id:'USR-005', name:'Viewer Account',    username:'viewer',  password:hashPw('View@2025'),  role:'viewer',     dept:'Management',email:'viewer@company.sa',  status:'Active', lastLogin:'—', created:today() },
+  ]);
+}
+
+// ── SEED CURRENCIES ──
+const CURRENCY_MASTER = {
+  SAR:{ name:'Saudi Riyal',       symbol:'SAR', flag:'🇸🇦', decimals:2, position:'bef', isBase:true  },
+  USD:{ name:'US Dollar',         symbol:'$',   flag:'🇺🇸', decimals:2, position:'bef' },
+  EUR:{ name:'Euro',              symbol:'€',   flag:'🇪🇺', decimals:2, position:'bef' },
+  GBP:{ name:'British Pound',     symbol:'£',   flag:'🇬🇧', decimals:2, position:'bef' },
+  AED:{ name:'UAE Dirham',        symbol:'AED', flag:'🇦🇪', decimals:2, position:'bef' },
+  KWD:{ name:'Kuwaiti Dinar',     symbol:'KWD', flag:'🇰🇼', decimals:3, position:'bef' },
+  EGP:{ name:'Egyptian Pound',    symbol:'EGP', flag:'🇪🇬', decimals:2, position:'bef' },
+  JPY:{ name:'Japanese Yen',      symbol:'¥',   flag:'🇯🇵', decimals:0, position:'bef' },
+  CNY:{ name:'Chinese Yuan',      symbol:'¥',   flag:'🇨🇳', decimals:2, position:'bef' },
+  INR:{ name:'Indian Rupee',      symbol:'₹',   flag:'🇮🇳', decimals:2, position:'bef' },
+};
+function baseCurr() { const c = S.get('currencies')||[]; const b = c.find(x=>x.isBase); return b?.code||'SAR'; }
+function getRate(code) { const c = S.get('currencies')||[]; const x = c.find(r=>r.code===code); return x?.rate||1; }
+function toBase(amt, fromCode) { if(!fromCode||fromCode===baseCurr()) return amt; const r = getRate(fromCode); return amt * r; }
+function fromBase(amt, toCode)  { if(!toCode||toCode===baseCurr()) return amt; const r = getRate(toCode); return r>0?amt/r:amt; }
+function convert(amt, fromCode, toCode) { return fromBase(toBase(amt,fromCode),toCode); }
+function fC(amt, code, opts) {
+  if (amt == null || isNaN(amt)) return '—';
+  const meta = CURRENCY_MASTER[code||baseCurr()] || CURRENCY_MASTER[baseCurr()] || {symbol:code||'SAR',decimals:2,position:'bef'};
+  const abs = Math.abs(amt);
+  const formatted = abs.toLocaleString('en-US', {minimumFractionDigits:meta.decimals,maximumFractionDigits:meta.decimals});
+  const sym = meta.position==='bef' ? meta.symbol+' '+formatted : formatted+' '+meta.symbol;
+  return amt < 0 ? '('+sym+')' : sym;
+}
+function fCM(amt, code) {
+  if (!amt) return '—';
+  const abs = Math.abs(amt);
+  const suffix = abs>=1e9?'B':abs>=1e6?'M':abs>=1e3?'K':'';
+  const val = abs>=1e9?abs/1e9:abs>=1e6?abs/1e6:abs>=1e3?abs/1e3:abs;
+  const meta = CURRENCY_MASTER[code||baseCurr()]||{symbol:code||'SAR'};
+  return (amt<0?'(':'')+meta.symbol+' '+(val%1===0?val.toFixed(0):val.toFixed(1))+suffix+(amt<0?')':'');
+}
+// fN, fM, fC, fCM, baseCurr, getRate, toBase, fromBase, convert — defined above at top of file
+
+function seedCurrencies() {
+  if (S.get('currencies')) return;
+  S.set('currencies', [
+    { code:'SAR', name:'Saudi Riyal',   symbol:'SAR', rate:1,    isBase:true,  active:true  },
+    { code:'USD', name:'US Dollar',     symbol:'$',   rate:3.75, isBase:false, active:true  },
+    { code:'EUR', name:'Euro',          symbol:'€',   rate:4.08, isBase:false, active:true  },
+    { code:'GBP', name:'British Pound', symbol:'£',   rate:4.72, isBase:false, active:true  },
+    { code:'AED', name:'UAE Dirham',    symbol:'AED', rate:1.02, isBase:false, active:true  },
+    { code:'KWD', name:'Kuwaiti Dinar', symbol:'KWD', rate:12.2, isBase:false, active:false },
+  ]);
+}
+
+// ── SEED APPROVAL POLICIES ──
+function seedApprovalPolicies() {
+  if (S.get('aprPolicies')) return;
+  S.set('aprPolicies', [
+    { id:'APR-001', module:'gl', txType:'MANJE', name:'Manual Journal — Manager Approval', thresholdBase:5000,
+      tiers:[{level:1,roleName:'manager',limitBase:50000},{level:2,roleName:'admin',limitBase:999999999}], active:true },
+    { id:'APR-002', module:'procurement', txType:'PO', name:'Purchase Order Approval', thresholdBase:10000,
+      tiers:[{level:1,roleName:'manager',limitBase:100000},{level:2,roleName:'admin',limitBase:999999999}], active:true },
+    { id:'APR-003', module:'assets', txType:'DISPOSAL', name:'Asset Disposal — Executive Auth', thresholdBase:50000,
+      tiers:[{level:1,roleName:'admin',limitBase:999999999}], active:true },
+    { id:'APR-004', module:'payroll', txType:'PAYRUN', name:'Payroll Run Approval', thresholdBase:0,
+      tiers:[{level:1,roleName:'manager',limitBase:999999},{level:2,roleName:'admin',limitBase:999999999}], active:true },
+  ]);
+}
+
+function seedApprovalRequests() {
+  if (S.get('aprRequests')) return;
+  S.set('aprRequests', [
+    { id:'REQ-001', module:'procurement', txType:'PO', docRef:'PO-0044', amount:284000, desc:'Purchase — Steel Plates (China Steel Works)', status:'pending', submittedBy:'USR-002', submittedAt:'2025-06-10', tiers:[{level:1,roleName:'manager',status:'pending'}] },
+    { id:'REQ-002', module:'gl', txType:'MANJE', docRef:'JE-DRAFT-001', amount:48000, desc:'Intercompany management fee accrual', status:'pending', submittedBy:'USR-003', submittedAt:'2025-06-11', tiers:[{level:1,roleName:'manager',status:'pending'}] },
+  ]);
+}
+
+function submitForApproval(module, txType, docRef, amount, desc) {
+  const policies = S.get('aprPolicies') || [];
+  const policy = policies.find(p => p.module===module && p.txType===txType && p.active && amount >= p.thresholdBase);
+  if (!policy) return { blocked:false };
+  const requests = S.get('aprRequests') || [];
+  const reqId = 'REQ-' + String(requests.length+1).padStart(3,'0');
+  const s = getSession();
+  requests.push({ id:reqId, module, txType, docRef, amount, desc, status:'pending', policyId:policy.id, policyName:policy.name, submittedBy:s?.userId||'SYSTEM', submittedAt:today(), tiers: policy.tiers.map(t=>({...t,status:'pending'})) });
+  S.set('aprRequests', requests);
+  appendAuditLog(module,'SUBMITTED_FOR_APPROVAL',docRef,{amount,policy:policy.name});
+  updateAprBell();
+  return { blocked:true, requestId:reqId, policyName:policy.name };
+}
+
+function actOnRequest(requestId, action, comment) {
+  const requests = S.get('aprRequests') || [];
+  const req = requests.find(r=>r.id===requestId);
+  if (!req) return;
+  const s = getSession();
+  const tier = req.tiers?.find(t=>t.status==='pending');
+  if (tier) { tier.status = action; tier.actedBy = s?.userId; tier.actedAt = today(); tier.comment = comment; }
+  const allApproved = req.tiers?.every(t=>t.status==='approve');
+  const anyRejected = req.tiers?.some(t=>t.status==='reject');
+  req.status = anyRejected ? 'rejected' : allApproved ? 'approved' : 'pending';
+  S.set('aprRequests', requests);
+  appendAuditLog(req.module, action.toUpperCase(), req.docRef, {comment});
+  updateAprBell();
+}
+
+function updateAprBell() {
+  const pending = (S.get('aprRequests')||[]).filter(r=>r.status==='pending').length;
+  const bell = document.getElementById('aprBellBtn');
+  const badge = document.getElementById('aprBellBadge');
+  if (bell) bell.title = pending + ' pending approvals';
+  if (badge) { badge.textContent = pending||''; badge.style.display = pending?'flex':'none'; }
+}
+
 
 // ── SEED DEFAULT DATA (runs once per browser) ──
 function seedData(){
@@ -2608,7 +2831,6 @@ function updateJEBal(){let dr=0,cr=0;document.querySelectorAll('#jeLines .je-gri
 // ── HELPERS ──
 const fN=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fM=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':fN(n);
-const today=()=>new Date().toISOString().slice(0,10);
 
 const sBadge=s=>{const m={Active:'b-green',Posted:'b-green',OK:'b-green',Approved:'b-green',Received:'b-green',Closed:'b-green','Near Done':'b-teal','In Progress':'b-blue','In Transit':'b-blue',Sent:'b-blue',New:'b-purple',Leave:'b-orange','Early Stage':'b-orange','Pending Approval':'b-orange',Draft:'b-grey',Low:'b-orange',Critical:'b-red',Open:'b-blue',Overdue:'b-red',Inactive:'b-grey','Raw Material':'b-blue',Component:'b-purple','Finished Good':'b-green',WIP:'b-orange',Service:'b-grey',Issue:'b-orange',Transfer:'b-blue','FG Receipt':'b-green',Return:'b-grey'};return`<span class="b ${m[s]||'b-grey'}">${s}</span>`;};
 
@@ -5188,6 +5410,153 @@ function buildSparklines(cur) {
   }).join('');
 }
 
+
+// ── USER / APPROVAL / CURRENCY RENDER FUNCTIONS ──
+function renderUsers() {
+  const users = S.get('users') || [];
+  const s = getSession();
+
+  // KPIs
+  document.getElementById('userKPIs').innerHTML = [
+    { l:'Total Users', v: users.length, c:'c-blue' },
+    { l:'Active', v: users.filter(u=>u.status==='Active').length, c:'c-green' },
+    { l:'Inactive', v: users.filter(u=>u.status==='Inactive').length, c:'c-orange' },
+    { l:'Roles Defined', v: Object.keys(ROLES).length, c:'c-teal' },
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Users table
+  document.getElementById('usersTbl').innerHTML = users.map(u => {
+    const role = ROLES[u.role] || {};
+    const isMe = s && s.userId === u.id;
+    return `<tr>
+      <td>
+        <div class="flex ic gap8">
+          <div class="user-avatar" style="background:${role.color||'#666'}">${u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
+          <span class="fw6">${u.name}${isMe?' <span class="b b-blue" style="font-size:10px">You</span>':''}</span>
+        </div>
+      </td>
+      <td class="t-blue fw6">${u.username}</td>
+      <td><span class="b" style="background:${role.bg||'#eee'};color:${role.color||'#333'}">${role.label||u.role}</span></td>
+      <td>${u.dept||'—'}</td>
+      <td class="t-muted t-sm">${u.lastLogin||'Never'}</td>
+      <td>${sBadge(u.status)}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn btn-g xs" onclick="openM('mEditUser','${u.id}')">Edit</button>
+          ${!isMe ? `<button class="btn btn-g xs" onclick="toggleUserStatus('${u.id}')">${u.status==='Active'?'Deactivate':'Activate'}</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Role cards
+  document.getElementById('roleCards').innerHTML = Object.entries(ROLES).map(([key, r]) => `
+    <div class="fsec mb8" style="border-left:3px solid ${r.color};border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px">
+      <div class="fw6 t-sm mb8" style="color:${r.color}">${r.label}</div>
+      <div class="t-xs t-muted">${r.desc}</div>
+      <div class="t-xs mt8" style="color:${r.color}">${r.perms==='*'?'All modules':'${r.perms.length} modules'}</div>
+    </div>`).join('');
+
+  // Permission matrix
+  const modules = [
+    {key:'dashboard',label:'Dashboard'},{key:'coa',label:'Chart of Accounts'},{key:'journal',label:'Journal Entry'},
+    {key:'po',label:'Purchase Orders'},{key:'grn',label:'Goods Receipt'},{key:'aging-ap',label:'AP Aging'},
+    {key:'items',label:'Item Master'},{key:'stockledger',label:'Stock Ledger'},{key:'transfers',label:'Stock Transfers'},
+    {key:'workorders',label:'Work Orders'},{key:'jobcost',label:'Job Cost Sheet'},{key:'invoices',label:'Sales Invoices'},
+    {key:'aging-ar',label:'AR Aging'},{key:'payroll',label:'Payroll Run'},{key:'pnl',label:'Income Statement'},
+    {key:'periodclose',label:'Period Closing'},{key:'users',label:'User Management'},
+  ];
+  const roleKeys = Object.keys(ROLES);
+  document.getElementById('permMatrix').innerHTML = `<table>
+    <thead><tr><th>Module</th>${roleKeys.map(k=>`<th style="color:${ROLES[k].color};text-align:center">${ROLES[k].label.split(' ')[0]}</th>`).join('')}</tr></thead>
+    <tbody>${modules.map(m=>`<tr>
+      <td>${m.label}</td>
+      ${roleKeys.map(k=>{
+        const has = ROLES[k].perms==='*' || ROLES[k].perms.includes(m.key);
+        const write = has && k !== 'viewer' && WRITE_PAGES.has(m.key);
+        const icon = !has ? '<span style="color:var(--border2)">—</span>'
+          : WRITE_PAGES.has(m.key) && k==='viewer' ? '<span style="color:var(--orange)">??</span>'
+          : has ? '<span style="color:var(--green)">✓</span>' : '—';
+        return `<td style="text-align:center">${icon}</td>`;
+      }).join('')}
+    </tr>`).join('')}</tbody>
+  </table><div class="t-xs t-muted" style="padding:10px 12px">✓ Full access &nbsp; ?? Read-only &nbsp; — No access</div>`;
+}
+
+function renderApprovals() {
+  switchAprModule('procurement', document.querySelector('#aprModuleTabs .tab'));
+}
+
+function renderMyApprovals() {
+  const s = getSession();
+  if (!s) return;
+  const requests = S.get('aprRequests') || [];
+  const policies = S.get('aprPolicies') || [];
+
+  const pending  = requests.filter(r => r.status === 'pending' && isMyTurn(r, s));
+  const submitted = requests.filter(r => r.submittedBy === s.userId);
+  const approved  = requests.filter(r => r.status === 'approved');
+  const rejected  = requests.filter(r => r.status === 'rejected');
+
+  // Update pending count badge
+  const pcEl = document.getElementById('pendingCount');
+  if (pcEl) { pcEl.textContent = pending.length; pcEl.style.display = pending.length ? 'inline-flex' : 'none'; }
+
+  // KPIs
+  document.getElementById('aprInboxKPIs').innerHTML = [
+    {l:'Pending My Action', v:pending.length,   c:'c-orange'},
+    {l:'Submitted by Me',   v:submitted.length, c:'c-blue'},
+    {l:'Approved',          v:approved.length,  c:'c-green'},
+    {l:'Rejected',          v:rejected.length,  c:'c-red'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  switchAprInbox('pending', document.querySelector('#aprInboxTabs .tab'));
+}
+
+function renderCurrencies() {
+  const base = baseCurr();
+  const currs = S.get('currencies') || [];
+  const meta = CURRENCY_MASTER[base] || {};
+
+  document.getElementById('baseCurrBanner').innerHTML =
+    `Base currency: <strong>${meta.flag||''} ${base} — ${meta.name||base}</strong>. All transactions are stored in ${base}. Foreign currency amounts are auto-converted at posting using the rates below.`;
+  document.getElementById('ratesAsOf').textContent = 'As of ' + today();
+
+  // Table
+  document.getElementById('currTbl').innerHTML = currs.map(c => {
+    const m = CURRENCY_MASTER[c.code] || {};
+    const rateVsBase = c.isBase ? 1 : (c.rate / (currs.find(x=>x.code===base)?.rate||1));
+    const inverse = rateVsBase > 0 ? (1/rateVsBase).toFixed(4) : '—';
+    return `<tr>
+      <td><span style="font-size:16px">${m.flag||'??'}</span> ${m.name||c.code}</td>
+      <td class="t-blue fw6">${c.code}</td>
+      <td style="font-size:15px">${m.symbol||c.code}</td>
+      <td class="num fw6 ${c.isBase?'t-green':''}">${c.isBase?'1.0000 (Base)':rateVsBase.toFixed(4)}</td>
+      <td class="num t-muted">${c.isBase?'—':inverse}</td>
+      <td class="t-muted t-sm">${c.updated}</td>
+      <td>${c.isBase?'<span class="b b-green">Base</span>':sBadge(c.active?'Active':'Inactive')}</td>
+      <td>
+        ${!c.isBase ? `<button class="btn btn-g xs" onclick="openM('mEditRate','${c.code}')">Edit Rate</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Populate converter selects
+  const opts = currs.filter(c=>c.active).map(c=>`<option value="${c.code}" ${c.code===base?'selected':''}>${c.code} — ${CURRENCY_MASTER[c.code]?.name||c.code}</option>`).join('');
+  ['convFrom','convTo','txCurr','trendCurr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = opts; }
+  });
+  // Default "To" to USD if base is SAR
+  const convTo = document.getElementById('convTo');
+  if (convTo && base === 'SAR') convTo.value = 'USD';
+
+  runConverter();
+  updateTxPreview();
+  renderRateTrend();
+}
+
+
 // ── WIRE ALL NEW MODULE SEEDS & ON_NAV ──
 function seedAllNew() {
   seedIntercompany();
@@ -6488,6 +6857,7 @@ function renderPeriodClose() {
     `<div class="cs-row"><span>${e.period}</span><span class="t-muted t-xs">${e.closedBy} · ${(e.ts||'').slice(0,10)}</span></div>`
   ).join('') || '<div class="t-muted t-sm">No period close history.</div>';
 }
+
 
 // ── BOOT ──
 var _errShown = false;
