@@ -2623,11 +2623,19 @@ function renderDash(){
     {l:'Inventory Alerts',v:st.filter(s=>s.status==='Low'||s.status==='Critical').length,c:'c-orange'},
     {l:'Gross Margin (Est.)',v:'31.4%',c:'c-green'}
   ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
-  document.getElementById('dashCost').innerHTML=`<div class="cs-row"><span>Direct Materials</span><span>SAR 285,400</span></div><div class="cs-row"><span>Direct Labor</span><span>SAR 112,800</span></div><div class="cs-row"><span>Manufacturing Overhead</span><span>SAR 94,200</span></div><div class="cs-row cs-st"><span>Total Manufacturing Cost</span><span>SAR 492,400</span></div><div class="cs-row cs-tot"><span>Cost of Goods Manufactured</span><span>SAR 487,800</span></div>`;
-  document.getElementById('dashActivity').innerHTML=(S.get('journals')||[]).slice(0,5).map(j=>`<div class="act-item"><div class="act-dot"></div><div style="flex:1;font-size:12.5px">${j.desc}</div><div class="t-xs t-muted">${j.date}</div></div>`).join('');
-  document.getElementById('dashInv').innerHTML=`<div class="tw"><table><thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>${st.filter(s=>s.status!=='OK'&&s.status!=='Active').slice(0,5).map(s=>`<tr><td>${s.name}</td><td class="num">${s.qty}</td><td>${sBadge(s.status)}</td></tr>`).join('')}</tbody></table></div>`;
-  document.getElementById('dashWO').innerHTML=`<div class="tw"><table><thead><tr><th>WO #</th><th>Product</th><th>Progress</th></tr></thead><tbody>${wo.map(w=>`<tr><td class="t-blue fw6">${w.id}</td><td style="font-size:12px">${w.prod}</td><td><div class="prog"><div class="prog-bar ${w.done>70?'pb-green':w.done>30?'pb-blue':'pb-orange'}" style="width:${w.done}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;
-  document.getElementById('dashAPAR').innerHTML=`<div class="cs-row"><span>Total AP</span><span class="t-red fw6">SAR 198,400</span></div><div class="cs-row"><span>Total AR</span><span class="t-blue fw6">SAR 412,000</span></div><div class="cs-row"><span>Net Position</span><span class="t-green fw6">SAR 213,600</span></div><div class="cs-row"><span>Overdue AR</span><span class="t-orange fw6">SAR 84,000</span></div>`;
+  const _t = _tb();
+  const _cur = baseCurr();
+  document.getElementById('dashCost').innerHTML=`
+    <div class="cs-row"><span>Direct Materials</span><span>${fC(_t.rows.find(r=>r.c==='5010')?.dr||0,_cur)}</span></div>
+    <div class="cs-row"><span>Direct Labour</span><span>${fC(_t.rows.find(r=>r.c==='5020')?.dr||0,_cur)}</span></div>
+    <div class="cs-row"><span>Mfg Overhead</span><span>${fC(_t.rows.find(r=>r.c==='5030')?.dr||0,_cur)}</span></div>
+    <div class="cs-row cs-st"><span>Total COGS</span><span>${fC(_t.cogs,_cur)}</span></div>
+    <div class="cs-row cs-tot"><span>Gross Profit</span><span>${fC(_t.grossProfit,_cur)}</span></div>`;
+  document.getElementById('dashAPAR').innerHTML=`
+    <div class="cs-row"><span>Total AR</span><span class="t-blue fw6">${fC(_t.ar,_cur)}</span></div>
+    <div class="cs-row"><span>Total AP</span><span class="t-red fw6">${fC(_t.ap,_cur)}</span></div>
+    <div class="cs-row"><span>Net Position</span><span class="${_t.ar-_t.ap>=0?'t-green':'t-red'} fw6">${fC(_t.ar-_t.ap,_cur)}</span></div>
+    <div class="cs-row"><span>Cash Balance</span><span class="t-blue fw6">${fC(_t.cashBank,_cur)}</span></div>`;
 }
 
 // ── RENDER: COA ──
@@ -2695,49 +2703,8 @@ function getTBData() {
 // tbRows alias — backward compatibility for any legacy code
 // Always returns live localStorage data via getTBData()
 const tbRows = getTBData();
-function renderTB(){
-  const cur = baseCurr();
-  const type = document.getElementById('tbType')?.value || 'unadj';
-  const period = document.getElementById('tbPeriod')?.value || 'jun25';
-  const periodLabel = {jun25:'June 30, 2025', mar25:'March 31, 2025', dec24:'December 31, 2024'}[period];
-  const typeLabel = {unadj:'Unadjusted', adj:'Adjusted', postclosing:'Post-Closing'}[type];
 
-  // Render letterhead
-  const lhEl = document.getElementById('tbPrintArea');
 
-  const catColor = {Assets:'var(--blue)',Liabilities:'var(--red)',Equity:'var(--purple)',Revenue:'var(--green)',Expenses:'var(--orange)',COGS:'var(--teal)'};
-
-  document.getElementById('tbTbl').innerHTML = getTBData().map(r=>`<tr>
-    <td class="t-blue fw6">${r.c}</td>
-    <td>${r.n}</td>
-    <td><span class="b" style="background:${catColor[r.cat]||'var(--surface2)'}22;color:${catColor[r.cat]||'var(--text2)'};font-size:10px;padding:1px 7px;border-radius:10px">${r.cat||''}</span></td>
-    <td class="num">${r.dr ? fC(r.dr,cur) : '—'}</td>
-    <td class="num">${r.cr ? fC(r.cr,cur) : '—'}</td>
-  </tr>`).join('');
-
-  const _tbD=getTBData(); const td = _tbD.reduce((s,r)=>s+r.dr,0);
-  const tc = _tbD.reduce((s,r)=>s+r.cr,0);
-  const balanced = Math.abs(td-tc)<0.01;
-
-  document.getElementById('tbFoot').innerHTML = `
-    <tr style="font-weight:700;background:var(--surface2)">
-      <td colspan="3">TOTAL</td>
-      <td class="num">${fC(td,cur)}</td>
-      <td class="num">${fC(tc,cur)}</td>
-    </tr>
-    <tr><td colspan="5" style="padding:10px 8px">
-      <span style="color:${balanced?'var(--green)':'var(--red)'};font-weight:600;font-size:12.5px">
-        ${balanced ? '✓ Trial balance is in agreement — Debits equal Credits' : '✗ OUT OF BALANCE — Difference: ' + fC(Math.abs(td-tc),cur)}
-      </span>
-    </td></tr>`;
-
-  document.getElementById('tbKPIs').innerHTML = [
-    {l:'Total Debits',    v:fC(td,cur), c:'c-blue'},
-    {l:'Total Credits',   v:fC(tc,cur), c:'c-blue'},
-    {l:'Difference',      v:fC(Math.abs(td-tc),cur), c:balanced?'c-green':'c-red'},
-    {l:'Type',            v:typeLabel+' · '+periodLabel, c:'c-teal'},
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:14px">${k.v}</div></div>`).join('');
-}
 
 function renderSup(){document.getElementById('supTbl').innerHTML=(S.get('suppliers')||[]).map(s=>`<tr><td class="t-blue fw6">${s.id}</td><td>${s.name}</td><td>${s.cat}</td><td>${s.phone}</td><td>${s.terms}</td><td class="num">SAR ${fN(s.ytd)}</td><td>${sBadge(s.status)}</td></tr>`).join('');}
 function renderCust(){document.getElementById('custTbl').innerHTML=(S.get('customers')||[]).map(c=>`<tr><td class="t-blue fw6">${c.id}</td><td>${c.name}</td><td>${c.industry}</td><td>${c.phone}</td><td>${c.terms}</td><td class="num">SAR ${fN(c.credit)}</td><td class="num t-blue">SAR ${fN(c.outstanding)}</td></tr>`).join('');}
@@ -5976,7 +5943,7 @@ function renderTB() {
   const ledger = S.get('glLedger')||[];
   const catColor = {Assets:'var(--blue)',Liabilities:'var(--red)',Equity:'var(--purple)',Revenue:'var(--green)',COGS:'var(--teal)',Expenses:'var(--orange)'};
 
-  // Compute period movements
+  // Compute period movements from GL ledger
   const periodMovements = {};
   ledger.forEach(e=>{
     periodMovements[e.account] = periodMovements[e.account]||{dr:0,cr:0};
@@ -5984,7 +5951,9 @@ function renderTB() {
     periodMovements[e.account].cr += (e.cr||0);
   });
 
-  const openBal = {'1010':284291,'1020':412000,'1300':148200,'1310':82400,'1320':42100,'1500':840000,'1700':48000,'2010':-198400,'2020':-34200,'2030':-28600,'3010':-400000,'3020':-186291,'4010':-412000,'5010':285400,'5020':112800,'6010':34200,'6020':28600,'6030':12400};
+  // Opening balances from localStorage (getTBData) — clears on reset
+  const openBal = {};
+  getTBData().forEach(r => { openBal[r.c] = (r.dr||0) - (r.cr||0); });
 
   let totalDr=0, totalCr=0, totalPeriodDr=0, totalPeriodCr=0;
 
@@ -6349,14 +6318,16 @@ function resetAll() {
     // NUCLEAR CLEAR: remove every mce_ key
     const theme = localStorage.getItem('mce_theme');
     const gsUrl = localStorage.getItem('mce_gs_url');
+    // Remove ALL mce_ keys including trialBalanceData, seeded, company, users, etc.
     Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
-    // Restore only non-data prefs
-    if (theme) localStorage.setItem('mce_theme', theme);
-    if (gsUrl) localStorage.setItem('mce_gs_url', gsUrl);
-    else localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
-    localStorage.setItem('mce_reset_pending', '1');
-    localStorage.setItem('mce_data_version', '4');
+    // Also clear any non-prefixed keys we might have used
     sessionStorage.clear();
+    // Restore only UI prefs (not data)
+    if (theme) localStorage.setItem('mce_theme', theme);
+    localStorage.setItem('mce_gs_url', gsUrl || DEFAULT_GS_URL);
+    // Set reset flag — boot will see this and go to wizard
+    localStorage.setItem('mce_reset_pending', '1');
+    // Do NOT set data_version — boot will see version mismatch and also clear again (belt+suspenders)
     // Fire-and-forget Sheets wipe
     try { if (GS_URL) fetch(GS_URL, {method:'POST', body:JSON.stringify({action:'reset'}), headers:{'Content-Type':'application/json'}}); } catch(e) {}
     closeM();
@@ -6538,31 +6509,39 @@ try {
   const _resetPending = localStorage.getItem('mce_reset_pending');
   if (_resetPending) {
     localStorage.removeItem('mce_reset_pending');
-    // Restore default GS URL and data version
     localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
-    localStorage.setItem('mce_data_version', '4');
-    sessionStorage.removeItem('mce_session');
-    // Seed only the minimal non-demo defaults (currencies, fiscal structure)
+    localStorage.setItem('mce_data_version', '5');
+    sessionStorage.clear();
     seedCurrencies();
     seedFiscalData();
     seedApprovalPolicies();
     seedAllNew();
     applyTheme();
-    // Always show wizard after reset
     document.getElementById('wizOv').style.display = 'flex';
     wRender();
     toast('All data has been cleared. Please complete the setup wizard.', 'info', 4000);
-    // Boot ends here — no seedData, no seedUsers, no login
   } else {
   // ── NORMAL BOOT ──
-  const DATA_VERSION = '4';
+  // VERSION 5: added trialBalanceData to localStorage (was const)
+  const DATA_VERSION = '5';
   if (localStorage.getItem('mce_data_version') !== DATA_VERSION) {
     const theme = localStorage.getItem('mce_theme');
-    Object.keys(localStorage).filter(k => k.startsWith('mce_')).forEach(k => localStorage.removeItem(k));
-    if (theme) localStorage.setItem('mce_theme', theme);
+    const gsUrl = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
+    // Clear ALL stale data
+    Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
+    localStorage.setItem('mce_theme', theme || 'light');
+    localStorage.setItem('mce_gs_url', gsUrl);
     localStorage.setItem('mce_data_version', DATA_VERSION);
-    localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
-    sessionStorage.removeItem('mce_session');
+    sessionStorage.clear();
+  }
+  // Always ensure trialBalanceData exists (backfill for users who upgraded)
+  if (!S.get('trialBalanceData')) {
+    const _tbSeed = tbRows_TEMPLATE.map(r => ({
+      ...r,
+      dr: Math.max(0,  DEMO_TB_BALANCES[r.c] || 0),
+      cr: Math.max(0, -(DEMO_TB_BALANCES[r.c] || 0)),
+    }));
+    S.set('trialBalanceData', _tbSeed);
   }
   seedData();
   seedUsers();
