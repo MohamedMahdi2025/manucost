@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ManuCost ERP</title>
+<style>
+/* ═══════════════════════════════════════════
+   D365 LIGHT THEME — ManuCost ERP
+   Palette: Dynamics 365 Unified Shell
+═══════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#F2F2F2;color:#201F1E;font-size:13px;line-height:1.4}
+:root{
+  --bg:#F2F2F2;--surface:#FFFFFF;--surface2:#F8F8F8;--surface3:#EDEDED;
+  --border:#D1D1D1;--border2:#C0C0C0;
+  --blue:#0078D4;--blue-dk:#005A9E;--blue-lt:#C7E0F4;--blue-xlt:#EBF3FB;
+  --green:#107C10;--green-lt:#DFF6DD;
+  --red:#A4262C;--red-lt:#FDE7E9;
+  --orange:#CA5010;--orange-lt:#FDEDDE;
+  --yellow-lt:#FFF4CE;
+  --purple:#5C2D91;--purple-lt:#F4EBF9;
+  --teal:#038387;--teal-lt:#E0F3F3;
+  --text:#201F1E;--text2:#605E5C;--text3:#979593;
+  --nav-bg:#0078D4;--nav-hover:#005A9E;
+  --radius:4px;--shadow:0 2px 8px rgba(0,0,0,.12);--shadow-sm:0 1px 4px rgba(0,0,0,.08)
+}
+/* LAYOUT */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;min-width:240px;background:var(--nav-bg);display:flex;flex-direction:column;overflow:hidden;transition:width .2s;flex-shrink:0}
+.sidebar.collapsed{width:48px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+/* SIDEBAR */
+.sb-header{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.15);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.sb-logo{width:28px;height:28px;background:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--blue);flex-shrink:0}
+.sb-title{font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-sub{font-size:10px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden}
+.nav-scroll{overflow-y:auto;flex:1;padding-bottom:12px}
+.nav-scroll::-webkit-scrollbar{width:4px}
+.nav-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:2px}
+.nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px 3px;white-space:nowrap;overflow:hidden}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,.85);font-size:12.5px;transition:background .1s;border-left:3px solid transparent;white-space:nowrap;overflow:hidden}
+.nav-item:hover{background:var(--nav-hover)}
+.nav-item.active{background:#fff;color:var(--blue);font-weight:600;border-left-color:var(--orange)}
+.nav-icon{width:15px;font-size:13px;flex-shrink:0;text-align:center}
+.nav-text{overflow:hidden;text-overflow:ellipsis}
+/* TOPBAR */
+.topbar{height:48px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;box-shadow:var(--shadow-sm);flex-shrink:0}
+.tb-company{font-size:13px;font-weight:600;color:var(--blue)}
+.tb-period{font-size:11px;color:var(--text2);background:var(--blue-xlt);border:1px solid var(--blue-lt);border-radius:var(--radius);padding:3px 9px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.mode-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.mode-btn{padding:5px 12px;font-size:11.5px;cursor:pointer;border:none;background:var(--surface2);color:var(--text2);font-family:inherit;transition:all .1s;font-weight:500}
+.mode-btn.active{background:var(--blue);color:#fff}
+.icon-btn{width:32px;height:32px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:15px;transition:all .1s}
+.icon-btn:hover{border-color:var(--blue);color:var(--blue)}
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg)}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+/* COMMAND BAR */
+.cmd-bar{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+/* PAGE */
+.page{display:none}.page.active{display:block}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.page-hdr h1{font-size:18px;font-weight:600;color:var(--text)}
+.page-hdr p{font-size:12px;color:var(--text3);margin-top:2px}
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius)}
+.card-hdr{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-body{padding:16px}
+/* KPI */
+.kpi-grid{display:grid;gap:12px;margin-bottom:16px}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.kpi.c-blue::before{background:var(--blue)}.kpi.c-green::before{background:var(--green)}
+.kpi.c-red::before{background:var(--red)}.kpi.c-orange::before{background:var(--orange)}
+.kpi.c-purple::before{background:var(--purple)}.kpi.c-teal::before{background:var(--teal)}
+.kpi-lbl{font-size:10.5px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kpi-val{font-size:24px;font-weight:300;color:var(--text);letter-spacing:-.5px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px}
+/* TABLES */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:11px;font-weight:600;color:var(--text2);padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);background:var(--surface2);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text);font-size:12.5px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--blue-xlt)}
+tfoot td{padding:9px 12px;font-weight:600;background:var(--surface2);border-top:2px solid var(--border);font-size:12.5px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+/* BADGES */
+.b{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-blue{background:var(--blue-lt);color:var(--blue-dk)}.b-green{background:var(--green-lt);color:var(--green)}
+.b-red{background:var(--red-lt);color:var(--red)}.b-orange{background:var(--orange-lt);color:var(--orange)}
+.b-purple{background:var(--purple-lt);color:var(--purple)}.b-teal{background:var(--teal-lt);color:var(--teal)}
+.b-grey{background:var(--surface3);color:var(--text2)}.b-yellow{background:var(--yellow-lt);color:#5D4037}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:inherit;transition:all .1s;white-space:nowrap;line-height:1.4}
+.btn:active{transform:translateY(1px)}
+.btn-p{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-p:hover{background:var(--blue-dk)}
+.btn-s{background:#fff;color:var(--blue);border-color:var(--blue)}.btn-s:hover{background:var(--blue-xlt)}
+.btn-g{background:transparent;color:var(--text2);border-color:var(--border)}.btn-g:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-xlt)}
+.btn-d{background:var(--red);color:#fff;border-color:var(--red)}.btn-d:hover{background:#8B1D22}
+.btn-ok{background:var(--green);color:#fff;border-color:var(--green)}.btn-ok:hover{background:#0A5F0A}
+.btn-w{background:var(--orange);color:#fff;border-color:var(--orange)}
+.sm{padding:4px 10px;font-size:11.5px}.xs{padding:2px 7px;font-size:11px}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* FORMS */
+.fr{display:grid;gap:12px;margin-bottom:14px}
+.fr2{grid-template-columns:1fr 1fr}.fr3{grid-template-columns:1fr 1fr 1fr}.fr4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fl{font-size:11.5px;font-weight:600;color:var(--text2)}
+.fl.req::after{content:' *';color:var(--red)}
+.fc{background:#fff;border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 10px;font-size:12.5px;font-family:inherit;outline:none;transition:border .1s,box-shadow .1s;width:100%}
+.fc:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(0,120,212,.15)}
+.fc:read-only{background:var(--surface2);color:var(--text3)}
+textarea.fc{resize:vertical;min-height:68px}
+.fhint{font-size:11px;color:var(--text3);margin-top:2px}
+.fsec{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+.fsec-t{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+/* TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;background:#fff;overflow-x:auto}
+.tab{padding:9px 16px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .1s;white-space:nowrap}
+.tab:hover{color:var(--text)}.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.2);width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column}
+.modal-lg{max-width:820px}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:14px;font-weight:600}
+.modal-close{width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--text2);border-radius:var(--radius);font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--red-lt);color:var(--red)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-ftr{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+/* ALERTS */
+.alert{display:flex;gap:10px;padding:10px 14px;border-radius:var(--radius);font-size:12.5px;margin-bottom:12px;border-left:4px solid}
+.a-info{background:var(--blue-xlt);border-color:var(--blue);color:var(--blue-dk)}
+.a-ok{background:var(--green-lt);border-color:var(--green);color:var(--green)}
+.a-warn{background:var(--yellow-lt);border-color:var(--orange);color:var(--orange)}
+.a-err{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+/* PROGRESS */
+.prog{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;min-width:60px}
+.prog-bar{height:100%;border-radius:3px;transition:width .4s}
+.pb-blue{background:var(--blue)}.pb-green{background:var(--green)}.pb-orange{background:var(--orange)}.pb-red{background:var(--red)}
+/* FINANCIAL STATEMENT */
+.fs-co{font-size:15px;font-weight:700;color:var(--text);text-align:center}
+.fs-sub{font-size:12px;color:var(--text2);text-align:center;margin:2px 0 16px}
+.fs-sec{font-size:11.5px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-top:12px}
+.fs-row{display:flex;justify-content:space-between;padding:4px 8px;font-size:12.5px;color:var(--text2)}
+.fs-row:hover{background:var(--blue-xlt);border-radius:var(--radius)}
+.fs-row.in{padding-left:24px}
+.fs-row.st{font-weight:600;color:var(--text);border-top:1px solid var(--border);padding:6px 8px}
+.fs-row.tot{background:var(--blue-xlt);border-radius:var(--radius);font-weight:700;color:var(--blue);padding:8px 10px;margin-top:4px}
+.fs-row.neg{color:var(--red)}
+/* COST SHEET */
+.cs-row{display:flex;justify-content:space-between;padding:5px 8px;font-size:12.5px;border-bottom:1px solid var(--border)}
+.cs-row.cs-st{font-weight:600;background:var(--surface2)}
+.cs-row.cs-tot{background:var(--blue-xlt);font-weight:700;color:var(--blue);border-radius:var(--radius);padding:8px 10px;margin-top:4px}
+.cs-lbl{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.8px;padding:6px 8px 4px}
+/* AGING */
+.aging-bar{height:28px;display:flex;border-radius:var(--radius);overflow:hidden;gap:2px}
+.a-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
+/* JE */
+.je-grid{display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px}
+.je-bal{display:flex;justify-content:flex-end;gap:20px;padding:10px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px}
+/* ACTIVITY */
+.act-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;background:var(--blue)}
+/* SEARCH */
+.sbox{display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;gap:6px}
+.sbox input{border:none;background:transparent;outline:none;font-size:12.5px;color:var(--text);width:180px;font-family:inherit}
+/* GRID HELPERS */
+.g2c{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3c{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4c{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+.mt12{margin-top:12px}.mt16{margin-top:16px}
+.flex{display:flex}.ic{align-items:center}.jb{justify-content:space-between}.gap8{gap:8px}.gap12{gap:12px}
+.fw6{font-weight:600}.t-blue{color:var(--blue)}.t-green{color:var(--green)}.t-red{color:var(--red)}
+.t-orange{color:var(--orange)}.t-muted{color:var(--text3)}.t-sm{font-size:11.5px}.t-xs{font-size:11px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.w100{width:100%}
+/* TOAST */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow);font-size:12.5px;max-width:360px;display:flex;gap:8px;align-items:flex-start;border-left:4px solid;animation:sIn .2s ease}
+.ti{border-left-color:var(--blue)}.to{border-left-color:var(--green)}.tw2{border-left-color:var(--orange)}.te{border-left-color:var(--red)}
+@keyframes sIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+/* WIZARD */
+.wiz-ov{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
+.wiz-card{background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.15);width:660px;max-height:92vh;overflow-y:auto}
+.wiz-hdr{padding:24px 28px 16px;border-bottom:1px solid var(--border)}
+.wiz-logo{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.wiz-logo-box{width:36px;height:36px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.wiz-logo-txt{font-size:17px;font-weight:600}
+.wiz-steps{display:flex;gap:0;position:relative}
+.wiz-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.wiz-step:not(:last-child)::after{content:'';position:absolute;top:11px;left:60%;right:-40%;height:2px;background:var(--border);z-index:0}
+.ws-dot{width:24px;height:24px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text3);z-index:1;position:relative}
+.ws-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.ws-dot.act{background:var(--blue);border-color:var(--blue);color:#fff}
+.ws-lbl{font-size:10px;color:var(--text3);text-align:center}
+.wiz-body{padding:24px 28px}
+.wiz-ftr{padding:14px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.wiz-step-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px}
+/* ACCOUNT TREE */
+.acc-row{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;border-radius:var(--radius)}
+.acc-row:hover{background:var(--blue-xlt)}
+.acc-code{font-size:11px;font-weight:600;color:var(--blue);width:52px;flex-shrink:0}
+.acc-name{flex:1;color:var(--text);font-size:12.5px}
+.acc-bal{font-size:12px;color:var(--text2);width:88px;text-align:right;font-variant-numeric:tabular-nums}
+.acc-children{margin-left:18px;border-left:1px solid var(--border);padding-left:6px}
+.acc-group{font-weight:600;background:var(--blue-xlt)}
+/* WH cards */
+.wh-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:box-shadow .15s}
+.wh-card:hover{box-shadow:var(--shadow)}
+/* PERIOD CLOSING */
+.period-row{display:grid;grid-template-columns:90px 110px 1fr 80px 90px 110px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12.5px}
+.period-row:last-child{border-bottom:none}
+.period-row.header{background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border)}
+.period-row.closed{background:#FEF8F8}
+.period-row.open{background:#F6FEF6}
+.period-row.future{background:var(--surface2);color:var(--text3)}
+.fy-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:box-shadow .15s;position:relative;overflow:hidden}
+.fy-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.fy-card.fy-open::before{background:var(--green)}
+.fy-card.fy-closed::before{background:var(--red)}
+.fy-card.fy-future::before{background:var(--border2)}
+/* TOPBAR PERIOD LOCK INDICATOR */
+.lock-indicator{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:var(--radius);font-weight:600}
+.lock-open{background:var(--green-lt);color:var(--green);border:1px solid #A8D8A8}
+.lock-closed{background:var(--red-lt);color:var(--red);border:1px solid #F0B0B0}
+.lock-partial{background:var(--yellow-lt);color:var(--orange);border:1px solid #F0C080}
+</style>
+</head>
+<body>
+<!-- ═══ WIZARD ═══ -->
+<div class="wiz-ov" id="wizOv">
+  <div class="wiz-card">
+    <div class="wiz-hdr">
+      <div class="wiz-logo">
+        <div class="wiz-logo-box">M</div>
+        <div class="wiz-logo-txt">ManuCost ERP — Company Setup</div>
+      </div>
+      <div class="wiz-steps" id="wizSteps"></div>
+    </div>
+    <div class="wiz-body" id="wizBody"></div>
+    <div class="wiz-ftr">
+      <button class="btn btn-g" id="wizBack" onclick="wPrev()" style="display:none">← Back</button>
+      <div></div>
+      <button class="btn btn-p" id="wizNext" onclick="wNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div class="app" id="app" style="display:none">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">M</div>
+      <div><div class="sb-title" id="sbCo">ManuCost ERP</div><div class="sb-sub" id="sbFY">FY 2025</div></div>
+    </div>
+    <div class="nav-scroll">
+      <div class="nav-item active" data-page="dashboard"><span class="nav-icon">⊞</span><span class="nav-text">Dashboard</span></div>
+      <div class="nav-label">Accounts</div>
+      <div class="nav-item" data-page="coa"><span class="nav-icon">≡</span><span class="nav-text">Chart of Accounts</span></div>
+      <div class="nav-item" data-page="journal"><span class="nav-icon">✎</span><span class="nav-text">Journal Entry</span></div>
+      <div class="nav-item" data-page="ledger"><span class="nav-icon">▣</span><span class="nav-text">General Ledger</span></div>
+      <div class="nav-item" data-page="tb"><span class="nav-icon">⊟</span><span class="nav-text">Trial Balance</span></div>
+      <div class="nav-label">Buying</div>
+      <div class="nav-item" data-page="suppliers"><span class="nav-icon">◉</span><span class="nav-text">Suppliers</span></div>
+      <div class="nav-item" data-page="payterms"><span class="nav-icon">◑</span><span class="nav-text">Payment Terms</span></div>
+      <div class="nav-item" data-page="po"><span class="nav-icon">◫</span><span class="nav-text">Purchase Orders</span></div>
+      <div class="nav-item" data-page="grn"><span class="nav-icon">◪</span><span class="nav-text">Goods Receipt (GRN)</span></div>
+      <div class="nav-item" data-page="aging-ap"><span class="nav-icon">◐</span><span class="nav-text">AP Aging</span></div>
+      <div class="nav-label">Stock</div>
+      <div class="nav-item" data-page="items"><span class="nav-icon">◈</span><span class="nav-text">Item Master</span></div>
+      <div class="nav-item" data-page="warehouses"><span class="nav-icon">◰</span><span class="nav-text">Warehouses & Bins</span></div>
+      <div class="nav-item" data-page="stockledger"><span class="nav-icon">◧</span><span class="nav-text">Stock Ledger</span></div>
+      <div class="nav-item" data-page="transfers"><span class="nav-icon">⇄</span><span class="nav-text">Stock Transfers</span></div>
+      <div class="nav-label">Manufacturing</div>
+      <div class="nav-item" data-page="bom"><span class="nav-icon">⬡</span><span class="nav-text">Bill of Materials</span></div>
+      <div class="nav-item" data-page="workorders"><span class="nav-icon">◎</span><span class="nav-text">Work Orders</span></div>
+      <div class="nav-item" data-page="jobcost"><span class="nav-icon">▤</span><span class="nav-text">Job Cost Sheet</span></div>
+      <div class="nav-item" data-page="overhead"><span class="nav-icon">⊞</span><span class="nav-text">Overhead Rates</span></div>
+      <div class="nav-item" data-page="abc"><span class="nav-icon">◎</span><span class="nav-text">ABC Costing</span></div>
+      <div class="nav-label">Selling</div>
+      <div class="nav-item" data-page="customers"><span class="nav-icon">◯</span><span class="nav-text">Customers</span></div>
+      <div class="nav-item" data-page="quotation"><span class="nav-icon">◫</span><span class="nav-text">Quotations</span></div>
+      <div class="nav-item" data-page="salesorder"><span class="nav-icon">◪</span><span class="nav-text">Sales Orders</span></div>
+      <div class="nav-item" data-page="invoices"><span class="nav-icon">◨</span><span class="nav-text">Sales Invoices</span></div>
+      <div class="nav-item" data-page="aging-ar"><span class="nav-icon">◓</span><span class="nav-text">AR Aging</span></div>
+      <div class="nav-label">HR & Payroll</div>
+      <div class="nav-item" data-page="employees"><span class="nav-icon">◯</span><span class="nav-text">Employees</span></div>
+      <div class="nav-item" data-page="timesheets"><span class="nav-icon">◷</span><span class="nav-text">Timesheets</span></div>
+      <div class="nav-item" data-page="payroll"><span class="nav-icon">◈</span><span class="nav-text">Payroll Run</span></div>
+      <div class="nav-label">Reports</div>
+      <div class="nav-item" data-page="pnl"><span class="nav-icon">▲</span><span class="nav-text">Income Statement</span></div>
+      <div class="nav-item" data-page="bs"><span class="nav-icon">▦</span><span class="nav-text">Balance Sheet</span></div>
+      <div class="nav-item" data-page="cf"><span class="nav-icon">▷</span><span class="nav-text">Cash Flow</span></div>
+      <div class="nav-item" data-page="invrpt"><span class="nav-icon">◧</span><span class="nav-text">Inventory Reports</span></div>
+      <div class="nav-item" data-page="adhoc"><span class="nav-icon">⊕</span><span class="nav-text">Ad-Hoc Reports</span></div>
+      <div class="nav-label">Settings</div>
+      <div class="nav-item" data-page="fiscalyear"><span class="nav-icon">📅</span><span class="nav-text">Fiscal Year</span></div>
+      <div class="nav-item" data-page="periodclose"><span class="nav-icon">🔒</span><span class="nav-text">Period Closing</span></div>
+      <div class="nav-item" data-page="setup"><span class="nav-icon">⚙</span><span class="nav-text">Company Setup</span></div>
+    </div>
+  </nav>
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="icon-btn" onclick="toggleSB()">☰</button>
+      <span class="tb-company" id="tbTitle">Dashboard</span>
+      <span class="tb-period" id="tbPeriod">FY 2025 · Q2</span>
+      <div class="tb-right">
+        <span id="syncBadge" onclick="nav('setup')" title="Google Sheets sync status" style="font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;background:#F8F8F8;color:#979593;border:1px solid #D1D1D1">☁ Not connected</span>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mJob" onclick="setMode('job')">Job Order</button>
+          <button class="mode-btn" id="mABC" onclick="setMode('abc')">ABC Costing</button>
+        </div>
+        <button class="icon-btn" onclick="nav('setup')" title="Settings">⚙</button>
+      </div>
+    </div>
+    <div class="content" id="content">
+<!-- ════ DASHBOARD ════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-hdr"><div><h1 id="dashH">Dashboard</h1><p id="dashSub">Manufacturing Overview</p></div><div class="btn-row"><button class="btn btn-p sm" onclick="nav('workorders')">+ Work Order</button><button class="btn btn-s sm" onclick="nav('journal')">+ Journal</button></div></div>
+  <div class="kpi-grid g4 mb16" id="dashKPIs"></div>
+  <div class="g2c mb16">
+    <div class="card"><div class="card-hdr"><span class="card-title">Cost Summary — This Month</span><span class="b b-blue" id="modeBadge">JOB ORDER</span></div><div class="card-body" id="dashCost"></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Recent Activity</span></div><div class="card-body" id="dashActivity"></div></div>
+  </div>
+  <div class="g3c">
+    <div class="card"><div class="card-hdr"><span class="card-title">Inventory Alerts</span><button class="btn btn-g xs" onclick="nav('invrpt')">View All</button></div><div class="card-body" id="dashInv"></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Open Work Orders</span><button class="btn btn-g xs" onclick="nav('workorders')">View All</button></div><div class="card-body" id="dashWO"></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">AP / AR Snapshot</span><button class="btn btn-g xs" onclick="nav('aging-ap')">Aging →</button></div><div class="card-body" id="dashAPAR"></div></div>
+  </div>
+</div>
+<!-- ════ CHART OF ACCOUNTS ════ -->
+<div class="page" id="page-coa">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mAcc')">+ New Account</button><button class="btn btn-g sm">Import</button><button class="btn btn-g sm">Export Excel</button></div>
+  <div class="g2c"><div class="card"><div class="card-hdr"><span class="card-title">Account Tree</span></div><div class="card-body" id="coaTree"></div></div><div class="card"><div class="card-hdr"><span class="card-title">Account Detail</span></div><div class="card-body" id="coaDet"><div class="alert a-info">Select an account from the tree.</div></div></div></div>
+</div>
+<!-- ════ JOURNAL ENTRY ════ -->
+<div class="page" id="page-journal">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mJE')">+ New Entry</button><button class="btn btn-g sm" onclick="openM('mJETpl')">Templates</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Posted Journal Entries</span><div class="sbox"><span>🔍</span><input placeholder="Search entries..."></div></div><div class="tw"><table><thead><tr><th>JE #</th><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Source</th><th>Status</th></tr></thead><tbody id="jeTbl"></tbody></table></div></div>
+</div>
+<!-- ════ GENERAL LEDGER ════ -->
+<div class="page" id="page-ledger">
+  <div class="cmd-bar">
+    <select class="fc" style="width:220px" id="lgAccSel" onchange="renderGL()"></select>
+    <input class="fc" type="date" value="2025-06-01" style="width:140px">
+    <input class="fc" type="date" value="2025-06-30" style="width:140px">
+    <button class="btn btn-p sm" onclick="renderGL()">Apply</button>
+    <button class="btn btn-g sm">Export</button>
+  </div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title" id="glTitle">General Ledger</span></div><div class="tw"><table><thead><tr><th>Date</th><th>JE #</th><th>Description</th><th>Debit</th><th>Credit</th><th>Running Balance</th></tr></thead><tbody id="glTbl"></tbody></table></div></div>
+</div>
+<!-- ════ TRIAL BALANCE ════ -->
+<div class="page" id="page-tb">
+  <div class="cmd-bar"><span class="tb-period">As at June 30, 2025</span><button class="btn btn-g sm">Export Excel</button><button class="btn btn-p sm" onclick="nav('pnl')">Generate Financials →</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Trial Balance</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Account Name</th><th>Debit</th><th>Credit</th></tr></thead><tbody id="tbTbl"></tbody><tfoot id="tbFoot"></tfoot></table></div></div>
+</div>
+<!-- ════ SUPPLIERS ════ -->
+<div class="page" id="page-suppliers">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mSup')">+ New Supplier</button><button class="btn btn-g sm">Import</button><div class="sbox" style="margin-left:auto"><span>🔍</span><input placeholder="Search suppliers..."></div></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Supplier Master</span></div><div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Phone</th><th>Terms</th><th>YTD Purchases</th><th>Status</th></tr></thead><tbody id="supTbl"></tbody></table></div></div>
+</div>
+<!-- ════ PAYMENT TERMS ════ -->
+<div class="page" id="page-payterms">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mPT')">+ New Term</button></div>
+  <div class="kpi-grid g4 mt12 mb16"><div class="kpi c-blue"><div class="kpi-lbl">Total AP Outstanding</div><div class="kpi-val">SAR 198K</div></div><div class="kpi c-orange"><div class="kpi-lbl">Due This Week</div><div class="kpi-val">SAR 48K</div></div><div class="kpi c-teal"><div class="kpi-lbl">Total AR Outstanding</div><div class="kpi-val">SAR 412K</div></div><div class="kpi c-red"><div class="kpi-lbl">Overdue AR</div><div class="kpi-val">SAR 84K</div></div></div>
+  <div class="g2c">
+    <div class="card"><div class="card-hdr"><span class="card-title">Defined Payment Terms</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Description</th><th>Net Days</th><th>Early Disc %</th><th>Disc Days</th></tr></thead><tbody id="ptTbl"></tbody></table></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Upcoming Payment Schedule</span></div><div class="tw"><table><thead><tr><th>Due Date</th><th>Party</th><th>Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptSched"></tbody></table></div></div>
+  </div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Early Payment Discount Opportunities</span></div><div class="alert a-ok mb12">💡 Al-Nasser Steel offers 2/10 Net 30. Pay by Jun 18 to save <strong>SAR 630</strong>.</div><div class="tw"><table><thead><tr><th>Supplier</th><th>Invoice</th><th>Amount</th><th>Disc %</th><th>Savings</th><th>Pay By</th><th>Normal Due</th></tr></thead><tbody><tr><td>Al-Nasser Steel</td><td class="t-blue fw6">INV-9012</td><td class="num">31,500</td><td class="num t-green fw6">2.0%</td><td class="num t-green fw6">630</td><td class="t-blue fw6">Jun 18</td><td class="t-muted">Jul 08</td></tr></tbody></table></div></div>
+</div>
+<!-- ════ PURCHASE ORDERS ════ -->
+<div class="page" id="page-po">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mPO')">+ New PO</button><button class="btn btn-g sm">Import</button><select class="fc" style="width:140px" onchange="filterTbl('poTbl',2,this.value)"><option value="">All Status</option><option>Draft</option><option>Approved</option><option>In Transit</option><option>Received</option></select></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Purchase Orders</span></div><div class="tw"><table><thead><tr><th>PO #</th><th>Date</th><th>Supplier</th><th>Amount</th><th>Status</th><th>GRN</th></tr></thead><tbody id="poTbl"></tbody></table></div></div>
+</div>
+<!-- ════ GRN ════ -->
+<div class="page" id="page-grn">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mGRN')">+ New GRN</button></div>
+  <div class="alert a-info mt12">GRN auto-posts JE: <strong>Dr. Raw Materials Inventory / Cr. Accounts Payable</strong></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Goods Receipt Notes</span></div><div class="tw"><table><thead><tr><th>GRN #</th><th>Date</th><th>PO Ref</th><th>Supplier</th><th>Location</th><th>Value</th><th>JE Ref</th></tr></thead><tbody id="grnTbl"></tbody></table></div></div>
+</div>
+<!-- ════ AP AGING ════ -->
+<div class="page" id="page-aging-ap">
+  <div class="cmd-bar"><span class="tb-period">As at June 15, 2025</span><button class="btn btn-g sm">Export Excel</button><button class="btn btn-p sm" onclick="nav('payterms')">Payment Schedule →</button></div>
+  <div class="kpi-grid g4 mt12 mb16" id="apKPIs"></div>
+  <div class="card mb16"><div class="card-hdr"><span class="card-title">AP Aging Schedule</span></div><div class="tw"><table><thead><tr><th>Supplier</th><th>Total AP</th><th style="color:var(--green)">0–30d</th><th style="color:var(--orange)">31–60d</th><th style="color:#CA5010">61–90d</th><th style="color:var(--red)">91–120d</th><th style="color:#8B1D22">&gt;120d</th><th>Terms</th><th>Risk</th></tr></thead><tbody id="apTbl"></tbody><tfoot id="apFoot"></tfoot></table></div></div>
+  <div class="card"><div class="card-hdr"><span class="card-title">Aging Distribution</span></div><div class="card-body"><div class="aging-bar" id="apBar"></div><div class="flex gap12 mt12 t-xs t-muted" style="flex-wrap:wrap"><span style="color:var(--green)">■ Current</span><span style="color:var(--orange)">■ 31–60d</span><span style="color:#CA5010">■ 61–90d</span><span style="color:var(--red)">■ 91–120d</span><span style="color:#8B1D22">■ &gt;120d</span></div></div></div>
+</div>
+<!-- ════ ITEM MASTER ════ -->
+<div class="page" id="page-items">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mItem')">+ New Item</button><button class="btn btn-g sm">Import</button><select class="fc" style="width:160px" onchange="filterTbl('itemTbl',2,this.value)"><option value="">All Types</option><option>Raw Material</option><option>Component</option><option>WIP</option><option>Finished Good</option><option>Service</option></select></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Item Master</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>UOM</th><th>Valuation</th><th>Std Cost</th><th>Reorder Pt</th><th>GL Account</th></tr></thead><tbody id="itemTbl"></tbody></table></div></div>
+</div>
+<!-- ════ WAREHOUSES ════ -->
+<div class="page" id="page-warehouses">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mWH')">+ New Warehouse</button><button class="btn btn-g sm" onclick="openM('mBin')">+ Add Bin</button></div>
+  <div class="kpi-grid g4 mt12 mb16"><div class="kpi c-blue"><div class="kpi-lbl">Locations</div><div class="kpi-val">4</div></div><div class="kpi c-green"><div class="kpi-lbl">Total Bins</div><div class="kpi-val">38</div></div><div class="kpi c-orange"><div class="kpi-lbl">Utilization</div><div class="kpi-val">67%</div></div><div class="kpi c-teal"><div class="kpi-lbl">Pending Putaway</div><div class="kpi-val">2</div></div></div>
+  <div class="g2c mb16" id="whCards"></div>
+  <div class="card" id="whBinCard" style="display:none"><div class="card-hdr"><span class="card-title" id="whBinTitle">Bin Detail</span><button class="btn btn-g sm" onclick="this.closest('.card').style.display='none'">Close</button></div><div class="tw"><table><thead><tr><th>Bin</th><th>Item</th><th>Qty</th><th>Value</th><th>Status</th></tr></thead><tbody id="whBinTbl"></tbody></table></div></div>
+</div>
+<!-- ════ STOCK LEDGER ════ -->
+<div class="page" id="page-stockledger">
+  <div class="cmd-bar">
+    <select class="fc" style="width:160px" onchange="filterSL('type',this.value)"><option value="">All Types</option><option>Raw Material</option><option>Component</option><option>WIP</option><option>Finished Good</option></select>
+    <select class="fc" style="width:170px" onchange="filterSL('wh',this.value)"><option value="">All Warehouses</option><option>WH-A</option><option>WH-B</option><option>WH-C</option><option>FL-1</option></select>
+    <button class="btn btn-g sm">Export</button>
+  </div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Stock Ledger — Current Balance</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Warehouse</th><th>Bin</th><th>UOM</th><th>On Hand</th><th>Reorder Pt</th><th>Unit Cost</th><th>Total Value</th><th>Status</th></tr></thead><tbody id="slTbl"></tbody></table></div></div>
+</div>
+<!-- ════ STOCK TRANSFERS ════ -->
+<div class="page" id="page-transfers">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mTrf')">+ New Transfer / Issue</button><select class="fc" style="width:180px" onchange="filterTbl('trfTbl',2,this.value)"><option value="">All Types</option><option>Issue</option><option>Transfer</option><option>FG Receipt</option><option>Return</option></select></div>
+  <div class="kpi-grid g4 mt12 mb16"><div class="kpi c-orange"><div class="kpi-lbl">Pending</div><div class="kpi-val">2</div></div><div class="kpi c-blue"><div class="kpi-lbl">Issued MTD (SAR)</div><div class="kpi-val">18,800</div></div><div class="kpi c-green"><div class="kpi-lbl">FG Received (SAR)</div><div class="kpi-val">16,760</div></div><div class="kpi c-teal"><div class="kpi-lbl">Transfers MTD</div><div class="kpi-val">3</div></div></div>
+  <div class="card"><div class="card-hdr"><span class="card-title">Transfer &amp; Issue Register</span></div><div class="tw"><table><thead><tr><th>Ref #</th><th>Date</th><th>Type</th><th>Item</th><th>From</th><th>To</th><th>Qty</th><th>Value</th><th>Job Ref</th><th>Status</th></tr></thead><tbody id="trfTbl"></tbody></table></div></div>
+</div>
+<!-- ════ BOM ════ -->
+<div class="page" id="page-bom">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mBOM')">+ New BOM</button><button class="btn btn-g sm">Import</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Bill of Materials</span></div><div class="tw"><table><thead><tr><th>BOM #</th><th>Product</th><th>Version</th><th>Batch Qty</th><th>Mat Cost</th><th>Labor Cost</th><th>OH Cost</th><th>Total</th><th>Status</th></tr></thead><tbody id="bomTbl"></tbody></table></div></div>
+</div>
+<!-- ════ WORK ORDERS ════ -->
+<div class="page" id="page-workorders">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mWO')">+ New Work Order</button><button class="btn btn-g sm" onclick="nav('jobcost')">Cost Sheets</button><select class="fc" style="width:150px" onchange="filterTbl('woTbl',9,this.value)"><option value="">All Status</option><option>New</option><option>Early Stage</option><option>In Progress</option><option>Near Done</option><option>Done</option></select></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Work Order Register</span></div><div class="tw"><table><thead><tr><th>WO #</th><th>Customer</th><th>Product</th><th>Qty</th><th>DM</th><th>DL</th><th>OH Applied</th><th>Total Cost</th><th>% Done</th><th>Status</th><th></th></tr></thead><tbody id="woTbl"></tbody></table></div></div>
+</div>
+<!-- ════ JOB COST SHEET ════ -->
+<div class="page" id="page-jobcost">
+  <div class="cmd-bar"><select class="fc" style="width:240px" id="jcSel" onchange="renderJC(this.value)"></select><button class="btn btn-g sm">Export PDF</button></div>
+  <div class="g2c mt12">
+    <div class="card" id="jcCard"><div class="card-hdr"><span class="card-title" id="jcTitle">Select a Work Order</span></div><div class="card-body" id="jcBody"><div class="alert a-info">Select a work order above.</div></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Add Cost Line</span></div><div class="card-body"><div class="fr fr2 mb12"><div class="fg"><label class="fl">Type</label><select class="fc"><option>Direct Material</option><option>Direct Labor</option><option>Manufacturing Overhead</option></select></div><div class="fg"><label class="fl">Work Order</label><select class="fc" id="jcAddSel"></select></div></div><div class="fr fr2 mb12"><div class="fg"><label class="fl">Description</label><input class="fc" placeholder="Item / activity"></div><div class="fg"><label class="fl">Amount (SAR)</label><input class="fc" type="number" placeholder="0.00"></div></div><button class="btn btn-p sm" onclick="toast('Cost line added.','success')">+ Add Line</button></div></div>
+  </div>
+</div>
+<!-- ════ OVERHEAD ════ -->
+<div class="page" id="page-overhead">
+  <div class="g2c mt12">
+    <div class="card"><div class="card-hdr"><span class="card-title">Overhead Rate Setup</span></div><div class="card-body">
+      <div class="fr fr2 mb12"><div class="fg"><label class="fl">Allocation Base</label><select class="fc" id="ohBase"><option>Direct Labor Cost</option><option>Direct Labor Hours</option><option>Machine Hours</option><option>Units Produced</option></select></div><div class="fg"><label class="fl">Method</label><select class="fc"><option>Predetermined Rate</option><option>Actual OH Rate</option></select></div></div>
+      <div class="fr fr2 mb12"><div class="fg"><label class="fl">Budgeted OH (SAR)</label><input class="fc" id="ohBudget" type="number" value="300000"></div><div class="fg"><label class="fl">Budgeted Base (SAR / hrs)</label><input class="fc" id="ohBase2" type="number" value="358000"></div></div>
+      <button class="btn btn-p sm mb12" onclick="calcOH()">Calculate Rate</button>
+      <div class="fsec"><div class="fsec-t">Predetermined OH Rate</div><div class="cs-row cs-tot" id="ohRes"><span>OH Rate</span><span>83.80% of DL Cost</span></div></div>
+    </div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">OH Variance (Monthly)</span></div><div class="tw"><table><thead><tr><th>Period</th><th>Applied</th><th>Actual</th><th>Variance</th><th>Type</th></tr></thead><tbody><tr><td>Jan 2025</td><td class="num">78,400</td><td class="num">82,100</td><td class="num t-red">(3,700)</td><td><span class="b b-red">Under-applied</span></td></tr><tr><td>Feb 2025</td><td class="num">81,200</td><td class="num">79,400</td><td class="num t-green">1,800</td><td><span class="b b-green">Over-applied</span></td></tr><tr><td>Mar 2025</td><td class="num">94,200</td><td class="num">91,800</td><td class="num t-green">2,400</td><td><span class="b b-green">Over-applied</span></td></tr><tr><td>Apr 2025</td><td class="num">88,400</td><td class="num">92,100</td><td class="num t-red">(3,700)</td><td><span class="b b-red">Under-applied</span></td></tr></tbody></table></div></div>
+  </div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Overhead Cost Elements</span></div><div class="tw"><table><thead><tr><th>Category</th><th>Fixed/Variable</th><th>Budget</th><th>Actual MTD</th><th>Variance</th></tr></thead><tbody><tr><td>Depreciation — Machinery</td><td><span class="b b-purple">Fixed</span></td><td class="num">18,000</td><td class="num">18,000</td><td class="num t-green">—</td></tr><tr><td>Factory Rent</td><td><span class="b b-purple">Fixed</span></td><td class="num">22,000</td><td class="num">22,000</td><td class="num t-green">—</td></tr><tr><td>Indirect Labor</td><td><span class="b b-blue">Variable</span></td><td class="num">28,000</td><td class="num">31,200</td><td class="num t-red">(3,200)</td></tr><tr><td>Utilities &amp; Energy</td><td><span class="b b-blue">Variable</span></td><td class="num">15,000</td><td class="num">13,400</td><td class="num t-green">1,600</td></tr><tr><td>Factory Supplies</td><td><span class="b b-blue">Variable</span></td><td class="num">8,200</td><td class="num">9,400</td><td class="num t-red">(1,200)</td></tr></tbody></table></div></div>
+</div>
+<!-- ════ ABC COSTING ════ -->
+<div class="page" id="page-abc">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mAct')">+ Add Activity Pool</button></div>
+  <div class="alert a-info mt12">ABC allocates overhead via multiple activity cost drivers — more accurate than single predetermined rate for multi-product manufacturing.</div>
+  <div class="g2c mt12">
+    <div class="card"><div class="card-hdr"><span class="card-title">Activity Cost Pools</span></div><div class="tw"><table><thead><tr><th>Activity</th><th>Cost Driver</th><th>Pool Cost</th><th>Driver Qty</th><th>Rate / Unit</th></tr></thead><tbody id="abcPoolTbl"></tbody></table></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">ABC vs Traditional Comparison</span></div><div class="tw"><table><thead><tr><th>Product</th><th>Traditional OH</th><th>ABC OH</th><th>Variance</th><th>Result</th></tr></thead><tbody id="abcCmpTbl"></tbody></table></div></div>
+  </div>
+</div>
+<!-- ════ CUSTOMERS ════ -->
+<div class="page" id="page-customers">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mCust')">+ New Customer</button><button class="btn btn-g sm">Import</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Customer Master</span></div><div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Industry</th><th>Phone</th><th>Terms</th><th>Credit Limit</th><th>Outstanding AR</th></tr></thead><tbody id="custTbl"></tbody></table></div></div>
+</div>
+<!-- ════ QUOTATIONS ════ -->
+<div class="page" id="page-quotation">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mQT')">+ New Quotation</button><select class="fc" style="width:140px" onchange="filterTbl('qtTbl',6,this.value)"><option value="">All Status</option><option>Draft</option><option>Sent</option><option>Accepted</option><option>Expired</option></select></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Quotation Register</span></div><div class="tw"><table><thead><tr><th>Quote #</th><th>Date</th><th>Customer</th><th>Items</th><th>Amount</th><th>Valid Until</th><th>Status</th></tr></thead><tbody id="qtTbl"></tbody></table></div></div>
+</div>
+<!-- ════ SALES ORDERS ════ -->
+<div class="page" id="page-salesorder">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mSO')">+ New Sales Order</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Sales Orders</span></div><div class="tw"><table><thead><tr><th>SO #</th><th>Date</th><th>Customer</th><th>Amount</th><th>Delivery Date</th><th>Status</th><th>WO Linked</th></tr></thead><tbody id="soTbl"></tbody></table></div></div>
+</div>
+<!-- ════ SALES INVOICES ════ -->
+<div class="page" id="page-invoices">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mInv')">+ New Invoice</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Sales Invoice Register</span></div><div class="tw"><table><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Net Amount</th><th>VAT 15%</th><th>Total</th><th>Due Date</th><th>Status</th></tr></thead><tbody id="invTbl"></tbody></table></div></div>
+</div>
+<!-- ════ AR AGING ════ -->
+<div class="page" id="page-aging-ar">
+  <div class="cmd-bar"><span class="tb-period">As at June 15, 2025</span><button class="btn btn-g sm">Export Excel</button><button class="btn btn-w sm">Send Reminders</button></div>
+  <div class="kpi-grid g4 mt12 mb16" id="arKPIs"></div>
+  <div class="card mb16"><div class="card-hdr"><span class="card-title">AR Aging Schedule</span></div><div class="tw"><table><thead><tr><th>Customer</th><th>Total AR</th><th style="color:var(--green)">0–30d</th><th style="color:var(--orange)">31–60d</th><th style="color:#CA5010">61–90d</th><th style="color:var(--red)">91–120d</th><th style="color:#8B1D22">&gt;120d</th><th>Terms</th><th>Risk</th></tr></thead><tbody id="arTbl"></tbody><tfoot id="arFoot"></tfoot></table></div></div>
+  <div class="card"><div class="card-hdr"><span class="card-title">Aging Distribution</span></div><div class="card-body"><div class="aging-bar" id="arBar"></div><div class="flex gap12 mt12 t-xs t-muted" style="flex-wrap:wrap"><span style="color:var(--green)">■ Current</span><span style="color:var(--orange)">■ 31–60d</span><span style="color:#CA5010">■ 61–90d</span><span style="color:var(--red)">■ 91–120d</span><span style="color:#8B1D22">■ &gt;120d</span></div></div></div>
+</div>
+<!-- ════ EMPLOYEES ════ -->
+<div class="page" id="page-employees">
+  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mEmp')">+ Add Employee</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Employee Master</span></div><div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Role</th><th>Basic Salary</th><th>Rate/hr</th><th>Status</th></tr></thead><tbody id="empTbl"></tbody></table></div></div>
+</div>
+<!-- ════ TIMESHEETS ════ -->
+<div class="page" id="page-timesheets">
+  <div class="cmd-bar"><button class="btn btn-p sm">+ New Timesheet</button><button class="btn btn-ok sm" onclick="toast('Timesheets posted to Work Orders.','success')">Post to WOs</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Timesheet Register</span></div><div class="tw"><table><thead><tr><th>Employee</th><th>Work Order</th><th>Activity</th><th>Date</th><th>Hours</th><th>Rate/hr</th><th>DL Cost</th></tr></thead><tbody id="tsTbl"></tbody></table></div></div>
+</div>
+<!-- ════ PAYROLL ════ -->
+<div class="page" id="page-payroll">
+  <div class="cmd-bar"><select class="fc" style="width:140px"><option>June 2025</option><option>May 2025</option></select><button class="btn btn-g sm">Recalculate</button><button class="btn btn-ok sm" onclick="toast('Payroll JE posted. Dr. Wages Expense / Cr. Wages Payable.','success')">Post Payroll JE</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Payroll Run — June 2025</span></div><div class="tw"><table><thead><tr><th>Employee</th><th>Basic</th><th>Housing (25%)</th><th>Transport</th><th>Overtime</th><th>Gross</th><th>GOSI Emp (10%)</th><th>Net Pay</th></tr></thead><tbody id="payTbl"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
+</div>
+<!-- ════ INCOME STATEMENT ════ -->
+<div class="page" id="page-pnl">
+  <div class="cmd-bar"><select class="fc" style="width:160px"><option>Q2 2025</option><option>H1 2025</option><option>YTD 2025</option></select><button class="btn btn-g sm">Export PDF</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Income Statement</span></div><div class="card-body" id="pnlRpt"></div></div>
+</div>
+<!-- ════ BALANCE SHEET ════ -->
+<div class="page" id="page-bs">
+  <div class="cmd-bar"><span class="tb-period">As at June 30, 2025</span><button class="btn btn-g sm">Export PDF</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Balance Sheet</span></div><div class="card-body" id="bsRpt"></div></div>
+</div>
+<!-- ════ CASH FLOW ════ -->
+<div class="page" id="page-cf">
+  <div class="cmd-bar"><span class="tb-period">Q2 2025</span><button class="btn btn-g sm">Export PDF</button></div>
+  <div class="card mt12"><div class="card-hdr"><span class="card-title">Statement of Cash Flows (Indirect Method)</span></div><div class="card-body" id="cfRpt"></div></div>
+</div>
+<!-- ════ INVENTORY REPORTS ════ -->
+<div class="page" id="page-invrpt">
+  <div class="tab-bar" id="invTabs">
+    <div class="tab active" onclick="switchInvTab('rm',this)">Raw Materials</div>
+    <div class="tab" onclick="switchInvTab('wip',this)">Work in Progress</div>
+    <div class="tab" onclick="switchInvTab('fg',this)">Finished Goods</div>
+    <div class="tab" onclick="switchInvTab('val',this)">Valuation Summary</div>
+    <div class="tab" onclick="switchInvTab('mov',this)">Movement Report</div>
+    <div class="tab" onclick="switchInvTab('slow',this)">Slow-Moving</div>
+  </div>
+  <div id="invRptBody"></div>
+</div>
+<!-- ════ AD-HOC REPORTS ════ -->
+<div class="page" id="page-adhoc">
+  <div class="g2c mb16">
+    <div class="card"><div class="card-hdr"><span class="card-title">Report Builder</span><span class="b b-purple">Ad-Hoc</span></div>
+      <div class="card-body">
+        <div class="fg mb12"><label class="fl">Report Subject</label><select class="fc" id="ahSubj" onchange="showAHFields()"><option value="">— Select Subject —</option><option value="inv">Inventory</option><option value="ap">Accounts Payable</option><option value="ar">Accounts Receivable</option><option value="jobs">Work Orders / Costing</option><option value="gl">General Ledger</option><option value="payroll">Payroll</option><option value="po">Procurement</option></select></div>
+        <div id="ahFields" style="display:none">
+          <div class="fr fr2 mb12"><div class="fg"><label class="fl">Date From</label><input class="fc" type="date" value="2025-06-01"></div><div class="fg"><label class="fl">Date To</label><input class="fc" type="date" value="2025-06-30"></div></div>
+          <div class="fr fr2 mb12"><div class="fg"><label class="fl">Group By</label><select class="fc"><option>None</option><option>Category</option><option>Warehouse</option><option>Supplier</option></select></div><div class="fg"><label class="fl">Sort By</label><select class="fc"><option>Code / ID</option><option>Value High→Low</option><option>Date</option></select></div></div>
+          <div class="btn-row"><button class="btn btn-p" onclick="runAH()">▶ Run Report</button><button class="btn btn-g" onclick="toast('Template saved.','success')">Save Template</button><button class="btn btn-g">Export Excel</button></div>
+        </div>
+        <div id="ahHint" class="alert a-info mt12">Select a subject above to configure the report.</div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">Saved Templates</span></div><div class="card-body" id="ahTemplates"></div></div>
+  </div>
+  <div class="card" id="ahResult" style="display:none">
+    <div class="card-hdr"><span class="card-title" id="ahResultTitle">Report Output</span><div class="btn-row"><button class="btn btn-g sm">Export Excel</button><button class="btn btn-g sm">Print / PDF</button></div></div>
+    <div class="tw" id="ahResultBody"></div>
+    <div class="card-body" id="ahResultTot" style="background:var(--surface2);border-top:1px solid var(--border);font-size:12px;font-weight:600;color:var(--blue)"></div>
+  </div>
+</div>
+<!-- ════ FISCAL YEAR ════ -->
+<div class="page" id="page-fiscalyear">
+  <div class="page-hdr">
+    <div><h1>Fiscal Year Management</h1><p>Define and manage fiscal years for financial reporting</p></div>
+    <button class="btn btn-p" onclick="openM('mFY')">+ New Fiscal Year</button>
+  </div>
+  <div class="kpi-grid g4 mb16" id="fyKPIs"></div>
+  <div class="g2c mb16">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Fiscal Years</span></div>
+      <div class="card-body" id="fyList"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Year Detail</span></div>
+      <div class="card-body" id="fyDetail"><div class="alert a-info">Select a fiscal year to view period breakdown.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Period Overview — All Years</span>
+      <div class="flex gap8">
+        <select class="fc" style="width:130px;font-size:11.5px" id="fyYearFilter" onchange="renderFYPeriods()">
+          <option value="2025">FY 2025</option>
+          <option value="2024">FY 2024</option>
+        </select>
+        <button class="btn btn-g sm" onclick="openM('mOpenYear')">Open New Year</button>
+      </div>
+    </div>
+    <div class="card-body" id="fyPeriods"></div>
+  </div>
+</div>
+
+<!-- ════ PERIOD CLOSING ════ -->
+<div class="page" id="page-periodclose">
+  <div class="page-hdr">
+    <div><h1>Period Closing</h1><p>Lock accounting periods to prevent backdated transactions</p></div>
+    <div class="btn-row">
+      <button class="btn btn-ok" onclick="openM('mCloseMonth')">🔒 Close Period</button>
+      <button class="btn btn-s" onclick="openM('mReopenMonth')">🔓 Re-open Period</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid g4 mb16" id="pcKPIs"></div>
+
+  <div class="alert a-warn mb16" id="pcAlert" style="display:none"></div>
+
+  <div class="card mb16">
+    <div class="card-hdr">
+      <span class="card-title">Period Status — FY 2025</span>
+      <div class="flex gap8 ic">
+        <span class="lock-indicator lock-open" id="pcCurrentLock">● Period Open</span>
+        <select class="fc" style="width:130px;font-size:11.5px" id="pcYearSel" onchange="renderPeriodClose()">
+          <option value="2025">FY 2025</option>
+          <option value="2024">FY 2024</option>
+        </select>
+      </div>
+    </div>
+    <div class="period-row header">
+      <span>Period</span><span>Month</span><span>Close Checklist</span><span>Closed By</span><span>Closed On</span><span>Status</span>
+    </div>
+    <div id="periodRows"></div>
+  </div>
+
+  <div class="g2c">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Closing Checklist</span></div>
+      <div class="card-body" id="pcChecklist"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Transaction Guard — Blocked Modules</span></div>
+      <div class="card-body">
+        <div class="alert a-info mb12">When a period is closed, these modules will reject any transaction dated within that period.</div>
+        <div style="display:flex;flex-direction:column;gap:6px" id="pcGuardList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ COMPANY SETUP ════ -->
+<div class="page" id="page-setup">
+  <div class="page-hdr">
+    <div><h1>Company Setup</h1><p>Manage company profile, system settings, and Google Sheets sync</p></div>
+    <button class="btn btn-p" onclick="saveSetup()">Save Changes</button>
+  </div>
+  <div class="g2c">
+    <div class="card mb16"><div class="card-hdr"><span class="card-title">Company Information</span></div><div class="card-body" id="setupF1"></div></div>
+    <div class="card mb16"><div class="card-hdr"><span class="card-title">Financial Settings</span></div><div class="card-body" id="setupF2"></div></div>
+    <div class="card mb16"><div class="card-hdr"><span class="card-title">Costing &amp; Manufacturing</span></div><div class="card-body" id="setupF3"></div></div>
+    <div class="card mb16"><div class="card-hdr"><span class="card-title">System &amp; Danger Zone</span></div><div class="card-body" id="setupF4"></div></div>
+  </div>
+
+  <!-- GOOGLE SHEETS INTEGRATION CARD — full width -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">☁ Google Sheets Integration</span>
+      <span id="setupSyncBadge" class="b b-grey">Not connected</span>
+    </div>
+    <div class="card-body">
+
+      <div class="alert a-info mb16">
+        Connect to Google Sheets so your ERP data is saved in the cloud and survives browser cache clears.
+        All reads stay instant (localStorage cache). Writes are mirrored to Sheets silently in the background.
+      </div>
+
+      <!-- Step-by-step instructions -->
+      <div class="fsec mb16">
+        <div class="fsec-t">How to get your Apps Script URL</div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:6px 10px;font-size:12.5px;color:var(--text2);line-height:1.7">
+          <span style="color:var(--blue);font-weight:700">1</span><span>Open your Google Sheet → <strong>Extensions → Apps Script</strong></span>
+          <span style="color:var(--blue);font-weight:700">2</span><span>Delete any existing code and paste the contents of <strong>ManuCost_AppsScript.js</strong> (download below)</span>
+          <span style="color:var(--blue);font-weight:700">3</span><span>Click <strong>Save</strong> (floppy disk), then <strong>Deploy → New Deployment</strong></span>
+          <span style="color:var(--blue);font-weight:700">4</span><span>Type: <strong>Web App</strong> · Execute as: <strong>Me</strong> · Who has access: <strong>Anyone</strong></span>
+          <span style="color:var(--blue);font-weight:700">5</span><span>Click <strong>Deploy</strong> → copy the <strong>Web App URL</strong> (starts with https://script.google.com/macros/s/…)</span>
+          <span style="color:var(--blue);font-weight:700">6</span><span>Paste that URL in the field below and click <strong>Connect</strong></span>
+        </div>
+      </div>
+
+      <div class="fr fr2 mb12">
+        <div class="fg" style="grid-column:1/-1">
+          <label class="fl req">Apps Script Web App URL</label>
+          <div style="display:flex;gap:8px">
+            <input class="fc" id="gsUrl" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1">
+            <button class="btn btn-p" onclick="connectSheets()">Connect</button>
+            <button class="btn btn-g" onclick="testSheets()">Test</button>
+          </div>
+          <div class="fhint">This URL is saved in your browser and never leaves your device.</div>
+        </div>
+      </div>
+
+      <div class="alert a-ok mb16" id="gsConnectMsg" style="display:none"></div>
+      <div class="alert a-err mb16" id="gsErrorMsg" style="display:none"></div>
+
+      <!-- Sync actions -->
+      <div class="g2c mb16" id="gsSyncActions" style="display:none">
+        <div class="fsec">
+          <div class="fsec-t">Push to Sheets</div>
+          <p style="font-size:12.5px;color:var(--text2);margin-bottom:10px">Upload all current data from this browser to Google Sheets. Use after first connecting, or after working offline.</p>
+          <button class="btn btn-p" onclick="pushToSheets()">⬆ Push All Data to Sheets</button>
+          <div class="t-xs t-muted mt12" id="pushStatus"></div>
+        </div>
+        <div class="fsec">
+          <div class="fsec-t">Pull from Sheets</div>
+          <p style="font-size:12.5px;color:var(--text2);margin-bottom:10px">Download all data from Google Sheets into this browser. Use on a new device or after another user made changes.</p>
+          <button class="btn btn-s" onclick="pullFromSheets()">⬇ Pull All Data from Sheets</button>
+          <div class="t-xs t-muted mt12" id="pullStatus"></div>
+        </div>
+      </div>
+
+      <!-- Sheet status table -->
+      <div id="gsSheetStatus" style="display:none">
+        <div class="fsec-t mb8">Sync Log</div>
+        <table>
+          <thead><tr><th>Module</th><th>Records</th><th>Last Synced</th><th>Status</th></tr></thead>
+          <tbody id="gsSyncLog"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL SHELL -->
+<div class="overlay" id="mShell" onclick="if(event.target===this)closeM()">
+  <div class="modal" id="mBox">
+    <div class="modal-hdr"><span class="modal-title" id="mTitle">Modal</span><button class="modal-close" onclick="closeM()">✕</button></div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-ftr"><button class="btn btn-g" onclick="closeM()">Cancel</button><button class="btn btn-p" id="mSaveBtn" onclick="mSave()">Save</button></div>
+  </div>
+</div>
+<div id="toasts"></div>
+<script>
+// ╔═══════════════════════════════════════════════════════╗
+// ║  ManuCost ERP — localStorage + Full Render Logic     ║
+// ╚═══════════════════════════════════════════════════════╝
+
+// ── STORAGE (localStorage with prefix + JSON) ──
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  STORAGE LAYER — Hybrid localStorage + Google Sheets            ║
+// ║  localStorage = instant reads (cache)                           ║
+// ║  Google Sheets = persistent cloud backup (async sync)           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ── CONFIG — paste your Apps Script Web App URL here after deploy ──
+let GS_URL = localStorage.getItem('mce_gs_url') || '';
+
+const GS = {
+  // Save URL
+  setURL(url) {
+    GS_URL = url.trim();
+    localStorage.setItem('mce_gs_url', GS_URL);
+  },
+  // Test connectivity
+  async ping() {
+    if (!GS_URL) return false;
+    try {
+      const r = await fetch(GS_URL + '?action=ping', { method: 'GET' });
+      const j = await r.json();
+      return j.ok === true;
+    } catch { return false; }
+  },
+  // Read one key from Sheets
+  async get(key) {
+    if (!GS_URL) return null;
+    try {
+      const r = await fetch(`${GS_URL}?action=get&key=${encodeURIComponent(key)}`);
+      const j = await r.json();
+      return j.ok ? j.value : null;
+    } catch { return null; }
+  },
+  // Write one key to Sheets (fire-and-forget, don't block UI)
+  async set(key, value) {
+    if (!GS_URL) return;
+    try {
+      await fetch(GS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'set', key, data: value }),
+      });
+    } catch { /* silent — localStorage already saved it */ }
+  },
+  // Push ALL localStorage keys to Sheets (full sync)
+  async pushAll() {
+    if (!GS_URL) return { pushed: 0 };
+    const entries = {};
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('mce_') && k !== 'mce_gs_url')
+      .forEach(k => {
+        try { entries[k.replace('mce_', '')] = JSON.parse(localStorage.getItem(k)); } catch {}
+      });
+    try {
+      const r = await fetch(GS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'bulkSet', data: entries }),
+      });
+      const j = await r.json();
+      return { pushed: j.count || 0, ok: j.ok };
+    } catch (e) { return { pushed: 0, error: e.message }; }
+  },
+  // Pull ALL keys from Sheets into localStorage (full restore)
+  async pullAll() {
+    if (!GS_URL) return { pulled: 0 };
+    try {
+      const r = await fetch(`${GS_URL}?action=backup`);
+      const j = await r.json();
+      if (!j.ok) return { pulled: 0, error: j.error };
+      let pulled = 0;
+      Object.entries(j.backup || {}).forEach(([k, v]) => {
+        localStorage.setItem('mce_' + k, JSON.stringify(v));
+        pulled++;
+      });
+      return { pulled };
+    } catch (e) { return { pulled: 0, error: e.message }; }
+  },
+  // Delete all Sheets data
+  async reset() {
+    if (!GS_URL) return;
+    await fetch(GS_URL, { method: 'POST', body: JSON.stringify({ action: 'reset' }) });
+  }
+};
+
+// ── LOCAL STORAGE WRAPPER (primary — always instant) ──
+const S = {
+  get(k)   { try { const v = localStorage.getItem('mce_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set(k, v){ try { localStorage.setItem('mce_'+k, JSON.stringify(v)); GS.set(k, v); } catch {} },
+  del(k)   { localStorage.removeItem('mce_'+k); }
+};
+
+// ── SYNC STATUS (shown in topbar) ──
+let _syncOK = null; // null=unknown, true=connected, false=offline
+async function checkSync() {
+  if (!GS_URL) { setSyncBadge('off'); return; }
+  setSyncBadge('checking');
+  const ok = await GS.ping();
+  _syncOK = ok;
+  setSyncBadge(ok ? 'on' : 'err');
+}
+function setSyncBadge(state) {
+  const el = document.getElementById('syncBadge');
+  if (!el) return;
+  const map = {
+    off:      ['☁ Not connected', 'background:#F8F8F8;color:#979593;border:1px solid #D1D1D1'],
+    checking: ['↻ Checking…',     'background:#FFF4CE;color:#CA5010;border:1px solid #F0C080'],
+    on:       ['☁ Sheets synced', 'background:#DFF6DD;color:#107C10;border:1px solid #A8D8A8'],
+    err:      ['⚠ Sheets offline','background:#FDE7E9;color:#A4262C;border:1px solid #F0B0B0'],
+  };
+  const [txt, style] = map[state] || map.off;
+  el.textContent = txt;
+  el.style.cssText = `font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;${style}`;
+}
+
+// ── SEED DEFAULT DATA (runs once per browser) ──
+function seedData(){
+  if(S.get('seeded'))return;
+  S.set('company',{name:"Al-Masna'a Manufacturing Co.",nameAr:'شركة المصنع',cr:'1010123456',vat:'310012345600003',address:'Industrial City Phase 2, Riyadh 11564, Saudi Arabia',phone:'+966-11-4421100',email:'info@almasnaa.sa',currency:'SAR',vatRate:15,fyType:'Calendar Year',fyYear:2025,costMethod:'job',invVal:'FIFO',ohBase:'DL Cost',gosiEmp:12,gosiEe:10,fgWH:'WH-C'});
+  S.set('suppliers',[
+    {id:'SUP-001',name:'Al-Nasser Steel Trading',cat:'Raw Materials',phone:'+966-11-4421100',terms:'NET30',ytd:284200,status:'Active'},
+    {id:'SUP-002',name:'Global Bearings KSA',cat:'Components',phone:'+966-12-6871234',terms:'NET45',ytd:128400,status:'Active'},
+    {id:'SUP-003',name:'Chem Solutions Arabia',cat:'Consumables',phone:'+966-13-8120055',terms:'NET30',ytd:48900,status:'Active'},
+    {id:'SUP-004',name:'Makkah Electricals',cat:'Electrical',phone:'+966-12-5420077',terms:'COD',ytd:31200,status:'Active'}
+  ]);
+  S.set('customers',[
+    {id:'CUST-001',name:'Saudi Aramco',industry:'Oil & Gas',phone:'+966-13-8720000',terms:'NET30',credit:500000,outstanding:184800},
+    {id:'CUST-002',name:'SABIC',industry:'Petrochemicals',phone:'+966-11-3253000',terms:'NET45',credit:300000,outstanding:86400},
+    {id:'CUST-003',name:'STC',industry:'Telecom',phone:'+966-11-4885555',terms:'NET60',credit:200000,outstanding:96800},
+    {id:'CUST-004',name:"Ma'aden",industry:'Mining',phone:'+966-11-8748000',terms:'NET30',credit:150000,outstanding:44000}
+  ]);
+  S.set('payterms',[
+    {code:'NET30',desc:'Net 30 Days',days:30,discPct:0,discDays:0},
+    {code:'NET45',desc:'Net 45 Days',days:45,discPct:0,discDays:0},
+    {code:'NET60',desc:'Net 60 Days',days:60,discPct:0,discDays:0},
+    {code:'2/10N30',desc:'2% if paid in 10, net 30',days:30,discPct:2,discDays:10},
+    {code:'COD',desc:'Cash on Delivery',days:0,discPct:0,discDays:0}
+  ]);
+  S.set('items',[
+    {code:'RM-0101',name:'Steel Rod 12mm',type:'Raw Material',uom:'kg',val:'FIFO',cost:180,reorder:100,gl:'1300'},
+    {code:'RM-0102',name:'Bearing 6205',type:'Component',uom:'pcs',val:'FIFO',cost:320,reorder:50,gl:'1300'},
+    {code:'RM-0103',name:'Paint — Industrial Blue',type:'Raw Material',uom:'L',val:'Avg',cost:42,reorder:100,gl:'1300'},
+    {code:'RM-0104',name:'Welding Wire ER70S',type:'Component',uom:'kg',val:'FIFO',cost:120,reorder:40,gl:'1300'},
+    {code:'RM-0105',name:'Copper Pipe 20mm',type:'Raw Material',uom:'kg',val:'FIFO',cost:150,reorder:60,gl:'1300'},
+    {code:'FG-0201',name:'Valve Assembly A',type:'Finished Good',uom:'pcs',val:'FIFO',cost:1676,reorder:10,gl:'1320'},
+    {code:'FG-0202',name:'Pump Casing B',type:'Finished Good',uom:'pcs',val:'FIFO',cost:2156,reorder:5,gl:'1320'}
+  ]);
+  S.set('stock',[
+    {code:'RM-0101',name:'Steel Rod 12mm',type:'Raw Material',wh:'WH-A',bin:'A-03-R2',uom:'kg',qty:42,reorder:100,cost:180,status:'Low'},
+    {code:'RM-0102',name:'Bearing 6205',type:'Component',wh:'WH-A',bin:'A-07-R1',uom:'pcs',qty:8,reorder:50,cost:320,status:'Critical'},
+    {code:'RM-0103',name:'Paint — Blue',type:'Raw Material',wh:'WH-B',bin:'B-02-R4',uom:'L',qty:210,reorder:100,cost:42,status:'OK'},
+    {code:'RM-0104',name:'Welding Wire',type:'Component',wh:'WH-A',bin:'A-05-R3',uom:'kg',qty:18,reorder:40,cost:120,status:'Low'},
+    {code:'RM-0105',name:'Copper Pipe',type:'Raw Material',wh:'WH-A',bin:'A-09-R1',uom:'kg',qty:85,reorder:60,cost:150,status:'OK'},
+    {code:'WIP-001',name:'WO-2020 WIP',type:'WIP',wh:'FL-1',bin:'LINE-A',uom:'batch',qty:1,reorder:0,cost:83848,status:'Active'},
+    {code:'WIP-002',name:'WO-2021 WIP',type:'WIP',wh:'FL-1',bin:'LINE-B',uom:'batch',qty:1,reorder:0,cost:53908,status:'Active'},
+    {code:'FG-0201',name:'Valve Assembly A',type:'Finished Good',wh:'WH-C',bin:'C-01-R1',uom:'pcs',qty:22,reorder:10,cost:1676,status:'OK'},
+    {code:'FG-0202',name:'Pump Casing B',type:'Finished Good',wh:'WH-C',bin:'C-02-R1',uom:'pcs',qty:12,reorder:5,cost:2156,status:'OK'}
+  ]);
+  S.set('workorders',[
+    {id:'WO-2020',cust:'Saudi Aramco',prod:'Valve Assembly A',qty:50,dm:48200,dl:19400,oh:16248,done:95,status:'Near Done'},
+    {id:'WO-2021',cust:'SABIC',prod:'Pump Casing B',qty:25,dm:31500,dl:12200,oh:10208,done:60,status:'In Progress'},
+    {id:'WO-2022',cust:'STC',prod:'Tower Bracket C',qty:100,dm:18800,dl:8400,oh:7032,done:30,status:'Early Stage'},
+    {id:'WO-2023',cust:"Ma'aden",prod:'Shaft Coupling D',qty:30,dm:9400,dl:3200,oh:2678,done:10,status:'New'}
+  ]);
+  S.set('boms',[
+    {id:'BOM-001',prod:'Valve Assembly A',ver:'1.0',qty:1,mat:964,lab:388,oh:324,total:1676,status:'Active'},
+    {id:'BOM-002',prod:'Pump Casing B',ver:'1.0',qty:1,mat:1260,lab:488,oh:408,total:2156,status:'Active'},
+    {id:'BOM-003',prod:'Tower Bracket C',ver:'2.1',qty:1,mat:188,lab:84,oh:70,total:342,status:'Active'}
+  ]);
+  S.set('employees',[
+    {id:'EMP-001',name:'Ahmed Al-Rashid',dept:'Production',role:'Lead Machinist',salary:8500,rate:95,status:'Active'},
+    {id:'EMP-002',name:'Khalid Al-Saud',dept:'Production',role:'Welder',salary:6200,rate:75,status:'Active'},
+    {id:'EMP-003',name:'Mohammed Farhan',dept:'Quality',role:'QC Inspector',salary:7000,rate:100,status:'Active'},
+    {id:'EMP-004',name:'Omar Al-Zahrani',dept:'Warehouse',role:'Store Keeper',salary:4800,rate:55,status:'Active'},
+    {id:'EMP-005',name:'Faisal Al-Ghamdi',dept:'Production',role:'Assembler',salary:5600,rate:68,status:'Leave'}
+  ]);
+  S.set('timesheets',[
+    {emp:'Ahmed Al-Rashid',wo:'WO-2020',act:'Machining',date:'2025-06-10',hrs:32,rate:95,cost:3040},
+    {emp:'Khalid Al-Saud',wo:'WO-2021',act:'Welding',date:'2025-06-10',hrs:31,rate:75,cost:2325},
+    {emp:'Mohammed Farhan',wo:'WO-2020',act:'QC Inspection',date:'2025-06-11',hrs:16,rate:100,cost:1600},
+    {emp:'Faisal Al-Ghamdi',wo:'WO-2022',act:'Assembly',date:'2025-06-12',hrs:24,rate:68,cost:1632}
+  ]);
+  S.set('journals',[
+    {id:'JE-0088',date:'2025-06-10',desc:'Manufacturing OH allocation — June',dr:94200,cr:94200,src:'OH Alloc',status:'Posted'},
+    {id:'JE-0087',date:'2025-06-10',desc:'GRN-0041 — Chem Solutions Arabia',dr:9800,cr:9800,src:'Procurement',status:'Posted'},
+    {id:'JE-0086',date:'2025-06-08',desc:'Payroll — June 2025 Direct Labor',dr:112800,cr:112800,src:'Payroll',status:'Posted'},
+    {id:'JE-0085',date:'2025-06-05',desc:'WIP transfer — WO-2019 completed to FG',dr:143200,cr:143200,src:'Costing',status:'Posted'}
+  ]);
+  S.set('pos',[
+    {id:'PO-0050',date:'2025-05-28',supplier:'Chem Solutions Arabia',items:3,amount:9800,status:'Received',grn:'GRN-0041'},
+    {id:'PO-0051',date:'2025-06-01',supplier:'Al-Nasser Steel Trading',items:2,amount:28400,status:'In Transit',grn:''},
+    {id:'PO-0052',date:'2025-06-08',supplier:'Global Bearings KSA',items:4,amount:31500,status:'Draft',grn:''}
+  ]);
+  S.set('grns',[
+    {id:'GRN-0041',date:'2025-06-10',po:'PO-0050',supplier:'Chem Solutions Arabia',loc:'WH-A',value:9800,je:'JE-0087'},
+    {id:'GRN-0040',date:'2025-05-30',po:'PO-0048',supplier:'Al-Nasser Steel Trading',loc:'WH-A',value:42800,je:'JE-0082'}
+  ]);
+  S.set('quotes',[
+    {id:'QT-0021',date:'2025-06-01',cust:'Saudi Aramco',items:2,amount:110000,valid:'2025-06-30',status:'Sent'},
+    {id:'QT-0022',date:'2025-06-08',cust:'SABIC',items:1,amount:80000,valid:'2025-07-08',status:'Draft'}
+  ]);
+  S.set('salesorders',[
+    {id:'SO-0041',date:'2025-05-15',cust:'Saudi Aramco',amount:184800,delivery:'2025-06-20',status:'In Progress',wo:'WO-2020'},
+    {id:'SO-0042',date:'2025-05-20',cust:'SABIC',amount:86400,delivery:'2025-06-30',status:'In Progress',wo:'WO-2021'}
+  ]);
+  S.set('invoices',[
+    {id:'SI-0041',date:'2025-05-20',cust:'Saudi Aramco',amount:160696,vat:24104,total:184800,due:'2025-06-22',status:'Open'},
+    {id:'SI-0042',date:'2025-05-25',cust:'SABIC',amount:75130,vat:11270,total:86400,due:'2025-06-30',status:'Open'}
+  ]);
+  S.set('transfers',[
+    {id:'ISS-0022',date:'2025-06-09',type:'Issue',item:'Steel Rod 12mm',from:'WH-A',to:'FL-1',qty:'60 kg',val:10800,wo:'WO-2020',status:'Posted'},
+    {id:'TRF-0011',date:'2025-06-08',type:'Transfer',item:'Paint Blue',from:'WH-A',to:'WH-B',qty:'50 L',val:2100,wo:'—',status:'Posted'},
+    {id:'ISS-0021',date:'2025-06-07',type:'Issue',item:'Bearing 6205',from:'WH-A',to:'FL-1',qty:'25 pcs',val:8000,wo:'WO-2021',status:'Posted'},
+    {id:'FG-RCV-08',date:'2025-06-04',type:'FG Receipt',item:'Valve Assembly A',from:'FL-1',to:'WH-C',qty:'10 pcs',val:16760,wo:'WO-2019',status:'Posted'}
+  ]);
+  S.set('seeded',true);
+}
+
+// ── WIZARD ──
+let wStep=1; const WS=5;
+const wStepDefs=[
+  {title:'Company Information',html:`<div class="fr fr2"><div class="fg"><label class="fl req">Company Name (English)</label><input class="fc" id="w1" placeholder="e.g. Al-Masna'a Manufacturing Co."></div><div class="fg"><label class="fl">Company Name (Arabic)</label><input class="fc" id="w2" placeholder="اسم الشركة"></div></div><div class="fr fr2"><div class="fg"><label class="fl req">Commercial Registration #</label><input class="fc" id="w3" placeholder="1010xxxxxx"></div><div class="fg"><label class="fl req">VAT Number</label><input class="fc" id="w4" placeholder="3xxxxxxxxx00003"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Industry</label><select class="fc" id="w5"><option>Manufacturing</option><option>Engineering & Fabrication</option><option>Food & Beverage</option><option>Chemicals</option><option>Electronics</option></select></div><div class="fg"><label class="fl">Country</label><select class="fc" id="w6"><option>Saudi Arabia</option><option>UAE</option><option>Kuwait</option><option>Bahrain</option><option>Qatar</option></select></div></div><div class="fg"><label class="fl">Address</label><textarea class="fc" id="w7" rows="2" placeholder="Street, City, Postal Code"></textarea></div>`},
+  {title:'Fiscal Year Settings',html:`<div class="fr fr2"><div class="fg"><label class="fl req">Fiscal Year Type</label><select class="fc" id="w8"><option>Calendar Year (Jan–Dec)</option><option>Hijri Year</option><option>Custom</option></select></div><div class="fg"><label class="fl">Current Year</label><input class="fc" id="w9" type="number" value="2025"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Reporting Period</label><select class="fc" id="w10"><option>Monthly</option><option>Quarterly</option></select></div><div class="fg"><label class="fl">Period Locking</label><select class="fc"><option>Manual Lock</option><option>Auto-lock after 30 days</option></select></div></div><div class="alert a-info">Fiscal year setting affects period closing and financial reporting. Cannot be changed once transactions are posted.</div>`},
+  {title:'Currency & Localization',html:`<div class="fr fr2"><div class="fg"><label class="fl req">Base Currency</label><select class="fc" id="w11"><option>SAR — Saudi Riyal</option><option>USD — US Dollar</option><option>AED — UAE Dirham</option><option>EUR — Euro</option></select></div><div class="fg"><label class="fl">Number Format</label><select class="fc"><option>1,234,567.89</option><option>1.234.567,89</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">VAT Rate %</label><input class="fc" id="w12" type="number" value="15"></div><div class="fg"><label class="fl">Zakat Applicable?</label><select class="fc"><option>Yes — Saudi Entity</option><option>No</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">GOSI — Employer %</label><input class="fc" id="w13" type="number" value="12"></div><div class="fg"><label class="fl">GOSI — Employee %</label><input class="fc" id="w14" type="number" value="10"></div></div>`},
+  {title:'Costing Method',html:`<div class="fr mb12"><div class="fg"><label class="fl req">Primary Costing Method</label><select class="fc" id="w15"><option value="job">Job Order Costing</option><option value="abc">Activity-Based Costing (ABC)</option><option value="both">Both (switchable per WO)</option><option value="process">Process Costing</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Inventory Valuation</label><select class="fc" id="w16"><option>FIFO</option><option>Weighted Average</option></select></div><div class="fg"><label class="fl">Overhead Allocation Base</label><select class="fc" id="w17"><option>Direct Labor Cost</option><option>Direct Labor Hours</option><option>Machine Hours</option><option>Units Produced</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">WIP Tracking</label><select class="fc"><option>Per Job Order</option><option>By Department</option></select></div><div class="fg"><label class="fl">Default FG Warehouse</label><input class="fc" id="w18" value="WH-C"></div></div><div class="alert a-info">Job Order tracks costs per individual production order. ABC uses activity cost drivers for more accurate multi-product overhead allocation.</div>`},
+  {title:'Setup Complete!',html:`<div style="text-align:center;padding:20px 0"><div style="font-size:52px;margin-bottom:12px">✅</div><div style="font-size:18px;font-weight:600;margin-bottom:8px">Your ERP is ready</div><div style="font-size:13px;color:var(--text2);margin-bottom:24px">Company profile saved. Update anytime from Company Setup in the navigation menu.</div><div class="g2c" style="text-align:left"><div class="fsec"><div class="fsec-t">Quick Start Guide</div><div style="font-size:12.5px;color:var(--text2);line-height:2">1. Add your Items in Item Master<br>2. Set up Warehouses &amp; Bins<br>3. Enter Suppliers &amp; Customers<br>4. Create a Work Order<br>5. Issue materials to production<br>6. Run Payroll and post JEs</div></div><div class="fsec"><div class="fsec-t">Modules Included</div><div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Chart of Accounts &amp; GL<br>✓ Procurement PO → GRN<br>✓ Sales Quote → Invoice<br>✓ Manufacturing &amp; Job Costing<br>✓ Inventory &amp; Warehouses<br>✓ Payroll · Aging · Reports</div></div></div></div>`}
+];
+
+function wRender(){
+  const s=wStepDefs[wStep-1];
+  document.getElementById('wizBody').innerHTML=`<div class="wiz-step-title">${s.title}</div>${s.html}`;
+  document.getElementById('wizBack').style.display=wStep>1?'block':'none';
+  document.getElementById('wizNext').textContent=wStep===WS?'🚀 Launch ERP':'Next →';
+  document.getElementById('wizSteps').innerHTML=wStepDefs.map((_,i)=>{
+    const n=i+1,cls=n<wStep?'done':n===wStep?'act':'';
+    return`<div class="wiz-step"><div class="ws-dot ${cls}">${n<wStep?'✓':n}</div><div class="ws-lbl">${['Company','Fiscal Year','Currency','Costing','Done'][i]}</div></div>`;
+  }).join('');
+  // pre-fill
+  const co=S.get('company')||{};
+  if(wStep===1){gSet('w1',co.name);gSet('w2',co.nameAr);gSet('w3',co.cr);gSet('w4',co.vat);gSet('w7',co.address);}
+}
+function wNext(){
+  if(wStep===1){const n=gv('w1');if(!n.trim()){toast('Company name is required.','error');return;}const co=S.get('company')||{};co.name=n;co.nameAr=gv('w2');co.cr=gv('w3');co.vat=gv('w4');co.industry=gv('w5');co.country=gv('w6');co.address=gv('w7');S.set('company',co);}
+  if(wStep===2){const co=S.get('company')||{};co.fyType=gv('w8');co.fyYear=parseInt(gv('w9'))||2025;S.set('company',co);}
+  if(wStep===3){const co=S.get('company')||{};co.currency=(gv('w11')||'SAR').split(' ')[0];co.vatRate=parseFloat(gv('w12'))||15;co.gosiEmp=parseFloat(gv('w13'))||12;co.gosiEe=parseFloat(gv('w14'))||10;S.set('company',co);}
+  if(wStep===4){const co=S.get('company')||{};co.costMethod=gv('w15');co.invVal=gv('w16');co.ohBase=gv('w17');co.fgWH=gv('w18');S.set('company',co);}
+  if(wStep===WS){launchApp();return;}
+  wStep++;wRender();
+}
+function wPrev(){if(wStep>1){wStep--;wRender();}}
+
+function launchApp(){
+  document.getElementById('wizOv').style.display='none';
+  document.getElementById('app').style.display='flex';
+  initApp();
+}
+
+// ── APP INIT ──
+function initApp(){
+  const co=S.get('company')||{};
+  document.getElementById('sbCo').textContent=co.name||'ManuCost ERP';
+  document.getElementById('sbFY').textContent='FY '+(co.fyYear||2025);
+  document.getElementById('tbPeriod').textContent='FY '+(co.fyYear||2025)+' · Q2';
+  document.getElementById('dashH').textContent='Dashboard';
+  document.getElementById('dashSub').textContent=(co.name||'')+' — Manufacturing Overview';
+  costMode=co.costMethod||'job';
+  document.getElementById('mJob').classList.toggle('active',costMode==='job');
+  document.getElementById('mABC').classList.toggle('active',costMode==='abc');
+  document.getElementById('modeBadge').textContent=costMode==='abc'?'ABC COSTING':'JOB ORDER';
+  setupNav();
+  renderDash();
+  buildSetupForms();
+  buildAHTemplates();
+  updateTopbarLock();
+  checkSync(); // check Google Sheets connection status
+}
+
+// ── NAVIGATION ──
+const PT={dashboard:'Dashboard',coa:'Chart of Accounts',journal:'Journal Entry',ledger:'General Ledger',tb:'Trial Balance',suppliers:'Suppliers',payterms:'Payment Terms',po:'Purchase Orders',grn:'Goods Receipt (GRN)','aging-ap':'AP Aging',items:'Item Master',warehouses:'Warehouses & Bins',stockledger:'Stock Ledger',transfers:'Stock Transfers',bom:'Bill of Materials',workorders:'Work Orders',jobcost:'Job Cost Sheets',overhead:'Overhead Rates',abc:'ABC Costing',customers:'Customers',quotation:'Quotations',salesorder:'Sales Orders',invoices:'Sales Invoices','aging-ar':'AR Aging',employees:'Employees',timesheets:'Timesheets',payroll:'Payroll Run',pnl:'Income Statement',bs:'Balance Sheet',cf:'Cash Flow Statement',invrpt:'Inventory Reports',adhoc:'Ad-Hoc Reports',fiscalyear:'Fiscal Year',periodclose:'Period Closing',setup:'Company Setup'};
+const ON_NAV={coa:renderCOA,journal:renderJE,ledger:()=>{buildGLSel();renderGL();},tb:renderTB,suppliers:renderSup,payterms:renderPT,po:renderPO,grn:renderGRN,'aging-ap':()=>renderAging('ap'),items:renderItems,warehouses:renderWH,stockledger:renderSL,transfers:renderTrf,bom:renderBOM,workorders:renderWO,jobcost:()=>{buildJCSel();},abc:renderABC,customers:renderCust,quotation:renderQT,salesorder:renderSO,invoices:renderInv,'aging-ar':()=>renderAging('ar'),employees:renderEmp,timesheets:renderTS,payroll:renderPayroll,pnl:renderPnL,bs:renderBS,cf:renderCF,invrpt:()=>switchInvTab('rm',null),adhoc:()=>{},fiscalyear:renderFiscalYear,periodclose:renderPeriodClose};
+let curPage='dashboard';
+function setupNav(){document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));}
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');
+  document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  document.getElementById('tbTitle').textContent=PT[page]||page;
+  curPage=page;
+  if(ON_NAV[page])ON_NAV[page]();
+}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('collapsed');}
+let costMode='job';
+function setMode(m){costMode=m;document.getElementById('mJob').classList.toggle('active',m==='job');document.getElementById('mABC').classList.toggle('active',m==='abc');document.getElementById('modeBadge').textContent=m==='abc'?'ABC COSTING':'JOB ORDER';const co=S.get('company')||{};co.costMethod=m;S.set('company',co);}
+
+// ── TOAST ──
+function toast(msg,type='info',dur=3500){const ic={info:'ℹ',success:'✓',warn:'⚠',error:'✕'};const el=document.createElement('div');el.className=`toast t${type[0]}`;el.innerHTML=`<span style="font-size:14px">${ic[type]||'ℹ'}</span><span>${msg}</span>`;document.getElementById('toasts').appendChild(el);setTimeout(()=>el.remove(),dur);}
+
+// ── MODAL ENGINE ──
+let mSaveFn=()=>{};
+function openM(name,wideClass){
+  const t=mTemplates[name];if(!t)return;
+  document.getElementById('mBox').className='modal'+(wideClass?' '+wideClass:'');
+  document.getElementById('mTitle').textContent=t.title;
+  document.getElementById('mBody').innerHTML=t.body();
+  document.getElementById('mSaveBtn').textContent=t.saveLabel||'Save';
+  mSaveFn=t.save;
+  document.getElementById('mShell').classList.add('open');
+}
+function closeM(){document.getElementById('mShell').classList.remove('open');}
+function mSave(){mSaveFn();}
+const gv=id=>{const el=document.getElementById(id);return el?el.value:''};
+const gSet=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined)el.value=v||''};
+
+// Modal templates
+const supOpts=()=>(S.get('suppliers')||[]).map(s=>s.name);
+const custOpts=()=>(S.get('customers')||[]).map(c=>c.name);
+const woOpts=()=>(S.get('workorders')||[]).map(w=>w.id+' — '+w.prod);
+const bomOpts=()=>(S.get('boms')||[]).map(b=>b.id+' — '+b.prod);
+const sel=(lbl,id,opts,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><select class="fc" id="${id}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+const inp=(lbl,id,type,ph,val,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><input class="fc" id="${id}" type="${type||'text'}" placeholder="${ph||''}" ${val!==undefined?`value="${val}"`:''} ></div>`;
+const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea class="fc" id="${id}" rows="2" placeholder="${ph||''}"></textarea></div>`;
+
+const mTemplates={
+  mSup:{title:'New Supplier',saveLabel:'Save Supplier',body:()=>`<div class="fr fr2">${inp('Supplier Name','ms_n','text','',undefined,true)}${sel('Category','ms_c',['Raw Materials','Components','Consumables','Electrical','Services'])}</div><div class="fr fr2">${inp('Phone','ms_p','text','+966-')}${inp('Email','ms_e','email','')}</div><div class="fr fr2">${inp('VAT Number','ms_v','text','')}${sel('Payment Terms','ms_t',['NET30','NET45','NET60','COD','2/10N30'])}</div>`,
+    save:()=>{const n=gv('ms_n');if(!n.trim()){toast('Name required','error');return;}const l=S.get('suppliers')||[];l.push({id:'SUP-'+(l.length+1).toString().padStart(3,'0'),name:n,cat:gv('ms_c'),phone:gv('ms_p'),terms:gv('ms_t'),ytd:0,status:'Active'});S.set('suppliers',l);closeM();renderSup();toast('Supplier saved.','success');}},
+  mCust:{title:'New Customer',saveLabel:'Save Customer',body:()=>`<div class="fr fr2">${inp('Customer Name','mc_n','text','',undefined,true)}${sel('Industry','mc_i',['Oil & Gas','Petrochemicals','Telecom','Mining','Construction','Government'])}</div><div class="fr fr2">${inp('Phone','mc_p','text','+966-')}${inp('Email','mc_e','email','')}</div><div class="fr fr2">${sel('Payment Terms','mc_t',['NET30','NET45','NET60','COD'])}${inp('Credit Limit (SAR)','mc_cl','number','0','100000')}</div>`,
+    save:()=>{const n=gv('mc_n');if(!n.trim()){toast('Name required','error');return;}const l=S.get('customers')||[];l.push({id:'CUST-'+(l.length+1).toString().padStart(3,'0'),name:n,industry:gv('mc_i'),phone:gv('mc_p'),terms:gv('mc_t'),credit:parseFloat(gv('mc_cl'))||0,outstanding:0});S.set('customers',l);closeM();renderCust();toast('Customer saved.','success');}},
+  mPT:{title:'New Payment Term',saveLabel:'Save Term',body:()=>`<div class="fr fr2">${inp('Term Code','mpt_c','text','NET30',undefined,true)}${inp('Description','mpt_d','text','Net 30 Days',undefined,true)}</div><div class="fr fr2">${inp('Net Days','mpt_nd','number','','30')}${sel('Apply To','mpt_a',['Both AP & AR','Suppliers (AP) Only','Customers (AR) Only'])}</div><div class="fr fr2">${inp('Early Discount %','mpt_dp','number','','0')}${inp('Discount if Paid Within (days)','mpt_dd','number','','0')}</div><div class="fr fr2">${inp('Late Fee %','mpt_lf','number','','0')}${inp('Grace Period (days)','mpt_gp','number','','0')}</div>`,
+    save:()=>{const c=gv('mpt_c');if(!c){toast('Code required','error');return;}const l=S.get('payterms')||[];l.push({code:c,desc:gv('mpt_d'),days:parseInt(gv('mpt_nd'))||0,discPct:parseFloat(gv('mpt_dp'))||0,discDays:parseInt(gv('mpt_dd'))||0});S.set('payterms',l);closeM();renderPT();toast('Payment term saved.','success');}},
+  mPO:{title:'New Purchase Order',saveLabel:'Create PO',body:()=>`<div class="fr fr2">${inp('PO Number','mpo_id','text','','PO-0053')}${inp('Date','mpo_d','date','')}</div><div class="fr fr2">${sel('Supplier','mpo_s',supOpts())}${sel('Payment Terms','mpo_t',['NET30','NET45','COD','2/10N30'])}</div><div class="fr fr2">${inp('Delivery Date','mpo_del','date','')}${sel('Linked Work Order','mpo_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div><div class="alert a-info" style="margin-top:8px">Add line items after saving the PO header.</div>`,
+    save:()=>{const l=S.get('pos')||[];l.unshift({id:'PO-00'+(53+l.length),date:gv('mpo_d')||today(),supplier:gv('mpo_s'),items:0,amount:0,status:'Draft',grn:''});S.set('pos',l);closeM();renderPO();toast('Purchase Order created.','success');}},
+  mGRN:{title:'New Goods Receipt (GRN)',saveLabel:'Confirm Receipt',body:()=>`<div class="fr fr2">${inp('GRN Number','mg_id','text','','GRN-0042')}${inp('Date','mg_d','date','')}</div><div class="fr fr2">${sel('PO Reference','mg_po',(S.get('pos')||[]).map(p=>p.id+' — '+p.supplier))}${sel('Received By','mg_rb',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr3">${sel('Warehouse','mg_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Location','mg_bin','text','','A-03-R2')}${sel('QC Hold?','mg_qc',['No — Direct Receipt','Yes — QC Hold'])}</div><div class="alert a-info" style="margin-top:8px">Auto-posts JE: <strong>Dr. Inventory / Cr. Accounts Payable</strong></div>`,
+    save:()=>{const grnDate=gv('mg_d')||today();if(checkPeriod(grnDate))return;const l=S.get('grns')||[];const id='GRN-00'+(42+l.length);l.unshift({id,date:grnDate,po:gv('mg_po').split(' ')[0],supplier:'',loc:gv('mg_wh').split(' ')[0],value:0,je:'JE-00'+(89+l.length)});S.set('grns',l);closeM();renderGRN();toast(`${id} confirmed. JE posted: Dr. Inventory / Cr. AP`,'success');}},
+  mItem:{title:'New Item',saveLabel:'Save Item',body:()=>`<div class="fr fr2">${inp('Item Code','mi_c','text','',undefined,true)}${inp('Item Name','mi_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','mi_t',['Raw Material','Component','WIP','Finished Good','Service','Consumable'])}${sel('Unit of Measure','mi_u',['kg','pcs','L','m','m²','ton','set','roll'])}</div><div class="fr fr2">${inp('Standard Cost (SAR)','mi_cost','number','','0')}${inp('Reorder Point','mi_ro','number','','0')}</div><div class="fr fr2">${sel('Valuation Method','mi_val',['FIFO','Weighted Average'])}${sel('GL Account','mi_gl',['1300 — Raw Materials','1310 — WIP','1320 — Finished Goods'])}</div>`,
+    save:()=>{const c=gv('mi_c'),n=gv('mi_n');if(!c||!n){toast('Code and Name required','error');return;}const l=S.get('items')||[];l.push({code:c,name:n,type:gv('mi_t'),uom:gv('mi_u'),val:gv('mi_val'),cost:parseFloat(gv('mi_cost'))||0,reorder:parseInt(gv('mi_ro'))||0,gl:gv('mi_gl').split(' ')[0]});S.set('items',l);closeM();renderItems();toast('Item saved.','success');}},
+  mWH:{title:'New Warehouse',saveLabel:'Create Warehouse',body:()=>`<div class="fr fr2">${inp('Location Code','mwh_c','text','','WH-D',true)}${inp('Name','mwh_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','mwh_t',['Raw Material Store','Production Input','Finished Goods','WIP Zone','Quarantine'])}${sel('Store Keeper','mwh_k',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr2">${inp('Number of Bins','mwh_b','number','','8')}${sel('GL Account','mwh_gl',['1300 — Raw Materials','1310 — WIP','1320 — Finished Goods'])}</div>`,
+    save:()=>{closeM();toast('Warehouse created.','success');}},
+  mBin:{title:'Add Storage Bin',saveLabel:'Add Bin',body:()=>`<div class="fr fr2">${sel('Warehouse','mb_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Code','mb_c','text','','A-13-R1',true)}</div><div class="fr fr2">${inp('Aisle','mb_a','text','','A')}${inp('Rack / Shelf','mb_r','text','','R1')}</div><div class="fr fr2">${inp('Max Weight (kg)','mb_w','number','','500')}${sel('Restriction','mb_rs',['None','Raw Materials Only','Hazardous','Heavy Items'])}</div>`,
+    save:()=>{closeM();toast('Bin added.','success');}},
+  mTrf:{title:'New Transfer / Issue',saveLabel:'Post',body:()=>`<div class="fr fr2">${sel('Type','mt_t',['Material Issue to Job','Inter-Warehouse Transfer','FG Receipt from Production','Return to Store'])}${inp('Date','mt_d','date','')}</div><div class="fr fr2">${sel('From','mt_f',['WH-A · Main','WH-B · Production','WH-C · FG','FL-1 · Floor'])}${sel('To','mt_to',['FL-1 · Production Floor','WH-A · Main','WH-B · Production','WH-C · FG'])}</div><div class="fr fr2">${sel('Item','mt_i',(S.get('items')||[]).map(i=>i.code+' '+i.name))}${inp('Quantity','mt_q','number','','0')}</div>${sel('Work Order (if Issue)','mt_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)],'')}<div class="fhint">Auto-posts inventory JE on save.</div>`,
+    save:()=>{const trfDate=gv('mt_d')||today();if(checkPeriod(trfDate))return;const l=S.get('transfers')||[];const tp=gv('mt_t');const pfx=tp.includes('Issue')?'ISS':tp.includes('Transfer')?'TRF':tp.includes('FG')?'FGR':'RTN';l.unshift({id:pfx+'-'+(Date.now()%9999),date:trfDate,type:tp.split(' ')[0],item:gv('mt_i').split(' ').slice(1).join(' '),from:gv('mt_f').split(' ')[0],to:gv('mt_to').split(' ')[0],qty:gv('mt_q')+' units',val:0,wo:gv('mt_wo'),status:'Posted'});S.set('transfers',l);closeM();renderTrf();toast('Transfer posted. JE auto-generated.','success');}},
+  mBOM:{title:'New Bill of Materials',saveLabel:'Save BOM',body:()=>`<div class="fr fr2">${inp('BOM #','mbom_id','text','','BOM-004')}${inp('Product Name','mbom_p','text','',undefined,true)}</div><div class="fr fr2">${inp('Version','mbom_v','text','','1.0')}${inp('Batch Size (qty)','mbom_q','number','','1')}</div><div class="fr fr3">${inp('Material Cost / Unit','mbom_m','number','','0')}${inp('Labor Cost / Unit','mbom_l','number','','0')}${inp('Overhead / Unit','mbom_o','number','','0')}</div>`,
+    save:()=>{const p=gv('mbom_p');if(!p){toast('Product name required','error');return;}const m=parseFloat(gv('mbom_m'))||0,l2=parseFloat(gv('mbom_l'))||0,o=parseFloat(gv('mbom_o'))||0;const l=S.get('boms')||[];l.push({id:'BOM-'+(l.length+1).toString().padStart(3,'0'),prod:p,ver:gv('mbom_v')||'1.0',qty:parseInt(gv('mbom_q'))||1,mat:m,lab:l2,oh:o,total:m+l2+o,status:'Active'});S.set('boms',l);closeM();renderBOM();toast('BOM saved.','success');}},
+  mWO:{title:'New Work Order',saveLabel:'Create WO',body:()=>`<div class="fr fr2">${inp('WO Number','mwo_id','text','','WO-2024')}${sel('Customer','mwo_c',custOpts())}</div><div class="fr fr2">${inp('Product','mwo_p','text','')}${inp('Quantity','mwo_q','number','','0')}</div><div class="fr fr2">${inp('Start Date','mwo_sd','date','')}${inp('Target Completion','mwo_td','date','')}</div><div class="fr fr2">${sel('BOM Reference','mwo_bom',['— None —',...bomOpts()])}${inp('Sales Order Ref','mwo_so','text','','SO-')}</div>`,
+    save:()=>{const p=gv('mwo_p'),c=gv('mwo_c');if(!p||!c){toast('Customer and Product required','error');return;}const l=S.get('workorders')||[];l.push({id:'WO-'+(2024+l.length),cust:c,prod:p,qty:parseInt(gv('mwo_q'))||0,dm:0,dl:0,oh:0,done:0,status:'New'});S.set('workorders',l);closeM();renderWO();toast('Work Order created.','success');}},
+  mAcc:{title:'New Account',saveLabel:'Add Account',body:()=>`<div class="fr fr2">${inp('Account Code','ma_c','text','',undefined,true)}${inp('Account Name','ma_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','ma_t',['Asset','Liability','Equity','Revenue','COGS','Expense'])}${sel('Normal Balance','ma_nb',['Debit','Credit'])}</div><div class="fr fr2">${sel('Parent Account','ma_pa',['— None —','1000 Current Assets','2000 Liabilities','3000 Equity','4000 Revenue','5000 COGS','6000 Expenses'])}${sel('Cost Center','ma_cc',['All','Production','Admin','Sales'])}</div>`,
+    save:()=>{closeM();toast('Account added.','success');renderCOA();}},
+  mJE:{title:'New Journal Entry',saveLabel:'Post Entry',body:()=>`<div class="fr fr3">${inp('JE Number','mje_id','text','','JE-0089')}${inp('Date','mje_d','date','',today())}${sel('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation'])}</div><div class="fg mb12"><label class="fl">Narration</label><input class="fc" id="mje_desc" placeholder="Describe this journal entry"></div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span><span></span></div><div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div><button class="btn btn-g sm mt12" onclick="addJELine()">+ Add Line</button><div class="je-bal" id="jeBal"><span>Dr: <strong id="jeDr">0.00</strong></span><span>Cr: <strong id="jeCr">0.00</strong></span><span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span></div>`,
+    save:()=>{if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const l=S.get('journals')||[];l.unshift({id:'JE-'+(89+l.length),date:jeDate,desc:gv('mje_desc')||'Manual JE',dr:0,cr:0,src:gv('mje_src'),status:'Posted'});S.set('journals',l);closeM();renderJE();toast('Journal Entry posted.','success');}},
+  mJETpl:{title:'Journal Entry Templates',saveLabel:'Close',body:()=>`<div style="display:flex;flex-direction:column;gap:8px">${[['GRN Receipt','Dr. Raw Materials / Cr. Accounts Payable'],['Payroll Post','Dr. Wages Expense / Cr. Wages Payable + GOSI'],['OH Allocation','Dr. WIP / Cr. OH Applied'],['WIP → FG','Dr. Finished Goods / Cr. WIP Inventory'],['COGS Entry','Dr. COGS / Cr. Finished Goods'],['Customer Invoice','Dr. AR / Cr. Revenue + VAT Payable'],['Depreciation','Dr. Depreciation / Cr. Accum. Depreciation']].map(([t,d])=>`<div class="fsec flex ic jb"><div><div class="fw6 mb8" style="font-size:12.5px">${t}</div><div class="t-sm t-muted">${d}</div></div><button class="btn btn-s sm" onclick="closeM();openM('mJE')">Use</button></div>`).join('')}</div>`,
+    save:()=>closeM()},
+  mAct:{title:'New Activity Pool (ABC)',saveLabel:'Add Pool',body:()=>`<div class="fr fr2">${inp('Activity Name','mact_n','text','',undefined,true)}${inp('Cost Driver','mact_d','text','e.g. Machine Hours',undefined,true)}</div><div class="fr fr2">${inp('Total Pool Cost (SAR)','mact_c','number','','0')}${inp('Budgeted Driver Qty','mact_q','number','','0')}</div>`,
+    save:()=>{closeM();toast('Activity pool added to ABC model.','success');renderABC();}},
+  mEmp:{title:'Add Employee',saveLabel:'Save Employee',body:()=>`<div class="fr fr2">${inp('Full Name','me_n','text','',undefined,true)}${inp('Iqama / National ID','me_id2','text','')}</div><div class="fr fr2">${sel('Department','me_d',['Production','Quality','Warehouse','Admin','Finance'])}${inp('Role / Position','me_r','text','')}</div><div class="fr fr2">${inp('Basic Salary (SAR)','me_s','number','','0')}${inp('Labor Rate / Hour','me_rt','number','','0')}</div>`,
+    save:()=>{const n=gv('me_n');if(!n){toast('Name required','error');return;}const l=S.get('employees')||[];l.push({id:'EMP-'+(l.length+1).toString().padStart(3,'0'),name:n,dept:gv('me_d'),role:gv('me_r'),salary:parseFloat(gv('me_s'))||0,rate:parseFloat(gv('me_rt'))||0,status:'Active'});S.set('employees',l);closeM();renderEmp();toast('Employee added.','success');}},
+  mQT:{title:'New Quotation',saveLabel:'Save Quote',body:()=>`<div class="fr fr2">${inp('Quote #','mq_id','text','','QT-0023')}${inp('Date','mq_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mq_c',custOpts())}${inp('Valid Until','mq_v','date','')}</div><div class="fr fr2">${inp('Item / Product','mq_i','text','')}${inp('Amount (SAR)','mq_a','number','','0')}</div>`,
+    save:()=>{const l=S.get('quotes')||[];l.unshift({id:'QT-00'+(23+l.length),date:gv('mq_d')||today(),cust:gv('mq_c'),items:1,amount:parseFloat(gv('mq_a'))||0,valid:gv('mq_v'),status:'Draft'});S.set('quotes',l);closeM();renderQT();toast('Quotation saved.','success');}},
+  mSO:{title:'New Sales Order',saveLabel:'Create SO',body:()=>`<div class="fr fr2">${inp('SO Number','mso_id','text','','SO-0043')}${inp('Date','mso_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mso_c',custOpts())}${inp('Delivery Date','mso_del','date','')}</div><div class="fr fr2">${inp('Amount (SAR)','mso_a','number','','0')}${sel('Link Work Order','mso_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div>`,
+    save:()=>{const l=S.get('salesorders')||[];l.unshift({id:'SO-00'+(43+l.length),date:gv('mso_d')||today(),cust:gv('mso_c'),amount:parseFloat(gv('mso_a'))||0,delivery:gv('mso_del'),status:'Draft',wo:gv('mso_wo')});S.set('salesorders',l);closeM();renderSO();toast('Sales Order created.','success');}},
+  mInv:{title:'New Sales Invoice',saveLabel:'Post Invoice',body:()=>`<div class="fr fr2">${inp('Invoice #','minv_id','text','','SI-0043')}${inp('Date','minv_d','date','',today())}</div><div class="fr fr2">${sel('Customer','minv_c',custOpts())}${inp('Sales Order Ref','minv_so','text','','SO-')}</div><div class="fr fr2">${inp('Net Amount (SAR)','minv_a','number','','0')}${inp('VAT Rate %','minv_vr','number','','15')}</div><div class="fhint">Auto-posts JE: Dr. Accounts Receivable / Cr. Revenue + VAT Payable</div>`,
+    save:()=>{const invDate=gv('minv_d')||today();if(checkPeriod(invDate))return;const a=parseFloat(gv('minv_a'))||0,vr=parseFloat(gv('minv_vr'))||15,vat=Math.round(a*vr/100);const l=S.get('invoices')||[];l.unshift({id:'SI-00'+(43+l.length),date:invDate,cust:gv('minv_c'),amount:a,vat,total:a+vat,due:'TBD',status:'Open'});S.set('invoices',l);closeM();renderInv();toast('Invoice saved. JE posted: Dr. AR / Cr. Revenue + VAT.','success');}}
+};
+
+// JE helpers
+const accList=[['1010','Cash & Bank'],['1020','Accounts Receivable'],['1300','Raw Materials'],['1310','WIP Inventory'],['1320','Finished Goods'],['2010','Accounts Payable'],['2020','Wages Payable'],['2030','VAT Payable'],['3010','Share Capital'],['4010','Revenue'],['5010','Direct Materials'],['5020','Direct Labor'],['5030','OH Applied'],['6010','COGS'],['6020','Selling Expenses'],['6030','Admin Expenses'],['6040','Depreciation']];
+const accOpts=()=>accList.map(([c,n])=>`<option value="${c}">${c} — ${n}</option>`).join('');
+function jeLineHTML(){return`<div class="je-grid"><select class="fc">${accOpts()}</select><input class="fc" type="number" placeholder="0.00" oninput="updateJEBal()"><input class="fc" type="number" placeholder="0.00" oninput="updateJEBal()"><button class="btn btn-d xs" onclick="this.closest('.je-grid').remove();updateJEBal()">−</button></div>`;}
+function addJELine(){const d=document.createElement('div');d.className='je-grid';d.innerHTML=`<select class="fc">${accOpts()}</select><input class="fc" type="number" placeholder="0.00" oninput="updateJEBal()"><input class="fc" type="number" placeholder="0.00" oninput="updateJEBal()"><button class="btn btn-d xs" onclick="this.closest('.je-grid').remove();updateJEBal()">−</button>`;document.getElementById('jeLines').appendChild(d);}
+function updateJEBal(){let dr=0,cr=0;document.querySelectorAll('#jeLines .je-grid').forEach(r=>{const ins=r.querySelectorAll('input[type=number]');dr+=parseFloat(ins[0].value)||0;cr+=parseFloat(ins[1].value)||0;});document.getElementById('jeDr').textContent=fN(dr);document.getElementById('jeCr').textContent=fN(cr);const st=document.getElementById('jeSt');if(Math.abs(dr-cr)<0.01&&dr>0){st.textContent='✓ Balanced';st.style.color='var(--green)';}else{st.textContent='Not balanced';st.style.color='var(--orange)';}}
+
+// ── HELPERS ──
+const fN=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fM=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':fN(n);
+const today=()=>new Date().toISOString().slice(0,10);
+
+const sBadge=s=>{const m={Active:'b-green',Posted:'b-green',OK:'b-green',Approved:'b-green',Received:'b-green',Closed:'b-green','Near Done':'b-teal','In Progress':'b-blue','In Transit':'b-blue',Sent:'b-blue',New:'b-purple',Leave:'b-orange','Early Stage':'b-orange','Pending Approval':'b-orange',Draft:'b-grey',Low:'b-orange',Critical:'b-red',Open:'b-blue',Overdue:'b-red',Inactive:'b-grey','Raw Material':'b-blue',Component:'b-purple','Finished Good':'b-green',WIP:'b-orange',Service:'b-grey',Issue:'b-orange',Transfer:'b-blue','FG Receipt':'b-green',Return:'b-grey'};return`<span class="b ${m[s]||'b-grey'}">${s}</span>`;};
+
+function filterTbl(tbodyId,colIdx,val){document.querySelectorAll('#'+tbodyId+' tr').forEach(r=>{const cell=r.cells[colIdx];r.style.display=(!val||cell?.textContent.trim()===val)?'':'none';});}
+
+// ── RENDER: DASHBOARD ──
+function renderDash(){
+  const wo=S.get('workorders')||[],st=S.get('stock')||[];
+  document.getElementById('dashKPIs').innerHTML=[
+    {l:'Active Work Orders',v:wo.filter(w=>w.status!=='Done').length,c:'c-blue'},
+    {l:'WIP Value',v:'SAR '+fM(wo.reduce((s,w)=>s+w.dm+w.dl+w.oh,0)),c:'c-teal'},
+    {l:'Inventory Alerts',v:st.filter(s=>s.status==='Low'||s.status==='Critical').length,c:'c-orange'},
+    {l:'Gross Margin (Est.)',v:'31.4%',c:'c-green'}
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+  document.getElementById('dashCost').innerHTML=`<div class="cs-row"><span>Direct Materials</span><span>SAR 285,400</span></div><div class="cs-row"><span>Direct Labor</span><span>SAR 112,800</span></div><div class="cs-row"><span>Manufacturing Overhead</span><span>SAR 94,200</span></div><div class="cs-row cs-st"><span>Total Manufacturing Cost</span><span>SAR 492,400</span></div><div class="cs-row cs-tot"><span>Cost of Goods Manufactured</span><span>SAR 487,800</span></div>`;
+  document.getElementById('dashActivity').innerHTML=(S.get('journals')||[]).slice(0,5).map(j=>`<div class="act-item"><div class="act-dot"></div><div style="flex:1;font-size:12.5px">${j.desc}</div><div class="t-xs t-muted">${j.date}</div></div>`).join('');
+  document.getElementById('dashInv').innerHTML=`<div class="tw"><table><thead><tr><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>${st.filter(s=>s.status!=='OK'&&s.status!=='Active').slice(0,5).map(s=>`<tr><td>${s.name}</td><td class="num">${s.qty}</td><td>${sBadge(s.status)}</td></tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('dashWO').innerHTML=`<div class="tw"><table><thead><tr><th>WO #</th><th>Product</th><th>Progress</th></tr></thead><tbody>${wo.map(w=>`<tr><td class="t-blue fw6">${w.id}</td><td style="font-size:12px">${w.prod}</td><td><div class="prog"><div class="prog-bar ${w.done>70?'pb-green':w.done>30?'pb-blue':'pb-orange'}" style="width:${w.done}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;
+  document.getElementById('dashAPAR').innerHTML=`<div class="cs-row"><span>Total AP</span><span class="t-red fw6">SAR 198,400</span></div><div class="cs-row"><span>Total AR</span><span class="t-blue fw6">SAR 412,000</span></div><div class="cs-row"><span>Net Position</span><span class="t-green fw6">SAR 213,600</span></div><div class="cs-row"><span>Overdue AR</span><span class="t-orange fw6">SAR 84,000</span></div>`;
+}
+
+// ── RENDER: COA ──
+function renderCOA(){
+  const tree=[{c:'1000',n:'Current Assets',ch:[{c:'1010',n:'Cash & Bank',b:284200},{c:'1020',n:'Accounts Receivable',b:412000},{c:'1300',n:'Raw Materials',b:148200},{c:'1310',n:'WIP Inventory',b:482400},{c:'1320',n:'Finished Goods',b:124800}]},{c:'2000',n:'Current Liabilities',ch:[{c:'2010',n:'Accounts Payable',b:198400},{c:'2020',n:'Wages Payable',b:31909},{c:'2030',n:'VAT Payable',b:18200}]},{c:'3000',n:'Equity',ch:[{c:'3010',n:'Share Capital',b:2000000},{c:'3020',n:'Retained Earnings',b:482000}]},{c:'4000',n:'Revenue',ch:[{c:'4010',n:'Sales Revenue',b:894200}]},{c:'5000',n:'COGS',ch:[{c:'5010',n:'Direct Materials',b:285400},{c:'5020',n:'Direct Labor',b:112800},{c:'5030',n:'OH Applied',b:94200}]},{c:'6000',n:'Operating Expenses',ch:[{c:'6010',n:'Selling Expenses',b:48200},{c:'6020',n:'Admin & General',b:62400},{c:'6040',n:'Depreciation',b:18000}]}];
+  document.getElementById('coaTree').innerHTML=tree.map(g=>`<div><div class="acc-row acc-group"><span class="acc-code">${g.c}</span><span class="acc-name">${g.n}</span><span class="acc-bal"></span></div><div class="acc-children">${g.ch.map(a=>`<div class="acc-row" onclick="showAccDet('${a.c}','${a.n}',${a.b})"><span class="acc-code">${a.c}</span><span class="acc-name">${a.n}</span><span class="acc-bal">${fN(a.b)}</span></div>`).join('')}</div></div>`).join('');
+}
+function showAccDet(c,n,b){document.getElementById('coaDet').innerHTML=`<div class="kpi c-blue mb12"><div class="kpi-lbl">${c} — ${n}</div><div class="kpi-val">SAR ${fN(b)}</div></div><div class="alert a-info">Use the General Ledger for full transaction history.</div><div class="btn-row mt12"><button class="btn btn-s sm" onclick="nav('ledger')">View in GL →</button></div>`;}
+
+// ── RENDER: JE ──
+function renderJE(){document.getElementById('jeTbl').innerHTML=(S.get('journals')||[]).map(j=>`<tr><td class="t-blue fw6">${j.id}</td><td>${j.date}</td><td>${j.desc}</td><td class="num">${fN(j.dr)}</td><td class="num">${fN(j.cr)}</td><td>${sBadge(j.src||'Manual')}</td><td>${sBadge(j.status)}</td></tr>`).join('');}
+
+// ── RENDER: GL ──
+const glData={'1010':[{d:'2025-06-01',je:'—',desc:'Opening Balance',dr:320000,cr:0,b:320000},{d:'2025-06-03',je:'JE-0083',desc:'Customer receipt SABIC',dr:94200,cr:0,b:414200},{d:'2025-06-08',je:'JE-0086',desc:'Payroll net payment',dr:0,cr:31909,b:382291},{d:'2025-06-12',je:'JE-0090',desc:'Supplier payment Al-Nasser',dr:0,cr:98000,b:284291}],'1300':[{d:'2025-06-01',je:'—',desc:'Opening Balance',dr:124200,cr:0,b:124200},{d:'2025-06-05',je:'JE-0082',desc:'GRN-0040 Al-Nasser Steel',dr:42800,cr:0,b:167000},{d:'2025-06-08',je:'JE-0085',desc:'Materials issued WO-2020',dr:0,cr:48200,b:118800},{d:'2025-06-10',je:'JE-0087',desc:'GRN-0041 Chem Solutions',dr:9800,cr:0,b:128600}],'1310':[{d:'2025-06-01',je:'—',desc:'Opening WIP',dr:48200,cr:0,b:48200},{d:'2025-06-08',je:'JE-0085',desc:'DM issued to production',dr:48200,cr:0,b:96400},{d:'2025-06-08',je:'JE-0086',desc:'DL allocation June',dr:112800,cr:0,b:209200},{d:'2025-06-10',je:'JE-0088',desc:'OH allocation June',dr:94200,cr:0,b:303400},{d:'2025-06-12',je:'JE-0089',desc:'WIP→FG WO-2019 completed',dr:0,cr:143200,b:160200}],'5020':[{d:'2025-06-08',je:'JE-0086',desc:'Payroll June direct labor',dr:112800,cr:0,b:112800}]};
+function buildGLSel(){const s=document.getElementById('lgAccSel');if(s&&!s.children.length)s.innerHTML=accList.map(([c,n])=>`<option value="${c}">${c} — ${n}</option>`).join('');}
+function renderGL(){const c=document.getElementById('lgAccSel')?.value||'1300';const rows=glData[c]||[];document.getElementById('glTitle').textContent='GL — '+c;document.getElementById('glTbl').innerHTML=rows.map(r=>`<tr><td>${r.d}</td><td class="t-blue fw6">${r.je}</td><td>${r.desc}</td><td class="num t-green">${r.dr?fN(r.dr):'—'}</td><td class="num t-red">${r.cr?fN(r.cr):'—'}</td><td class="num fw6">${fN(r.b)}</td></tr>`).join('');}
+
+// ── RENDER: TB ──
+const tbRows=[{c:'1010',n:'Cash & Bank',dr:284200,cr:0},{c:'1020',n:'Accounts Receivable',dr:412000,cr:0},{c:'1300',n:'Raw Materials',dr:148200,cr:0},{c:'1310',n:'WIP Inventory',dr:482400,cr:0},{c:'1320',n:'Finished Goods',dr:124800,cr:0},{c:'1510',n:'Machinery & Equipment',dr:1840000,cr:0},{c:'1520',n:'Accum. Depreciation',dr:0,cr:284000},{c:'2010',n:'Accounts Payable',dr:0,cr:198400},{c:'2020',n:'Wages Payable',dr:0,cr:31909},{c:'2030',n:'VAT Payable',dr:0,cr:18200},{c:'3010',n:'Share Capital',dr:0,cr:2000000},{c:'3020',n:'Retained Earnings',dr:0,cr:482000},{c:'4010',n:'Sales Revenue',dr:0,cr:894200},{c:'5010',n:'Direct Materials',dr:285400,cr:0},{c:'5020',n:'Direct Labor',dr:112800,cr:0},{c:'5030',n:'OH Applied',dr:94200,cr:0},{c:'6010',n:'Selling Expenses',dr:48200,cr:0},{c:'6020',n:'Admin & General',dr:62400,cr:0},{c:'6040',n:'Depreciation',dr:18000,cr:0}];
+function renderTB(){document.getElementById('tbTbl').innerHTML=tbRows.map(r=>`<tr><td class="t-blue fw6">${r.c}</td><td>${r.n}</td><td class="num">${r.dr?fN(r.dr):'—'}</td><td class="num">${r.cr?fN(r.cr):'—'}</td></tr>`).join('');const td=tbRows.reduce((s,r)=>s+r.dr,0),tc=tbRows.reduce((s,r)=>s+r.cr,0);document.getElementById('tbFoot').innerHTML=`<tr><td colspan="2">TOTAL</td><td class="num">${fN(td)}</td><td class="num">${fN(tc)}</td></tr><tr><td colspan="4" style="color:${td===tc?'var(--green)':'var(--red)'}">  ${td===tc?'✓ Trial Balance is in agreement':'✗ Out of balance — '+fN(Math.abs(td-tc))}</td></tr>`;}
+
+// ── RENDER: SUPPLIERS / CUSTOMERS ──
+function renderSup(){document.getElementById('supTbl').innerHTML=(S.get('suppliers')||[]).map(s=>`<tr><td class="t-blue fw6">${s.id}</td><td>${s.name}</td><td>${s.cat}</td><td>${s.phone}</td><td>${s.terms}</td><td class="num">SAR ${fN(s.ytd)}</td><td>${sBadge(s.status)}</td></tr>`).join('');}
+function renderCust(){document.getElementById('custTbl').innerHTML=(S.get('customers')||[]).map(c=>`<tr><td class="t-blue fw6">${c.id}</td><td>${c.name}</td><td>${c.industry}</td><td>${c.phone}</td><td>${c.terms}</td><td class="num">SAR ${fN(c.credit)}</td><td class="num t-blue">SAR ${fN(c.outstanding)}</td></tr>`).join('');}
+
+// ── RENDER: PAYMENT TERMS ──
+function renderPT(){
+  document.getElementById('ptTbl').innerHTML=(S.get('payterms')||[]).map(p=>`<tr><td class="t-blue fw6">${p.code}</td><td>${p.desc}</td><td class="num">${p.days}</td><td class="num ${p.discPct>0?'t-green':''}">${p.discPct||'—'}</td><td class="num">${p.discDays||'—'}</td></tr>`).join('');
+  document.getElementById('ptSched').innerHTML=[{due:'Jun 14',party:'Global Bearings KSA',type:'AP',amt:28400},{due:'Jun 18',party:'Chem Solutions Arabia',type:'AP',amt:9800},{due:'Jun 22',party:'Saudi Aramco',type:'AR',amt:184800},{due:'Jun 30',party:'SABIC',type:'AR',amt:86400}].map(r=>`<tr><td class="${r.type==='AP'?'t-red':'t-blue'} fw6">${r.due}</td><td>${r.party}</td><td>${sBadge(r.type)}</td><td class="num">SAR ${fN(r.amt)}</td><td><button class="btn ${r.type==='AP'?'btn-ok':'btn-g'} xs" onclick="toast('${r.type==='AP'?'Payment recorded.':'Reminder sent to '+r.party+'.'}','success')">${r.type==='AP'?'Pay Now':'Remind'}</button></td></tr>`).join('');
+}
+
+// ── RENDER: PO / GRN ──
+function renderPO(){document.getElementById('poTbl').innerHTML=(S.get('pos')||[]).map(p=>`<tr><td class="t-blue fw6">${p.id}</td><td>${p.date}</td><td>${p.supplier}</td><td class="num">SAR ${fN(p.amount)}</td><td>${sBadge(p.status)}</td><td>${p.grn||'—'}</td></tr>`).join('');}
+function renderGRN(){document.getElementById('grnTbl').innerHTML=(S.get('grns')||[]).map(g=>`<tr><td class="t-blue fw6">${g.id}</td><td>${g.date}</td><td>${g.po}</td><td>${g.supplier}</td><td><span class="b b-blue">${g.loc}</span></td><td class="num">SAR ${fN(g.value)}</td><td><span class="b b-green">${g.je}</span></td></tr>`).join('');}
+
+// ── RENDER: AGING ──
+const apData=[{n:'Al-Nasser Steel',t:98000,b0:69600,b30:0,b60:0,b90:28400,b120:0,terms:'NET30'},{n:'Global Bearings KSA',t:60200,b0:28600,b30:31600,b60:0,b90:0,b120:0,terms:'NET45'},{n:'Chem Solutions Arabia',t:9800,b0:9800,b30:0,b60:0,b90:0,b120:0,terms:'NET30'},{n:'Makkah Electricals',t:30400,b0:1800,b30:28600,b60:0,b90:0,b120:0,terms:'COD'}];
+const arData=[{n:'Saudi Aramco',t:184800,b0:184800,b30:0,b60:0,b90:0,b120:0,terms:'NET30'},{n:'SABIC',t:86400,b0:59200,b30:27200,b60:0,b90:0,b120:0,terms:'NET45'},{n:'STC',t:96800,b0:0,b30:56800,b60:40000,b90:0,b120:0,terms:'NET60'},{n:"Ma'aden",t:44000,b0:0,b30:0,b60:0,b90:0,b120:44000,terms:'NET30'}];
+function agRisk(r){if(r.b120>0)return'<span class="b b-red">High</span>';if((r.b60+r.b90+r.b120)/r.t>0.3)return'<span class="b b-orange">Medium</span>';return'<span class="b b-green">Low</span>';}
+function renderAging(type){
+  const data=type==='ap'?apData:arData,tbId=type==='ap'?'apTbl':'arTbl',ftId=type==='ap'?'apFoot':'arFoot',barId=type==='ap'?'apBar':'arBar',kpiId=type==='ap'?'apKPIs':'arKPIs';
+  const tot=k=>data.reduce((s,r)=>s+r[k],0),grand=tot('t');
+  const fC=(v,c)=>v>0?`<td class="num" style="color:${c}">${fN(v)}</td>`:'<td class="num t-muted">—</td>';
+  document.getElementById(tbId).innerHTML=data.map(r=>`<tr><td class="fw6">${r.n}</td><td class="num fw6">${fN(r.t)}</td>${fC(r.b0,'var(--green)')}${fC(r.b30,'var(--orange)')}${fC(r.b60,'#CA5010')}${fC(r.b90,'var(--red)')}${fC(r.b120,'#8B1D22')}<td style="font-size:11px">${r.terms}</td><td>${agRisk(r)}</td></tr>`).join('');
+  document.getElementById(ftId).innerHTML=`<tr><td>TOTAL</td><td class="num">${fN(grand)}</td>${[['b0','var(--green)'],['b30','var(--orange)'],['b60','#CA5010'],['b90','var(--red)'],['b120','#8B1D22']].map(([k,c])=>`<td class="num" style="color:${c}">${fN(tot(k))}</td>`).join('')}<td colspan="2"></td></tr>`;
+  document.getElementById(kpiId).innerHTML=[{l:type==='ap'?'Total AP':'Total AR',v:fN(grand),c:'c-blue'},{l:'Current (0–30d)',v:fN(tot('b0')),c:'c-green'},{l:'31–60 Days',v:fN(tot('b30')),c:'c-orange'},{l:'Over 60 Days',v:fN(tot('b60')+tot('b90')+tot('b120')),c:'c-red'}].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+  const bar=document.getElementById(barId);if(bar&&grand>0)bar.innerHTML=[{k:'b0',c:'var(--green)'},{k:'b30',c:'var(--orange)'},{k:'b60',c:'#CA5010'},{k:'b90',c:'var(--red)'},{k:'b120',c:'#8B1D22'}].filter(x=>tot(x.k)>0).map(x=>`<div class="a-seg" style="flex:${tot(x.k)};background:${x.c}">${Math.round(tot(x.k)/grand*100)}%</div>`).join('');
+}
+
+// ── RENDER: ITEMS / STOCK / TRANSFERS ──
+function renderItems(){document.getElementById('itemTbl').innerHTML=(S.get('items')||[]).map(i=>`<tr><td class="t-blue fw6">${i.code}</td><td>${i.name}</td><td>${sBadge(i.type)}</td><td>${i.uom}</td><td>${i.val}</td><td class="num">SAR ${fN(i.cost)}</td><td class="num">${i.reorder}</td><td>${i.gl}</td></tr>`).join('');}
+function renderSL(){document.getElementById('slTbl').innerHTML=(S.get('stock')||[]).map(s=>`<tr data-type="${s.type}" data-wh="${s.wh}"><td class="t-blue fw6">${s.code}</td><td>${s.name}</td><td>${sBadge(s.type)}</td><td><span class="b b-blue">${s.wh}</span></td><td style="font-size:11px">${s.bin}</td><td>${s.uom}</td><td class="num ${s.qty<=s.reorder&&s.reorder>0?'t-red fw6':''}">${s.qty}</td><td class="num">${s.reorder||'—'}</td><td class="num">SAR ${fN(s.cost)}</td><td class="num">SAR ${fN(s.qty*s.cost)}</td><td>${sBadge(s.status)}</td></tr>`).join('');}
+function filterSL(k,v){document.querySelectorAll('#slTbl tr').forEach(r=>r.style.display=(!v||r.dataset[k]===v)?'':'none');}
+function renderTrf(){document.getElementById('trfTbl').innerHTML=(S.get('transfers')||[]).map(t=>`<tr><td class="t-blue fw6">${t.id}</td><td>${t.date}</td><td>${sBadge(t.type)}</td><td>${t.item}</td><td><span class="b b-blue">${t.from}</span></td><td><span class="b b-teal">${t.to}</span></td><td class="num">${t.qty}</td><td class="num">SAR ${fN(t.val)}</td><td>${t.wo||'—'}</td><td>${sBadge(t.status)}</td></tr>`).join('');}
+
+// ── RENDER: WAREHOUSES ──
+const whInfo=[{code:'WH-A',name:'Main Raw Material Store',type:'Raw Material',keeper:'Omar Al-Zahrani',bins:12,skus:48,val:'284K',pct:72,cls:'b-blue'},{code:'WH-B',name:'Production Input Store',type:'Production',keeper:'Faisal Al-Ghamdi',bins:8,skus:31,val:'148K',pct:58,cls:'b-purple'},{code:'WH-C',name:'Finished Goods Store',type:'Finished Goods',keeper:'Ahmed Al-Rashid',bins:6,skus:22,val:'124K',pct:45,cls:'b-green'},{code:'FL-1',name:'Production Floor WIP',type:'WIP Zone',keeper:'Khalid Al-Saud',bins:4,skus:4,val:'482K',pct:90,cls:'b-orange'}];
+const whBins={'WH-A':[{bin:'A-01-R1',item:'Empty',qty:'—',val:'—',st:'OK'},{bin:'A-03-R2',item:'Steel Rod 12mm',qty:'42 kg',val:'7,560',st:'Low'},{bin:'A-05-R3',item:'Welding Wire',qty:'18 kg',val:'2,160',st:'Low'},{bin:'A-07-R1',item:'Bearing 6205',qty:'8 pcs',val:'2,560',st:'Critical'}],'WH-B':[{bin:'B-02-R4',item:'Paint Blue',qty:'210 L',val:'8,820',st:'OK'}],'WH-C':[{bin:'C-01-R1',item:'Valve Assy A',qty:'22 pcs',val:'36,880',st:'OK'},{bin:'C-02-R1',item:'Pump Casing B',qty:'12 pcs',val:'25,872',st:'OK'}],'FL-1':[{bin:'LINE-A',item:'WO-2020 WIP',qty:'batch',val:'83,848',st:'Active'},{bin:'LINE-B',item:'WO-2021 WIP',qty:'batch',val:'53,908',st:'Active'}]};
+function renderWH(){document.getElementById('whCards').innerHTML=whInfo.map(w=>`<div class="wh-card" onclick="showBins('${w.code}','${w.name}')"><div class="flex ic jb mb8"><span class="fw6">${w.name}</span><span class="b ${w.cls}">${w.code}</span></div><div class="flex gap12 mb8 t-sm t-muted"><span>Bins: <strong>${w.bins}</strong></span><span>SKUs: <strong>${w.skus}</strong></span><span>Value: <strong class="t-blue">SAR ${w.val}</strong></span></div><div class="prog"><div class="prog-bar ${w.cls.replace('b-','pb-')}" style="width:${w.pct}%"></div></div><div class="t-xs t-muted mt12">${w.pct}% capacity · ${w.type} · Keeper: ${w.keeper}</div></div>`).join('');}
+function showBins(code,name){const bins=whBins[code]||[];document.getElementById('whBinTitle').textContent='Bins — '+name;document.getElementById('whBinTbl').innerHTML=bins.map(b=>`<tr><td class="t-blue fw6">${b.bin}</td><td>${b.item}</td><td class="num">${b.qty}</td><td class="num">${b.val}</td><td>${sBadge(b.st)}</td></tr>`).join('');document.getElementById('whBinCard').style.display='block';}
+
+// ── RENDER: BOM / WO / JC ──
+function renderBOM(){document.getElementById('bomTbl').innerHTML=(S.get('boms')||[]).map(b=>`<tr><td class="t-blue fw6">${b.id}</td><td>${b.prod}</td><td>${b.ver}</td><td class="num">${b.qty}</td><td class="num">SAR ${fN(b.mat)}</td><td class="num">SAR ${fN(b.lab)}</td><td class="num">SAR ${fN(b.oh)}</td><td class="num fw6">SAR ${fN(b.total)}</td><td>${sBadge(b.status)}</td></tr>`).join('');}
+function renderWO(){document.getElementById('woTbl').innerHTML=(S.get('workorders')||[]).map(w=>`<tr><td class="t-blue fw6">${w.id}</td><td>${w.cust}</td><td>${w.prod}</td><td class="num">${w.qty}</td><td class="num">SAR ${fN(w.dm)}</td><td class="num">SAR ${fN(w.dl)}</td><td class="num">SAR ${fN(w.oh)}</td><td class="num fw6">SAR ${fN(w.dm+w.dl+w.oh)}</td><td><div class="prog"><div class="prog-bar ${w.done>70?'pb-green':w.done>30?'pb-blue':'pb-orange'}" style="width:${w.done}%"></div></div> ${w.done}%</td><td>${sBadge(w.status)}</td><td><button class="btn btn-g xs" onclick="document.getElementById('jcSel').value='${w.id}';nav('jobcost');renderJC('${w.id}')">Cost Sheet</button></td></tr>`).join('');}
+function buildJCSel(){const s=document.getElementById('jcSel');if(s){s.innerHTML=(S.get('workorders')||[]).map(w=>`<option value="${w.id}">${w.id} — ${w.prod}</option>`).join('');const el=document.getElementById('jcAddSel');if(el)el.innerHTML=s.innerHTML;if(s.value)renderJC(s.value);}}
+function renderJC(id){const wo=(S.get('workorders')||[]).find(w=>w.id===id);if(!wo){return;}document.getElementById('jcTitle').textContent='Cost Sheet — '+wo.id;const tot=wo.dm+wo.dl+wo.oh,cpuEst=tot/wo.qty,spEst=cpuEst*1.32,gpu=spEst-cpuEst;document.getElementById('jcBody').innerHTML=`<div class="t-sm t-muted mb12">${wo.cust} | ${wo.prod} | Qty: ${wo.qty}</div><div class="cs-lbl">1. Direct Materials</div><div class="cs-row"><span>Per BOM / issues</span><span>SAR ${fN(wo.dm)}</span></div><div class="cs-row cs-st"><span>Total DM</span><span>SAR ${fN(wo.dm)}</span></div><div class="cs-lbl">2. Direct Labor</div><div class="cs-row"><span>Timesheets charged</span><span>SAR ${fN(wo.dl)}</span></div><div class="cs-row cs-st"><span>Total DL</span><span>SAR ${fN(wo.dl)}</span></div><div class="cs-lbl">3. Manufacturing Overhead</div><div class="cs-row"><span>Applied @ 83.75% of DL</span><span>SAR ${fN(wo.oh)}</span></div><div class="cs-row cs-st"><span>Total OH</span><span>SAR ${fN(wo.oh)}</span></div><div class="cs-row cs-tot"><span>TOTAL JOB COST</span><span>SAR ${fN(tot)}</span></div><div class="divider"></div><div class="cs-row"><span>Cost Per Unit</span><span class="fw6">SAR ${fN(cpuEst,2)}</span></div><div class="cs-row"><span>Estimated Selling Price</span><span>SAR ${fN(spEst,2)}</span></div><div class="cs-row" style="color:var(--green)"><span>Gross Profit Per Unit</span><span class="fw6">SAR ${fN(gpu,2)}</span></div>`;}
+
+// ── RENDER: OVERHEAD ──
+function calcOH(){const b=parseFloat(document.getElementById('ohBudget').value)||1,q=parseFloat(document.getElementById('ohBase2').value)||1,r=(b/q*100).toFixed(2);document.getElementById('ohRes').innerHTML=`<span>Predetermined OH Rate</span><span>${r}% of ${document.getElementById('ohBase').value}</span>`;}
+
+// ── RENDER: ABC ──
+function renderABC(){
+  document.getElementById('abcPoolTbl').innerHTML=[['Machine Setup','Setup Hours',48000,240,'200.00'],['Machining','Machine Hours',120000,6000,'20.00'],['Quality Inspection','Insp Hours',36000,720,'50.00'],['Material Handling','# Moves',18000,900,'20.00'],['Packing','# Orders',24000,200,'120.00']].map(([a,d,c,q,r])=>`<tr><td>${a}</td><td>${d}</td><td class="num">${fN(c)}</td><td class="num">${fN(q)}</td><td class="num fw6 t-blue">SAR ${r}</td></tr>`).join('');
+  document.getElementById('abcCmpTbl').innerHTML=[['Valve Assembly A',324.96,640.00],['Pump Casing B',408.32,2400.00],['Tower Bracket C',70.32,64.00]].map(([p,t,a])=>`<tr><td>${p}</td><td class="num">SAR ${t.toFixed(2)}</td><td class="num fw6">SAR ${a.toFixed(2)}</td><td class="num ${a>t?'t-red':'t-green'}">${a>t?'+':''}${(a-t).toFixed(2)}</td><td>${a>t?'<span class="b b-red">Under-costed</span>':'<span class="b b-green">Over-costed</span>'}</td></tr>`).join('');
+}
+
+// ── RENDER: SELLING ──
+function renderQT(){document.getElementById('qtTbl').innerHTML=(S.get('quotes')||[]).map(q=>`<tr><td class="t-blue fw6">${q.id}</td><td>${q.date}</td><td>${q.cust}</td><td class="num">${q.items}</td><td class="num">SAR ${fN(q.amount)}</td><td>${q.valid}</td><td>${sBadge(q.status)}</td></tr>`).join('');}
+function renderSO(){document.getElementById('soTbl').innerHTML=(S.get('salesorders')||[]).map(s=>`<tr><td class="t-blue fw6">${s.id}</td><td>${s.date}</td><td>${s.cust}</td><td class="num">SAR ${fN(s.amount)}</td><td>${s.delivery}</td><td>${sBadge(s.status)}</td><td class="t-blue">${s.wo||'—'}</td></tr>`).join('');}
+function renderInv(){document.getElementById('invTbl').innerHTML=(S.get('invoices')||[]).map(i=>`<tr><td class="t-blue fw6">${i.id}</td><td>${i.date}</td><td>${i.cust}</td><td class="num">SAR ${fN(i.amount)}</td><td class="num">SAR ${fN(i.vat)}</td><td class="num fw6">SAR ${fN(i.total)}</td><td>${i.due}</td><td>${sBadge(i.status)}</td></tr>`).join('');}
+
+// ── RENDER: HR ──
+function renderEmp(){document.getElementById('empTbl').innerHTML=(S.get('employees')||[]).map(e=>`<tr><td class="t-blue fw6">${e.id}</td><td>${e.name}</td><td>${e.dept}</td><td>${e.role}</td><td class="num">SAR ${fN(e.salary)}</td><td class="num">SAR ${e.rate}/hr</td><td>${sBadge(e.status)}</td></tr>`).join('');}
+function renderTS(){document.getElementById('tsTbl').innerHTML=(S.get('timesheets')||[]).map(t=>`<tr><td>${t.emp}</td><td class="t-blue fw6">${t.wo}</td><td>${t.act}</td><td>${t.date}</td><td class="num">${t.hrs}h</td><td class="num">SAR ${t.rate}/hr</td><td class="num fw6">SAR ${fN(t.cost)}</td></tr>`).join('');}
+function renderPayroll(){const emps=S.get('employees')||[];const rows=emps.map(e=>{const h=Math.round(e.salary*0.25),tr2=400,ot=Math.round(e.salary*0.09),g=e.salary+h+tr2+ot,gosi=Math.round(g*0.1),net=g-gosi;return{...e,h,tr2,ot,g,gosi,net};});document.getElementById('payTbl').innerHTML=rows.map(r=>`<tr><td>${r.name}</td><td class="num">${fN(r.salary)}</td><td class="num">${fN(r.h)}</td><td class="num">${fN(r.tr2)}</td><td class="num">${fN(r.ot)}</td><td class="num fw6">${fN(r.g)}</td><td class="num t-red">(${fN(r.gosi)})</td><td class="num t-green fw6">${fN(r.net)}</td></tr>`).join('');const tg=rows.reduce((s,r)=>s+r.g,0),tn=rows.reduce((s,r)=>s+r.net,0);document.getElementById('payFoot').innerHTML=`<td>TOTAL</td><td></td><td></td><td></td><td></td><td class="num">SAR ${fN(tg)}</td><td class="num t-red">(${fN(tg-tn)})</td><td class="num t-green">SAR ${fN(tn)}</td>`;}
+
+// ── RENDER: FINANCIALS ──
+function co(){return(S.get('company')||{}).name||'Company';}
+function renderPnL(){document.getElementById('pnlRpt').innerHTML=`<div class="fs-co">${co()}</div><div class="fs-sub">Income Statement · Quarter ended June 30, 2025</div><div class="fs-sec">Revenue</div><div class="fs-row in"><span>Sales Revenue</span><span>SAR 894,200</span></div><div class="fs-row st"><span>Total Revenue</span><span>SAR 894,200</span></div><div class="fs-sec">Cost of Goods Sold</div><div class="fs-row in"><span>Direct Materials</span><span>285,400</span></div><div class="fs-row in"><span>Direct Labor</span><span>112,800</span></div><div class="fs-row in"><span>Manufacturing Overhead Applied</span><span>94,200</span></div><div class="fs-row st"><span>Total COGS</span><span>(SAR 492,400)</span></div><div class="fs-row tot"><span>GROSS PROFIT</span><span>SAR 401,800</span></div><div class="fs-row in t-muted t-sm"><span>Gross Margin %</span><span>44.9%</span></div><div class="fs-sec">Operating Expenses</div><div class="fs-row in"><span>Selling Expenses</span><span>48,200</span></div><div class="fs-row in"><span>Admin & General</span><span>62,400</span></div><div class="fs-row in"><span>Depreciation</span><span>18,000</span></div><div class="fs-row st"><span>Total OpEx</span><span>(SAR 128,600)</span></div><div class="fs-row tot"><span>OPERATING PROFIT (EBIT)</span><span>SAR 273,200</span></div><div class="fs-row in"><span>Finance Costs</span><span>(12,400)</span></div><div class="fs-row st"><span>Profit Before Zakat</span><span>SAR 260,800</span></div><div class="fs-row in neg"><span>Zakat (2.5% of Net Assets)</span><span>(SAR 39,120)</span></div><div class="fs-row tot" style="color:var(--green)"><span>NET PROFIT</span><span>SAR 221,680</span></div>`;}
+function renderBS(){document.getElementById('bsRpt').innerHTML=`<div class="fs-co">${co()}</div><div class="fs-sub">Balance Sheet · As at June 30, 2025</div><div class="g2c" style="gap:24px"><div><div class="fs-sec">Assets</div><div class="fs-row" style="font-weight:600"><span>Current Assets</span></div><div class="fs-row in"><span>Cash & Bank</span><span>284,200</span></div><div class="fs-row in"><span>Accounts Receivable</span><span>412,000</span></div><div class="fs-row in"><span>Raw Materials</span><span>148,200</span></div><div class="fs-row in"><span>WIP Inventory</span><span>482,400</span></div><div class="fs-row in"><span>Finished Goods</span><span>124,800</span></div><div class="fs-row st"><span>Total Current Assets</span><span>1,451,600</span></div><div class="fs-row" style="font-weight:600;margin-top:8px"><span>Non-Current Assets</span></div><div class="fs-row in"><span>Machinery & Equipment</span><span>1,840,000</span></div><div class="fs-row in"><span>Less: Accum. Depreciation</span><span>(284,000)</span></div><div class="fs-row st"><span>Total Non-Current Assets</span><span>1,556,000</span></div><div class="fs-row tot"><span>TOTAL ASSETS</span><span>3,007,600</span></div></div><div><div class="fs-sec">Liabilities & Equity</div><div class="fs-row" style="font-weight:600"><span>Current Liabilities</span></div><div class="fs-row in"><span>Accounts Payable</span><span>198,400</span></div><div class="fs-row in"><span>Wages Payable</span><span>31,909</span></div><div class="fs-row in"><span>VAT Payable</span><span>18,200</span></div><div class="fs-row st"><span>Total Current Liabilities</span><span>248,509</span></div><div class="fs-row in" style="margin-top:8px"><span>Bank Loan (Long Term)</span><span>300,000</span></div><div class="fs-row st"><span>Total Liabilities</span><span>548,509</span></div><div class="fs-row" style="font-weight:600;margin-top:8px"><span>Equity</span></div><div class="fs-row in"><span>Share Capital</span><span>2,000,000</span></div><div class="fs-row in"><span>Retained Earnings</span><span>482,000</span></div><div class="fs-row in t-green"><span>Net Profit (Current Year)</span><span>221,680</span></div><div class="fs-row st t-green"><span>Total Equity</span><span>2,459,091</span></div><div class="fs-row tot"><span>TOTAL LIABILITIES & EQUITY</span><span>3,007,600</span></div></div></div>`;}
+function renderCF(){document.getElementById('cfRpt').innerHTML=`<div class="fs-co">${co()}</div><div class="fs-sub">Statement of Cash Flows (Indirect Method) · Q2 2025</div><div class="fs-sec">A. Operating Activities</div><div class="fs-row in"><span>Net Profit</span><span>221,680</span></div><div class="fs-row in"><span>Add: Depreciation</span><span>18,000</span></div><div class="fs-row in"><span>(Increase) in Accounts Receivable</span><span>(84,200)</span></div><div class="fs-row in"><span>(Increase) in Inventories</span><span>(124,600)</span></div><div class="fs-row in"><span>Increase in Accounts Payable</span><span>42,400</span></div><div class="fs-row st"><span>Net Cash from Operations</span><span>73,280</span></div><div class="fs-sec">B. Investing Activities</div><div class="fs-row in"><span>Purchase of Machinery</span><span>(180,000)</span></div><div class="fs-row st"><span>Net Cash from Investing</span><span>(180,000)</span></div><div class="fs-sec">C. Financing Activities</div><div class="fs-row in"><span>Repayment of Bank Loan</span><span>(50,000)</span></div><div class="fs-row in"><span>Dividends Paid</span><span>(60,000)</span></div><div class="fs-row st"><span>Net Cash from Financing</span><span>(110,000)</span></div><div class="fs-row tot" style="color:var(--red)"><span>NET CHANGE IN CASH</span><span>(216,720)</span></div><div class="fs-row in"><span>Opening Cash Balance (Apr 1)</span><span>500,920</span></div><div class="fs-row tot"><span>CLOSING CASH BALANCE (Jun 30)</span><span>284,200</span></div>`;}
+
+// ── RENDER: INVENTORY REPORTS ──
+function switchInvTab(tab,el){document.querySelectorAll('#invTabs .tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');const st=S.get('stock')||[],wo=S.get('workorders')||[];let h='';
+  if(tab==='rm'){const rm=st.filter(s=>s.type==='Raw Material'||s.type==='Component');h=`<div class="kpi-grid g4 mb16">${[{l:'RM Items',v:rm.length,c:'c-blue'},{l:'RM Value',v:'SAR '+fM(rm.reduce((s,i)=>s+i.qty*i.cost,0)),c:'c-teal'},{l:'Below Reorder',v:rm.filter(i=>i.qty<=i.reorder&&i.reorder>0).length,c:'c-red'},{l:'Avg Days Cover',v:'18d',c:'c-green'}].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('')}</div><div class="card"><div class="card-hdr"><span class="card-title">Raw Materials & Components</span><button class="btn btn-g sm">Export</button></div><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>WH</th><th>UOM</th><th>On Hand</th><th>Reorder Pt</th><th>Unit Cost</th><th>Total Value</th><th>Status</th></tr></thead><tbody>${rm.map(i=>`<tr><td class="t-blue fw6">${i.code}</td><td>${i.name}</td><td><span class="b b-blue">${i.wh}</span></td><td>${i.uom}</td><td class="num ${i.qty<=i.reorder&&i.reorder>0?'t-red fw6':''}">${i.qty}</td><td class="num">${i.reorder}</td><td class="num">SAR ${fN(i.cost)}</td><td class="num">SAR ${fN(i.qty*i.cost)}</td><td>${sBadge(i.status)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="7">TOTAL VALUE</td><td class="num">SAR ${fN(rm.reduce((s,i)=>s+i.qty*i.cost,0))}</td><td></td></tr></tfoot></table></div></div>`;}
+  else if(tab==='wip'){h=`<div class="kpi-grid g4 mb16">${[{l:'Active Jobs',v:wo.length,c:'c-blue'},{l:'WIP Value',v:'SAR '+fM(wo.reduce((s,w)=>s+w.dm+w.dl+w.oh,0)),c:'c-teal'},{l:'Avg Cycle Time',v:'14d',c:'c-orange'},{l:'Near Completion',v:wo.filter(w=>w.done>=80).length,c:'c-green'}].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('')}</div><div class="card"><div class="card-hdr"><span class="card-title">Work in Progress — Per Job</span></div><div class="tw"><table><thead><tr><th>WO #</th><th>Product</th><th>Location</th><th>DM</th><th>DL</th><th>OH</th><th>Total WIP</th><th>% Done</th><th>Status</th></tr></thead><tbody>${wo.map(w=>`<tr><td class="t-blue fw6">${w.id}</td><td>${w.prod}</td><td><span class="b b-orange">FL-1</span></td><td class="num">SAR ${fN(w.dm)}</td><td class="num">SAR ${fN(w.dl)}</td><td class="num">SAR ${fN(w.oh)}</td><td class="num fw6">SAR ${fN(w.dm+w.dl+w.oh)}</td><td><div class="prog"><div class="prog-bar ${w.done>70?'pb-green':w.done>30?'pb-blue':'pb-orange'}" style="width:${w.done}%"></div></div> ${w.done}%</td><td>${sBadge(w.status)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="6">TOTAL WIP</td><td class="num">SAR ${fN(wo.reduce((s,w)=>s+w.dm+w.dl+w.oh,0))}</td><td colspan="2"></td></tr></tfoot></table></div></div>`;}
+  else if(tab==='fg'){const fg=st.filter(s=>s.type==='Finished Good');h=`<div class="kpi-grid g4 mb16">${[{l:'FG SKUs',v:fg.length,c:'c-blue'},{l:'FG Cost Value',v:'SAR '+fM(fg.reduce((s,i)=>s+i.qty*i.cost,0)),c:'c-teal'},{l:'Est. Sell Value',v:'SAR '+fM(fg.reduce((s,i)=>s+i.qty*i.cost*1.38,0)),c:'c-green'},{l:'Embedded Margin',v:'~38%',c:'c-orange'}].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('')}</div><div class="card"><div class="card-hdr"><span class="card-title">Finished Goods Inventory</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Product</th><th>Location</th><th>Qty</th><th>Cost/Unit</th><th>Total Cost</th><th>Est. Sell Price</th><th>Margin</th><th>Status</th></tr></thead><tbody>${fg.map(i=>`<tr><td class="t-blue fw6">${i.code}</td><td>${i.name}</td><td><span class="b b-green">${i.wh} ${i.bin}</span></td><td class="num">${i.qty}</td><td class="num">SAR ${fN(i.cost)}</td><td class="num">SAR ${fN(i.qty*i.cost)}</td><td class="num">SAR ${fN(i.cost*1.38,0)}</td><td class="num t-green fw6">38%</td><td>${sBadge(i.status)}</td></tr>`).join('')}</tbody></table></div></div>`;}
+  else if(tab==='val'){h=`<div class="card"><div class="card-hdr"><span class="card-title">Inventory Valuation Summary — June 30, 2025</span><button class="btn btn-g sm">Export PDF</button></div><div class="card-body"><div class="fs-sec">Reconciliation</div><div class="fs-row"><span>Opening Inventory (Jun 1)</span><span>SAR 384,200</span></div><div class="fs-row in"><span>+ Purchases / GRNs received</span><span>52,600</span></div><div class="fs-row in"><span>+ DL + OH transferred to WIP</span><span>207,000</span></div><div class="fs-row in"><span>− Materials issued to production</span><span>(285,400)</span></div><div class="fs-row in"><span>− COGS (FG dispatched to customers)</span><span>(103,134)</span></div><div class="fs-row st"><span>Closing Inventory (Jun 30)</span><span>SAR 255,266</span></div><div class="fs-sec">By Category</div><div class="fs-row in"><span>Raw Materials &amp; Components</span><span>SAR ${fN(st.filter(s=>s.type==='Raw Material'||s.type==='Component').reduce((x,i)=>x+i.qty*i.cost,0))}</span></div><div class="fs-row in"><span>Work in Progress (all open WOs)</span><span>SAR ${fN(wo.reduce((s,w)=>s+w.dm+w.dl+w.oh,0))}</span></div><div class="fs-row in"><span>Finished Goods</span><span>SAR ${fN(st.filter(s=>s.type==='Finished Good').reduce((s,i)=>s+i.qty*i.cost,0))}</span></div><div class="fs-row tot"><span>TOTAL INVENTORY (B/S Value)</span><span>SAR ${fN(st.filter(s=>s.type!=='WIP').reduce((s,i)=>s+i.qty*i.cost,0)+wo.reduce((s,w)=>s+w.dm+w.dl+w.oh,0))}</span></div></div></div>`;}
+  else if(tab==='mov'){h=`<div class="card"><div class="card-hdr"><span class="card-title">Item Movement Report</span><div class="flex gap8"><select class="fc" style="width:200px;font-size:11.5px" id="movSel">${(S.get('items')||[]).map(i=>`<option value="${i.code}">${i.code} ${i.name}</option>`).join('')}</select></div></div><div class="tw"><table><thead><tr><th>Date</th><th>Reference</th><th>Transaction Type</th><th>In</th><th>Out</th><th>Running Balance</th></tr></thead><tbody>${[{d:'2025-06-01',r:'Opening',t:'Opening Balance',i:102,o:0,b:102},{d:'2025-06-05',r:'GRN-0040',t:'Receipt from Supplier',i:120,o:0,b:222},{d:'2025-06-08',r:'ISS-0020',t:'Issue → WO-2020',i:0,o:60,b:162},{d:'2025-06-09',r:'ISS-0022',t:'Issue → WO-2020',i:0,o:60,b:102},{d:'2025-06-12',r:'ISS-0023',t:'Issue → WO-2022',i:0,o:60,b:42}].map(r=>`<tr><td>${r.d}</td><td class="t-blue fw6">${r.r}</td><td>${r.t}</td><td class="num t-green fw6">${r.i||'—'}</td><td class="num t-red fw6">${r.o||'—'}</td><td class="num fw6">${r.b}</td></tr>`).join('')}</tbody></table></div></div>`;}
+  else if(tab==='slow'){h=`<div class="alert a-warn">Items with zero movement in the selected window. Consider write-down, disposal, or return to supplier.</div><div class="card"><div class="card-hdr"><span class="card-title">Slow-Moving & Obsolete Inventory</span><select class="fc" style="width:180px;font-size:11.5px"><option>No movement &gt;30d</option><option>No movement &gt;60d</option><option>No movement &gt;90d</option></select></div><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Qty</th><th>Value</th><th>Last Movement</th><th>Idle Days</th><th>Action</th></tr></thead><tbody><tr><td class="t-blue fw6">RM-0105</td><td>Copper Pipe 20mm</td><td>Raw Material</td><td class="num">85 kg</td><td class="num t-orange">SAR 12,750</td><td>2025-04-12</td><td class="num t-red fw6">64d</td><td><button class="btn btn-g sm" onclick="toast('Write-down JE created. Dr. Loss / Cr. Inventory.','success')">Write-down</button></td></tr><tr><td class="t-blue fw6">FG-0203</td><td>Shaft Coupling (Old Spec)</td><td>Finished Good</td><td class="num">5 pcs</td><td class="num t-orange">SAR 8,380</td><td>2025-03-28</td><td class="num t-red fw6">79d</td><td><button class="btn btn-g sm" onclick="toast('Write-off JE created.','success')">Write-off</button></td></tr></tbody></table></div></div>`;}
+  document.getElementById('invRptBody').innerHTML=h;
+}
+
+// ── AD-HOC REPORTS ──
+const ahData={inv:{t:'Inventory Report',h:['Code','Name','Type','Wh','On Hand','Unit Cost','Total Value','Status'],r:[['RM-0101','Steel Rod 12mm','Raw Material','WH-A','42','180','7,560','Low'],['RM-0102','Bearing 6205','Component','WH-A','8','320','2,560','Critical'],['FG-0201','Valve Assembly A','Finished Good','WH-C','22','1,676','36,880','OK']],tot:'Total Value: SAR 47,000'},ap:{t:'AP Outstanding',h:['Supplier','Invoice','Date','Due','Amount','Aging'],r:[['Al-Nasser Steel','INV-9012','2025-06-08','2025-07-08','31,500','Current'],['Global Bearings','INV-4421','2025-05-15','2025-06-14','28,400','31–60d']],tot:'Total AP: SAR 59,900'},ar:{t:'AR Outstanding',h:['Customer','Invoice','Date','Due','Amount','Aging'],r:[['Saudi Aramco','SI-0041','2025-05-20','2025-06-22','184,800','Current'],['SABIC','SI-0042','2025-05-25','2025-06-30','86,400','Current'],['STC','SI-0038','2025-04-10','2025-06-08','96,800','31–60d']],tot:'Total AR: SAR 368,000'},jobs:{t:'Work Order Cost vs Budget',h:['WO #','Customer','Product','Budget','Actual','Variance','Over %'],r:[['WO-2020','Saudi Aramco','Valve Assembly A','79,000','83,848','-4,848','-6.1%'],['WO-2021','SABIC','Pump Casing B','49,000','53,908','-4,908','-10.0%']],tot:'Total Over Budget: SAR 9,756'},gl:{t:'GL Account Summary',h:['Code','Account','Opening','Period Dr','Period Cr','Closing'],r:[['1010','Cash & Bank','320,000','94,200','129,909','284,291'],['1300','Raw Materials','124,200','52,600','128,700','48,100']],tot:'Net movement: (83,800)'},payroll:{t:'Payroll by Work Order',h:['Employee','Work Order','Activity','Hours','Rate/hr','Cost'],r:[['Ahmed Al-Rashid','WO-2020','Machining','32 hrs','SAR 95','3,040'],['Khalid Al-Saud','WO-2021','Welding','31 hrs','SAR 75','2,325'],['Mohammed Farhan','WO-2020','QC Inspection','16 hrs','SAR 100','1,600']],tot:'Total DL: SAR 6,965'},po:{t:'Purchase Order Summary',h:['PO #','Date','Supplier','Amount','Status','GRN'],r:[['PO-0051','2025-06-01','Al-Nasser Steel','28,400','In Transit','—'],['PO-0052','2025-06-08','Global Bearings','31,500','Draft','—']],tot:'Total Open POs: SAR 59,900'}};
+function showAHFields(){const v=document.getElementById('ahSubj').value;document.getElementById('ahFields').style.display=v?'block':'none';document.getElementById('ahHint').style.display=v?'none':'block';}
+function runAH(){const s=document.getElementById('ahSubj').value,d=ahData[s];if(!d){toast('Select a subject first','warn');return;}const cm={Low:'b-orange',Critical:'b-red',OK:'b-green',Current:'b-green','31–60d':'b-orange','In Transit':'b-blue',Draft:'b-grey'};const fc=v=>{if(cm[v])return`<td><span class="b ${cm[v]}">${v}</span></td>`;if(/^\d{1,3}(,\d{3})*$/.test(v))return`<td class="num">${v}</td>`;if(v.startsWith('-'))return`<td class="num t-red">${v}</td>`;if(/^(WO|PO|SI|QT|INV|RM|FG)-/.test(v))return`<td class="t-blue fw6">${v}</td>`;return`<td>${v}</td>`;};document.getElementById('ahResultTitle').textContent=d.t;document.getElementById('ahResultBody').innerHTML=`<table><thead><tr>${d.h.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${d.r.map(row=>`<tr>${row.map(fc).join('')}</tr>`).join('')}</tbody></table>`;document.getElementById('ahResultTot').textContent='∑ '+d.tot;document.getElementById('ahResult').style.display='block';document.getElementById('ahResult').scrollIntoView({behavior:'smooth'});toast(d.t+' generated.','success');}
+function buildAHTemplates(){document.getElementById('ahTemplates').innerHTML=[['Monthly Inventory Valuation','inv'],['AP Outstanding by Supplier','ap'],['AR Aging Summary','ar'],['Work Order Cost vs Budget','jobs'],['Payroll Cost by Job','payroll'],['Open Purchase Orders','po']].map(([n,k])=>`<div class="fsec flex ic jb mb8"><div><div class="fw6 t-sm mb8">${n}</div><div class="t-xs t-muted">${ahData[k]?.t}</div></div><button class="btn btn-s sm" onclick="document.getElementById('ahSubj').value='${k}';showAHFields();runAH()">Run</button></div>`).join('');}
+
+// ── COMPANY SETUP PAGE ──
+  mFY:{title:'New Fiscal Year',saveLabel:'Create Fiscal Year',body:()=>`<div class="fr fr2">${inp('Year','mfy_y','number','','2026')}${sel('Type','mfy_t',['Calendar Year (Jan–Dec)','Hijri Year','Custom'])}</div><div class="fr fr2">${inp('Start Date','mfy_s','date','','2026-01-01')}${inp('End Date','mfy_e','date','','2026-12-31')}</div><div class="fr fr2">${sel('Period Length','mfy_pl',['Monthly (12 periods)','Quarterly (4 periods)'])}${sel('Carry Forward Method','mfy_cf',['Balance Sheet only','All Accounts'])}</div><div class="alert a-info" style="margin-top:8px">A new fiscal year will create 12 blank periods, all set to Future status until activated.</div>`,
+    save:()=>{const y=parseInt(gv('mfy_y'))||2026;const fys=S.get('fiscalYears')||[];if(fys.find(f=>f.year===y)){toast(`FY ${y} already exists.`,'warn');return;}const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const periods=months.map((m,i)=>{const n=i+1,start=`${y}-${String(n).padStart(2,'0')}-01`,endD=new Date(y,n,0),end=`${y}-${String(n).padStart(2,'0')}-${String(endD.getDate()).padStart(2,'0')}`;return{period:`P${String(n).padStart(2,'0')}`,month:m,year:y,start,end,status:'Future',closedBy:'—',closedOn:'—',checklist:{trialBalance:false,bankRecon:false,arReconcile:false,apReconcile:false,inventoryCount:false,accrualsPosted:false,depreciationPosted:false,jeReviewed:false}};});periods[0].status='Open';fys.push({year:y,type:gv('mfy_t'),start:gv('mfy_s'),end:gv('mfy_e'),status:'Open',currentPeriod:'P01',periods});S.set('fiscalYears',fys);closeM();renderFiscalYear();toast(`FY ${y} created with 12 periods.`,'success');}},
+  mOpenYear:{title:'Open / Activate Year',saveLabel:'Activate',body:()=>`<div class="fg mb12"><label class="fl">Select Year to Activate</label><select class="fc" id="moy_y">${(S.get('fiscalYears')||[]).filter(f=>f.status!=='Open').map(f=>`<option value="${f.year}">FY ${f.year} (${f.status})</option>`).join('')}</select></div><div class="fg"><label class="fl">Opening Balance Method</label><select class="fc"><option>Carry forward from previous year</option><option>Enter manually</option></select></div><div class="alert a-info" style="margin-top:8px">Activating a year sets P01 to Open status and makes it available for transactions.</div>`,
+    save:()=>{const y=parseInt(gv('moy_y'));if(!y){toast('Select a year','warn');return;}const fys=S.get('fiscalYears')||[];const fy=fys.find(f=>f.year===y);if(fy){fy.status='Open';if(fy.periods[0])fy.periods[0].status='Open';}S.set('fiscalYears',fys);closeM();renderFiscalYear();updateTopbarLock();toast(`FY ${y} activated.`,'success');}},
+  mCloseMonth:{title:'Close Accounting Period',saveLabel:'Close Period',body:()=>{const fys=S.get('fiscalYears')||[];const cur=fys.find(f=>f.status==='Open');const openPeriods=(cur?.periods||[]).filter(p=>p.status==='Open');return`<div class="fg mb12"><label class="fl req">Select Period to Close</label><select class="fc" id="mcm_p">${openPeriods.map(p=>`<option value="${p.period}|${cur?.year}">${p.period} — ${p.month} ${cur?.year}</option>`).join('')}</select></div><div class="alert a-warn mb12">Closing this period will block all transactions (JE, GRN, Invoices, Payroll, Stock) dated within it.</div><div class="fg"><label class="fl req">Closing Note</label><textarea class="fc" id="mcm_note" rows="2" placeholder="e.g. All accruals posted, bank reconciled..."></textarea></div>`;},
+    save:()=>{const val=gv('mcm_p');if(!val){toast('Select a period','warn');return;}const [period,year]=val.split('|');if(!gv('mcm_note').trim()){toast('Closing note required','warn');return;}closePeriod(parseInt(year),period);}},
+  mReopenMonth:{title:'Re-open Accounting Period',saveLabel:'Re-open',body:()=>{const fys=S.get('fiscalYears')||[];const closedPeriods=fys.flatMap(f=>f.periods.filter(p=>p.status==='Closed').map(p=>({...p,fyYear:f.year})));return`<div class="fg mb12"><label class="fl req">Select Period to Re-open</label><select class="fc" id="mrm_p">${closedPeriods.map(p=>`<option value="${p.period}|${p.fyYear}">${p.period} — ${p.month} ${p.fyYear}</option>`).join('')}</select></div><div class="fg mb12"><label class="fl req">Reason for Re-opening</label><textarea class="fc" id="mrm_r" rows="3" placeholder="e.g. Missed supplier invoice, requires backdated JE..."></textarea></div><div class="fg"><label class="fl req">Authorised By</label><select class="fc" id="mrm_auth">${(S.get('employees')||[]).map(e=>`<option>${e.name}</option>`).join('')}</select></div>`;},
+    save:()=>{const val=gv('mrm_p'),reason=gv('mrm_r');if(!val||!reason.trim()){toast('Period and reason required','error');return;}const [period,year]=val.split('|');reopenPeriod(parseInt(year),period);}}
+};
+
+function buildSetupForms(){
+  const c=S.get('company')||{};
+  document.getElementById('setupF1').innerHTML=`<div class="fr fr2">${inp('Company Name','s_name','text','',c.name)}</div><div class="fr fr2">${inp('Company Name (Arabic)','s_ar','text','',c.nameAr)}${inp('CR Number','s_cr','text','',c.cr)}</div><div class="fr fr2">${inp('VAT Number','s_vat','text','',c.vat)}${inp('Phone','s_ph','text','',c.phone)}</div>${inp('Email','s_em','email','',c.email)}${ta('Address','s_addr',c.address||'')}`;
+  document.getElementById('setupF2').innerHTML=`<div class="fr fr2">${inp('Base Currency','s_cur','text','',c.currency||'SAR')}${inp('VAT Rate %','s_vr','number','',c.vatRate||15)}</div><div class="fr fr2">${inp('GOSI Employer %','s_ge','number','',c.gosiEmp||12)}${inp('GOSI Employee %','s_gee','number','',c.gosiEe||10)}</div>`;
+  document.getElementById('setupF3').innerHTML=`<div class="fr fr2">${sel('Costing Method','s_cm',['job — Job Order','abc — ABC Costing','both — Both'])}${sel('Inventory Valuation','s_iv',['FIFO','Weighted Average'])}</div><div class="fr fr2">${sel('OH Allocation Base','s_oh',['Direct Labor Cost','Direct Labor Hours','Machine Hours'])}${inp('Default FG Warehouse','s_fgwh','text','',c.fgWH||'WH-C')}</div>`;
+  document.getElementById('setupF4').innerHTML=`<div class="fr fr2">${sel('Auto-post Procurement JE','s_apje',['Yes','No — Manual Review'])}${sel('Require JE Approval','s_jea',['No','Yes — Manager'])}</div><div class="divider"></div><div class="alert a-warn">Danger Zone — these actions cannot be undone.</div><div class="btn-row"><button class="btn btn-g sm" onclick="if(confirm('Re-run wizard?'))rerunWizard()">Re-run Setup Wizard</button><button class="btn btn-d sm" onclick="if(confirm('RESET ALL DATA? Clears localStorage + Sheets.'))resetAllFull()">🗑 Reset All Data</button></div>`;
+  // Initialize Google Sheets UI after DOM is ready
+  setTimeout(initGSUI, 50);
+}
+function saveSetup(){const c=S.get('company')||{};c.name=gv('s_name')||c.name;c.nameAr=gv('s_ar');c.cr=gv('s_cr');c.vat=gv('s_vat');c.phone=gv('s_ph');c.email=gv('s_em');c.address=gv('s_addr');c.currency=gv('s_cur');c.vatRate=parseFloat(gv('s_vr'))||15;c.gosiEmp=parseFloat(gv('s_ge'))||12;c.gosiEe=parseFloat(gv('s_gee'))||10;c.fgWH=gv('s_fgwh');S.set('company',c);document.getElementById('sbCo').textContent=c.name||'ManuCost ERP';toast('Settings saved.','success');}
+function resetAll(){localStorage.clear();location.reload();}
+async function resetAllFull(){localStorage.clear();if(GS_URL){await GS.reset();toast('All data cleared from localStorage and Sheets.','success');}location.reload();}
+function rerunWizard(){document.getElementById('app').style.display='none';document.getElementById('wizOv').style.display='flex';wStep=1;wRender();}
+
+// ── FISCAL YEAR + PERIOD CLOSING ENGINE ──
+
+// Seed fiscal year and period data (called inside seedData)
+function seedFiscalData(){
+  if(S.get('fiscalYears')) return;
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const buildPeriods=(year,closedUpTo)=>months.map((m,i)=>{
+    const num=i+1;
+    const start=`${year}-${String(num).padStart(2,'0')}-01`;
+    const end=new Date(year,num,0);
+    const endStr=`${year}-${String(num).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+    const status=num<closedUpTo?'Closed':num===closedUpTo?'Closing':num<=6?'Open':'Future';
+    return{period:`P${String(num).padStart(2,'0')}`,month:m,year,start,end:endStr,status,closedBy:num<closedUpTo?'Ahmed Al-Rashid':'—',closedOn:num<closedUpTo?`${year}-${String(num).padStart(2,'0')}-28`:'—',checklist:{trialBalance:num<closedUpTo,bankRecon:num<closedUpTo,arReconcile:num<closedUpTo,apReconcile:num<closedUpTo,inventoryCount:num<closedUpTo,accrualsPosted:num<closedUpTo,depreciationPosted:num<closedUpTo,jeReviewed:num<closedUpTo}};
+  });
+  S.set('fiscalYears',[
+    {year:2025,type:'Calendar Year',start:'2025-01-01',end:'2025-12-31',status:'Open',currentPeriod:'P06',periods:buildPeriods(2025,6)},
+    {year:2024,type:'Calendar Year',start:'2024-01-01',end:'2024-12-31',status:'Closed',currentPeriod:'P12',periods:buildPeriods(2024,13)},
+  ]);
+}
+
+// ── PERIOD GUARD — called by every write operation ──
+function periodGuard(dateStr){
+  // Returns {blocked:true, reason:'...'} if the date falls in a closed period
+  if(!dateStr) return {blocked:false};
+  const d=new Date(dateStr);
+  const year=d.getFullYear();
+  const month=d.getMonth()+1;
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  if(!fy) return {blocked:false}; // unknown year — allow
+  if(fy.status==='Closed') return {blocked:true,reason:`FY ${year} is fully closed. No transactions are permitted.`};
+  const period=fy.periods.find(p=>p.year===year&&parseInt(p.period.replace('P',''))===month);
+  if(!period) return {blocked:false};
+  if(period.status==='Closed'){
+    return{blocked:true,reason:`Period ${period.period} — ${period.month} ${year} is closed. Re-open the period in Period Closing before posting.`};
+  }
+  return{blocked:false};
+}
+
+// Wrap any save action with period check — usage: if(checkPeriod(dateValue)) return;
+function checkPeriod(dateStr){
+  const g=periodGuard(dateStr);
+  if(g.blocked){
+    showPeriodBlockModal(g.reason);
+    return true;
+  }
+  return false;
+}
+
+function showPeriodBlockModal(reason){
+  openM('_periodBlock');
+  document.getElementById('mTitle').textContent='⛔ Period Closed';
+  document.getElementById('mBody').innerHTML=`
+    <div class="alert a-err mb12">${reason}</div>
+    <div class="card-body" style="background:var(--surface2);border-radius:var(--radius);padding:12px;font-size:12.5px;color:var(--text2)">
+      <div class="fw6 mb8">To post this transaction you must:</div>
+      <div style="line-height:2">1. Navigate to <strong>Period Closing</strong> in Settings<br>
+      2. Select the locked period<br>
+      3. Click <strong>Re-open Period</strong> (requires reason)<br>
+      4. Re-post your transaction<br>
+      5. Re-close the period</div>
+    </div>
+    <div class="btn-row mt12">
+      <button class="btn btn-s" onclick="closeM();nav('periodclose')">Go to Period Closing →</button>
+    </div>`;
+  document.getElementById('mSaveBtn').style.display='none';
+  document.getElementById('mShell').classList.add('open');
+}
+
+// ── RENDER: FISCAL YEAR PAGE ──
+function renderFiscalYear(){
+  const fys=S.get('fiscalYears')||[];
+  const cur=fys.find(f=>f.status==='Open')||fys[0];
+  const closed=fys.filter(f=>f.status==='Closed').length;
+  document.getElementById('fyKPIs').innerHTML=[
+    {l:'Fiscal Years Defined',v:fys.length,c:'c-blue'},
+    {l:'Current FY',v:cur?cur.year:'—',c:'c-green'},
+    {l:'Closed FY',v:closed,c:'c-teal'},
+    {l:'Current Period',v:cur?cur.currentPeriod:'—',c:'c-orange'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  document.getElementById('fyList').innerHTML=fys.map(fy=>`
+    <div class="fy-card fy-${fy.status==='Open'?'open':fy.status==='Closed'?'closed':'future'} mb12"
+         onclick="showFYDetail(${fy.year})" style="cursor:pointer">
+      <div class="flex ic jb mb8">
+        <span class="fw6" style="font-size:14px">FY ${fy.year}</span>
+        <span class="b ${fy.status==='Open'?'b-green':fy.status==='Closed'?'b-red':'b-grey'}">${fy.status}</span>
+      </div>
+      <div class="flex gap12 t-sm t-muted mb8">
+        <span>📅 ${fy.start} → ${fy.end}</span>
+        <span>Type: ${fy.type}</span>
+      </div>
+      <div class="flex gap12 t-sm">
+        <span>Periods: <strong>${fy.periods.filter(p=>p.status==='Closed').length}/12 closed</strong></span>
+        <span>Current: <strong class="t-blue">${fy.currentPeriod}</strong></span>
+      </div>
+      <div class="prog mt12"><div class="prog-bar ${fy.status==='Open'?'pb-green':'pb-blue'}" style="width:${Math.round(fy.periods.filter(p=>p.status==='Closed').length/12*100)}%"></div></div>
+    </div>`).join('');
+
+  renderFYPeriods();
+}
+
+function showFYDetail(year){
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  if(!fy) return;
+  const closed=fy.periods.filter(p=>p.status==='Closed').length;
+  const open=fy.periods.filter(p=>p.status==='Open').length;
+  document.getElementById('fyDetail').innerHTML=`
+    <div class="kpi c-blue mb12" style="padding:10px 14px"><div class="kpi-lbl">FY ${fy.year} — ${fy.type}</div><div class="kpi-val" style="font-size:18px">${fy.status}</div></div>
+    <div class="cs-row"><span>Start Date</span><span class="fw6">${fy.start}</span></div>
+    <div class="cs-row"><span>End Date</span><span class="fw6">${fy.end}</span></div>
+    <div class="cs-row"><span>Periods Closed</span><span class="fw6 t-green">${closed} / 12</span></div>
+    <div class="cs-row"><span>Periods Open</span><span class="fw6 t-blue">${open} / 12</span></div>
+    <div class="cs-row"><span>Current Period</span><span class="fw6 t-orange">${fy.currentPeriod}</span></div>
+    <div class="divider"></div>
+    ${fy.status==='Open'?`<button class="btn btn-d sm w100" onclick="if(confirm('Close entire FY ${fy.year}? All periods will be locked.'))closeFY(${fy.year})">Close FY ${fy.year}</button>`:'<div class="alert a-err" style="margin-top:8px">This fiscal year is fully closed.</div>'}`;
+}
+
+function renderFYPeriods(){
+  const year=parseInt(document.getElementById('fyYearFilter')?.value)||2025;
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  if(!fy){document.getElementById('fyPeriods').innerHTML='<div class="alert a-warn">No data for selected year.</div>';return;}
+  document.getElementById('fyPeriods').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px">
+      ${fy.periods.map(p=>{
+        const cls=p.status==='Closed'?'b-red':p.status==='Open'?'b-green':p.status==='Closing'?'b-orange':'b-grey';
+        const bg=p.status==='Closed'?'#FEF8F8':p.status==='Open'?'#F6FEF6':p.status==='Future'?'var(--surface2)':'var(--yellow-lt)';
+        return`<div style="background:${bg};border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+          <div class="flex ic jb mb8"><span class="fw6 t-sm">${p.period} — ${p.month}</span><span class="b ${cls}" style="font-size:10px">${p.status}</span></div>
+          <div class="t-xs t-muted">${p.start.slice(5)} → ${p.end.slice(5)}</div>
+          ${p.status==='Closed'?`<div class="t-xs t-muted mt8">Closed: ${p.closedOn.slice(5)}</div>`:''}
+          ${p.status==='Open'?`<button class="btn btn-ok xs mt8 w100" onclick="quickClosePeriod(${year},'${p.period}')">Close →</button>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function closeFY(year){
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  if(fy){fy.status='Closed';fy.periods.forEach(p=>{if(p.status!=='Closed'){p.status='Closed';p.closedBy='System';p.closedOn=today();}});S.set('fiscalYears',fys);}
+  renderFiscalYear();
+  updateTopbarLock();
+  toast(`FY ${year} fully closed. All 12 periods locked.`,'success');
+}
+
+// ── RENDER: PERIOD CLOSING PAGE ──
+function renderPeriodClose(){
+  const year=parseInt(document.getElementById('pcYearSel')?.value)||2025;
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  if(!fy){document.getElementById('periodRows').innerHTML='<div class="alert a-warn" style="margin:12px">No fiscal year data.</div>';return;}
+
+  const closed=fy.periods.filter(p=>p.status==='Closed').length;
+  const open=fy.periods.filter(p=>p.status==='Open').length;
+  const future=fy.periods.filter(p=>p.status==='Future').length;
+
+  document.getElementById('pcKPIs').innerHTML=[
+    {l:'Periods Closed',v:closed,c:'c-red'},
+    {l:'Periods Open',v:open,c:'c-green'},
+    {l:'Future Periods',v:future,c:'c-teal'},
+    {l:'Current Period',v:fy.currentPeriod,c:'c-blue'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Period rows
+  document.getElementById('periodRows').innerHTML=fy.periods.map(p=>{
+    const isClosed=p.status==='Closed', isFuture=p.status==='Future';
+    const rowCls=isClosed?'closed':isFuture?'future':'open';
+    const checks=p.checklist;
+    const doneCount=Object.values(checks).filter(Boolean).length;
+    const total=Object.keys(checks).length;
+    const pct=Math.round(doneCount/total*100);
+    return`<div class="period-row ${rowCls}">
+      <span class="fw6">${p.period}</span>
+      <span>${p.month} ${year}</span>
+      <span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="prog" style="flex:1"><div class="prog-bar ${isClosed?'pb-green':pct>50?'pb-blue':'pb-orange'}" style="width:${pct}%"></div></div>
+          <span class="t-xs">${doneCount}/${total}</span>
+          ${!isClosed&&!isFuture?`<button class="btn btn-g xs" onclick="openChecklistModal(${year},'${p.period}')">Checklist</button>`:''}
+        </div>
+      </span>
+      <span class="t-xs">${p.closedBy}</span>
+      <span class="t-xs">${p.closedOn}</span>
+      <span>
+        ${isClosed
+          ?`<button class="btn btn-g xs" onclick="reopenPeriod(${year},'${p.period}')">🔓 Re-open</button>`
+          :isFuture
+          ?`<span class="b b-grey" style="font-size:10px">Future</span>`
+          :`<button class="btn btn-ok xs" onclick="closePeriod(${year},'${p.period}')">🔒 Close</button>`}
+      </span>
+    </div>`;
+  }).join('');
+
+  // Checklist summary (for current open period)
+  const curP=fy.periods.find(p=>p.period===fy.currentPeriod)||fy.periods.find(p=>p.status==='Open');
+  if(curP){
+    const checkLabels={trialBalance:'Trial Balance agreed',bankRecon:'Bank Reconciliation complete',arReconcile:'AR Reconciliation complete',apReconcile:'AP Reconciliation complete',inventoryCount:'Inventory count verified',accrualsPosted:'Accruals & prepayments posted',depreciationPosted:'Depreciation posted',jeReviewed:'All Journal Entries reviewed'};
+    document.getElementById('pcChecklist').innerHTML=`
+      <div class="fw6 mb12 t-sm">Checklist for ${curP.month} ${year} (${curP.period})</div>
+      ${Object.entries(checkLabels).map(([k,label])=>`
+        <div class="flex ic gap8 mb8" style="padding:8px 10px;background:${curP.checklist[k]?'var(--green-lt)':'var(--surface2)'};border-radius:var(--radius);border:1px solid ${curP.checklist[k]?'#A8D8A8':'var(--border)'}">
+          <input type="checkbox" ${curP.checklist[k]?'checked':''} onchange="toggleCheck(${year},'${curP.period}','${k}',this.checked)" style="width:14px;height:14px;cursor:pointer;accent-color:var(--green)">
+          <span style="font-size:12.5px;color:${curP.checklist[k]?'var(--green)':'var(--text2)'}">${label}</span>
+          ${curP.checklist[k]?'<span class="t-xs t-green" style="margin-left:auto">✓ Done</span>':'<span class="t-xs t-muted" style="margin-left:auto">Pending</span>'}
+        </div>`).join('')}
+      <div class="btn-row mt12">
+        ${Object.values(curP.checklist).every(Boolean)
+          ?`<button class="btn btn-ok" onclick="closePeriod(${year},'${curP.period}')">🔒 All Done — Close Period</button>`
+          :`<button class="btn btn-g" disabled title="Complete all checklist items first">Complete checklist to close</button>`}
+      </div>`;
+  }
+
+  // Module guard list
+  const modules=[{n:'Journal Entry',icon:'✎'},{n:'Purchase Orders',icon:'◫'},{n:'Goods Receipt',icon:'◪'},{n:'Sales Orders',icon:'◪'},{n:'Sales Invoices',icon:'◨'},{n:'Stock Transfers',icon:'⇄'},{n:'Payroll Run',icon:'◈'},{n:'Work Orders',icon:'◎'}];
+  document.getElementById('pcGuardList').innerHTML=modules.map(m=>`
+    <div class="flex ic jb" style="padding:8px 12px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
+      <span style="font-size:12.5px"><span class="t-muted">${m.icon}</span> ${m.n}</span>
+      <span class="b b-green" style="font-size:10px">✓ Guarded</span>
+    </div>`).join('');
+
+  updateTopbarLock();
+}
+
+function quickClosePeriod(year,period){
+  if(!confirm(`Close ${period} — ${year}?\n\nThis will block all transactions dated in this period.`)) return;
+  closePeriod(year,period);
+}
+
+function closePeriod(year,period){
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  if(!fy) return;
+  const p=fy.periods.find(p=>p.period===period);
+  if(!p) return;
+  // All checklist items must be checked
+  const allDone=Object.values(p.checklist).every(Boolean);
+  if(!allDone){
+    const remaining=Object.entries(p.checklist).filter(([,v])=>!v).length;
+    toast(`${remaining} checklist item(s) still pending. Complete them first.`,'warn');
+    return;
+  }
+  p.status='Closed';
+  p.closedBy=((S.get('company')||{}).name||'Admin');
+  p.closedOn=today();
+  // advance currentPeriod to next open one
+  const next=fy.periods.find(pp=>pp.status==='Open'||pp.status==='Future');
+  if(next){fy.currentPeriod=next.period;if(next.status==='Future')next.status='Open';}
+  S.set('fiscalYears',fys);
+  renderPeriodClose();
+  updateTopbarLock();
+  toast(`Period ${period} — ${year} closed. Transactions in this period are now blocked.`,'success');
+}
+
+function reopenPeriod(year,period){
+  openM('_reopenConfirm');
+  document.getElementById('mTitle').textContent='🔓 Re-open Period';
+  document.getElementById('mBody').innerHTML=`
+    <div class="alert a-warn mb12">Re-opening a closed period allows backdated transactions. This action is logged.</div>
+    <div class="fg mb12"><label class="fl req">Reason for Re-opening</label><textarea class="fc" id="reopenReason" rows="3" placeholder="e.g. Missed accrual for supplier invoice INV-9012..."></textarea></div>
+    <div class="fg"><label class="fl req">Authorised By</label><select class="fc" id="reopenAuth">${(S.get('employees')||[]).filter(e=>['Admin','Finance'].includes(e.dept)).concat([{name:'CFO / Finance Director'}]).map(e=>`<option>${e.name}</option>`).join('')}</select></div>`;
+  document.getElementById('mSaveBtn').style.display='flex';
+  document.getElementById('mSaveBtn').textContent='Re-open Period';
+  mSaveFn=()=>{
+    const reason=gv('reopenReason');
+    if(!reason.trim()){toast('Reason is required','error');return;}
+    const fys=S.get('fiscalYears')||[];
+    const fy=fys.find(f=>f.year===year);
+    const p=fy?.periods.find(p=>p.period===period);
+    if(p){p.status='Open';p.closedBy='—';p.closedOn='—';
+      // log reopen
+      const log=S.get('periodLog')||[];
+      log.unshift({action:'RE-OPEN',period,year,reason,by:gv('reopenAuth'),date:today()});
+      S.set('periodLog',log);
+    }
+    S.set('fiscalYears',fys);
+    closeM();
+    renderPeriodClose();
+    updateTopbarLock();
+    toast(`Period ${period} re-opened. Remember to re-close after posting.`,'warn');
+  };
+  document.getElementById('mShell').classList.add('open');
+}
+
+function openChecklistModal(year,period){
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  const p=fy?.periods.find(pp=>pp.period===period);
+  if(!p) return;
+  const checkLabels={trialBalance:'Trial Balance agreed',bankRecon:'Bank Reconciliation',arReconcile:'AR Reconciliation',apReconcile:'AP Reconciliation',inventoryCount:'Inventory Count',accrualsPosted:'Accruals & Prepayments',depreciationPosted:'Depreciation Posted',jeReviewed:'All JEs Reviewed'};
+  openM('_checklist');
+  document.getElementById('mTitle').textContent=`Closing Checklist — ${p.month} ${year}`;
+  document.getElementById('mBody').innerHTML=`
+    ${Object.entries(checkLabels).map(([k,label])=>`
+      <div class="flex ic gap8 mb8" style="padding:9px 12px;background:${p.checklist[k]?'var(--green-lt)':'var(--surface2)'};border-radius:var(--radius);border:1px solid ${p.checklist[k]?'#A8D8A8':'var(--border)'}">
+        <input type="checkbox" id="cl_${k}" ${p.checklist[k]?'checked':''} style="width:15px;height:15px;accent-color:var(--green)">
+        <span style="font-size:13px">${label}</span>
+        ${p.checklist[k]?'<span class="b b-green" style="margin-left:auto;font-size:10px">Done</span>':''}
+      </div>`).join('')}`;
+  document.getElementById('mSaveBtn').textContent='Save Checklist';
+  mSaveFn=()=>{
+    Object.keys(checkLabels).forEach(k=>{
+      const el=document.getElementById('cl_'+k);
+      if(el) p.checklist[k]=el.checked;
+    });
+    S.set('fiscalYears',fys);
+    closeM();
+    renderPeriodClose();
+    toast('Checklist saved.','success');
+  };
+  document.getElementById('mShell').classList.add('open');
+}
+
+function toggleCheck(year,period,key,val){
+  const fys=S.get('fiscalYears')||[];
+  const fy=fys.find(f=>f.year===year);
+  const p=fy?.periods.find(pp=>pp.period===period);
+  if(p){p.checklist[key]=val;S.set('fiscalYears',fys);}
+  renderPeriodClose();
+}
+
+// ── TOPBAR PERIOD LOCK INDICATOR ──
+function updateTopbarLock(){
+  const fys=S.get('fiscalYears')||[];
+  const cur=fys.find(f=>f.status==='Open');
+  if(!cur){
+    document.getElementById('tbPeriod').className='lock-indicator lock-closed';
+    document.getElementById('tbPeriod').textContent='🔒 All Periods Closed';
+    return;
+  }
+  const co2=S.get('company')||{};
+  const curP=cur.periods.find(p=>p.period===cur.currentPeriod);
+  if(curP&&curP.status==='Closed'){
+    document.getElementById('tbPeriod').className='lock-indicator lock-partial';
+    document.getElementById('tbPeriod').textContent=`⚠ ${cur.currentPeriod} Closed`;
+  } else {
+    document.getElementById('tbPeriod').className='tb-period';
+    document.getElementById('tbPeriod').textContent=`FY ${cur.year} · ${cur.currentPeriod}`;
+  }
+}
+
+// ── ADD-TO-SEED ──  (call from seedData after S.set('seeded',true))
+
+// ── GOOGLE SHEETS UI FUNCTIONS ──
+
+function connectSheets() {
+  const url = gv('gsUrl').trim();
+  if (!url.startsWith('https://script.google.com')) {
+    showGSMsg('err', 'URL must start with https://script.google.com/macros/s/…');
+    return;
+  }
+  GS.setURL(url);
+  showGSMsg('ok', '↻ Testing connection…');
+  GS.ping().then(ok => {
+    if (ok) {
+      _syncOK = true;
+      showGSMsg('ok', '✓ Connected to Google Sheets! Your data will now sync automatically.');
+      document.getElementById('gsSyncActions').style.display = 'grid';
+      document.getElementById('setupSyncBadge').textContent = '● Connected';
+      document.getElementById('setupSyncBadge').className = 'b b-green';
+      setSyncBadge('on');
+      renderSyncLog();
+    } else {
+      showGSMsg('err', '✗ Could not reach Apps Script. Check the URL and make sure deployment is set to "Anyone".');
+      setSyncBadge('err');
+    }
+  });
+}
+
+function testSheets() {
+  if (!GS_URL) { showGSMsg('err', 'Enter and connect a URL first.'); return; }
+  showGSMsg('ok', '↻ Pinging…');
+  GS.ping().then(ok => {
+    if (ok) { showGSMsg('ok', '✓ Connection OK — Google Sheets is reachable.'); setSyncBadge('on'); }
+    else    { showGSMsg('err', '✗ Cannot reach Apps Script right now. Check internet connection.'); setSyncBadge('err'); }
+  });
+}
+
+async function pushToSheets() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⬆ Pushing…';
+  document.getElementById('pushStatus').textContent = '';
+  const result = await GS.pushAll();
+  btn.disabled = false; btn.textContent = '⬆ Push All Data to Sheets';
+  if (result.ok || result.pushed > 0) {
+    document.getElementById('pushStatus').textContent = `✓ Pushed ${result.pushed} records — ${new Date().toLocaleTimeString()}`;
+    toast(`${result.pushed} records pushed to Google Sheets.`, 'success');
+    renderSyncLog();
+  } else {
+    document.getElementById('pushStatus').textContent = '✗ Push failed: ' + (result.error || 'unknown error');
+    toast('Push failed. Check your connection.', 'warn');
+  }
+}
+
+async function pullFromSheets() {
+  if (!confirm('Pull from Google Sheets?\n\nThis will overwrite your current browser data with whatever is in the Sheet. Make sure you pushed first if you have local changes.')) return;
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⬇ Pulling…';
+  document.getElementById('pullStatus').textContent = '';
+  const result = await GS.pullAll();
+  btn.disabled = false; btn.textContent = '⬇ Pull All Data from Sheets';
+  if (result.pulled > 0) {
+    document.getElementById('pullStatus').textContent = `✓ Pulled ${result.pulled} records — ${new Date().toLocaleTimeString()}`;
+    toast(`${result.pulled} records pulled from Google Sheets. Reloading…`, 'success');
+    setTimeout(() => location.reload(), 1500);
+  } else {
+    document.getElementById('pullStatus').textContent = '✗ Pull failed: ' + (result.error || 'no data returned');
+    toast('Pull failed: ' + (result.error || 'no data'), 'warn');
+  }
+}
+
+function showGSMsg(type, msg) {
+  const ok  = document.getElementById('gsConnectMsg');
+  const err = document.getElementById('gsErrorMsg');
+  if (type === 'ok') {
+    ok.textContent = msg; ok.style.display = 'flex';
+    err.style.display = 'none';
+  } else {
+    err.textContent = msg; err.style.display = 'flex';
+    ok.style.display = 'none';
+  }
+}
+
+function renderSyncLog() {
+  const modules = [
+    {key:'company',   label:'Company Settings'},
+    {key:'suppliers', label:'Suppliers'},
+    {key:'customers', label:'Customers'},
+    {key:'items',     label:'Item Master'},
+    {key:'stock',     label:'Stock Ledger'},
+    {key:'workorders',label:'Work Orders'},
+    {key:'journals',  label:'Journal Entries'},
+    {key:'invoices',  label:'Sales Invoices'},
+    {key:'pos',       label:'Purchase Orders'},
+    {key:'employees', label:'Employees'},
+    {key:'payterms',  label:'Payment Terms'},
+    {key:'fiscalYears',label:'Fiscal Years'},
+  ];
+  const tbl = document.getElementById('gsSyncLog');
+  if (!tbl) return;
+  tbl.innerHTML = modules.map(m => {
+    const data = S.get(m.key);
+    const count = Array.isArray(data) ? data.length : (data ? 1 : 0);
+    const synced = GS_URL ? new Date().toLocaleTimeString() : '—';
+    const status = GS_URL ? '<span class="b b-green">Synced</span>' : '<span class="b b-grey">Local only</span>';
+    return `<tr>
+      <td>${m.label}</td>
+      <td class="num">${count}</td>
+      <td class="t-muted t-sm">${synced}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('gsSheetStatus').style.display = 'block';
+}
+
+function initGSUI() {
+  // Pre-fill saved URL if exists
+  const saved = localStorage.getItem('mce_gs_url') || '';
+  const urlEl = document.getElementById('gsUrl');
+  if (urlEl && saved) {
+    urlEl.value = saved;
+    document.getElementById('gsSyncActions').style.display = 'grid';
+  }
+  // Show connected status
+  if (saved) {
+    checkSync().then(() => {
+      if (_syncOK) {
+        document.getElementById('setupSyncBadge').textContent = '● Connected';
+        document.getElementById('setupSyncBadge').className = 'b b-green';
+        renderSyncLog();
+      }
+    });
+  }
+}
+
+// Patch setupF4 to include GS reset
+// ── BOOT ──
+seedData();
+seedFiscalData();
+const _co=S.get('company');
+if(!_co||!_co.name){document.getElementById('wizOv').style.display='flex';wRender();}
+else{document.getElementById('wizOv').style.display='none';document.getElementById('app').style.display='flex';initApp();}
+</script>
+</body>
+</html>
