@@ -731,6 +731,12 @@ textarea.fc{resize:vertical;min-height:68px}
 </div>
 <div id="toasts"></div>
 <script>
+// ── HELPER FUNCTIONS — must be first, used by wStepDefs below ──
+const gv=id=>{const el=document.getElementById(id);return el?el.value:''};
+const gSet=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined)el.value=v||''};
+const sel=(lbl,id,opts,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><select class="fc" id="${id}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+const inp=(lbl,id,type,ph,val,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><input class="fc" id="${id}" type="${type||'text'}" placeholder="${ph||''}" ${val!==undefined?`value="${val}"`:''} ></div>`;
+const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea class="fc" id="${id}" rows="2" placeholder="${ph||''}"></textarea></div>`;
 // ╔═══════════════════════════════════════════════════════╗
 // ║  ManuCost ERP — localStorage + Full Render Logic     ║
 // ╚═══════════════════════════════════════════════════════╝
@@ -1046,17 +1052,12 @@ function openM(name,wideClass){
 }
 function closeM(){document.getElementById('mShell').classList.remove('open');}
 function mSave(){mSaveFn();}
-const gv=id=>{const el=document.getElementById(id);return el?el.value:''};
-const gSet=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined)el.value=v||''};
 
 // Modal templates
 const supOpts=()=>(S.get('suppliers')||[]).map(s=>s.name);
 const custOpts=()=>(S.get('customers')||[]).map(c=>c.name);
 const woOpts=()=>(S.get('workorders')||[]).map(w=>w.id+' — '+w.prod);
 const bomOpts=()=>(S.get('boms')||[]).map(b=>b.id+' — '+b.prod);
-const sel=(lbl,id,opts,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><select class="fc" id="${id}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
-const inp=(lbl,id,type,ph,val,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><input class="fc" id="${id}" type="${type||'text'}" placeholder="${ph||''}" ${val!==undefined?`value="${val}"`:''} ></div>`;
-const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea class="fc" id="${id}" rows="2" placeholder="${ph||''}"></textarea></div>`;
 
 const mTemplates={
   mSup:{title:'New Supplier',saveLabel:'Save Supplier',body:()=>`<div class="fr fr2">${inp('Supplier Name','ms_n','text','',undefined,true)}${sel('Category','ms_c',['Raw Materials','Components','Consumables','Electrical','Services'])}</div><div class="fr fr2">${inp('Phone','ms_p','text','+966-')}${inp('Email','ms_e','email','')}</div><div class="fr fr2">${inp('VAT Number','ms_v','text','')}${sel('Payment Terms','ms_t',['NET30','NET45','NET60','COD','2/10N30'])}</div>`,
@@ -1743,11 +1744,24 @@ function initGSUI() {
 
 // Patch setupF4 to include GS reset
 // ── BOOT ──
-seedData();
-seedFiscalData();
-const _co=S.get('company');
-if(!_co||!_co.name){document.getElementById('wizOv').style.display='flex';wRender();}
-else{document.getElementById('wizOv').style.display='none';document.getElementById('app').style.display='flex';initApp();}
+window.addEventListener('error', function(e) {
+  var d = document.createElement('div');
+  d.style.cssText = 'font-family:monospace;padding:20px;background:#FDE7E9;color:#A4262C;border:2px solid #A4262C;margin:20px;border-radius:4px;position:relative;z-index:9999';
+  d.innerHTML = '<strong>ERP Startup Error — please screenshot and report</strong><br><br>' + e.message + '<br>Line: ' + e.lineno;
+  document.body.prepend(d);
+});
+try {
+  seedData();
+  seedFiscalData();
+  const _co=S.get('company');
+  if(!_co||!_co.name){document.getElementById('wizOv').style.display='flex';wRender();}
+  else{document.getElementById('wizOv').style.display='none';document.getElementById('app').style.display='flex';initApp();}
+} catch(e) {
+  var d = document.createElement('div');
+  d.style.cssText = 'font-family:monospace;padding:20px;background:#FDE7E9;color:#A4262C;border:2px solid #A4262C;margin:20px;border-radius:4px;position:relative;z-index:9999';
+  d.innerHTML = '<strong>ERP Startup Error</strong><br><br>' + e.message + '<br><br>' + (e.stack || '');
+  document.body.prepend(d);
+}
 </script>
 </body>
 </html>
