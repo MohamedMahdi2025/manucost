@@ -50,9 +50,12 @@ body{font-family:'Segoe UI',-apple-system,sans-serif;background:#F2F2F2;color:#2
 .tb-period{font-size:11px;color:var(--text2);background:var(--blue-xlt);border:1px solid var(--blue-lt);border-radius:var(--radius);padding:3px 9px}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .mode-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.mode-btn{padding:5px 12px;font-size:11.5px;cursor:pointer;border:none;background:var(--surface2);color:var(--text2);font-family:inherit;transition:all .1s;font-weight:500}
-.mode-btn.active{background:var(--blue);color:#fff}
-.icon-btn{width:32px;height:32px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:15px;transition:all .1s}
+.mode-btn{padding:5px 13px;font-size:11.5px;cursor:pointer;border:none;background:var(--surface2);color:var(--text2);font-family:inherit;font-weight:600;position:relative;overflow:hidden;transition:all .18s cubic-bezier(.4,0,.2,1)}
+.mode-btn.active{background:linear-gradient(135deg,#0082e0 0%,#0078D4 100%);color:#fff;box-shadow:inset 0 1px 3px rgba(0,0,0,.15)}
+.mode-btn:hover:not(.active){background:var(--blue-xlt);color:var(--blue)}
+.icon-btn{width:34px;height:34px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:15px;position:relative;overflow:hidden;transition:all .18s cubic-bezier(.4,0,.2,1)}
+.icon-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-xlt);box-shadow:0 2px 8px rgba(0,120,212,.18);transform:translateY(-1px)}
+.icon-btn:active{transform:translateY(0) scale(.9)}
 .icon-btn:hover{border-color:var(--blue);color:var(--blue)}
 /* CONTENT */
 .content{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg)}
@@ -61,19 +64,49 @@ body{font-family:'Segoe UI',-apple-system,sans-serif;background:#F2F2F2;color:#2
 /* COMMAND BAR */
 .cmd-bar{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 /* PAGE */
-.page{display:none}.page.active{display:block}
-.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
-.page-hdr h1{font-size:18px;font-weight:600;color:var(--text)}
-.page-hdr p{font-size:12px;color:var(--text3);margin-top:2px}
+/* ── PAGE TRANSITIONS ── */
+.page{display:none;opacity:0;transform:translateY(10px);transition:opacity .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1)}
+.page.active{display:block;opacity:1;transform:translateY(0)}
+.page.page-exit{opacity:0;transform:translateY(-8px);transition:opacity .14s ease,transform .14s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes kpiPop{0%{transform:scale(.92);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+.anim-fade-up{animation:fadeUp .28s cubic-bezier(.4,0,.2,1) both}
+.anim-slide-right{animation:slideInRight .26s cubic-bezier(.4,0,.2,1) both}
+.anim-scale-in{animation:scaleIn .22s cubic-bezier(.4,0,.2,1) both}
+.kpi-grid .kpi{animation:kpiPop .32s cubic-bezier(.4,0,.2,1) both}
+.kpi-grid .kpi:nth-child(1){animation-delay:.04s}
+.kpi-grid .kpi:nth-child(2){animation-delay:.09s}
+.kpi-grid .kpi:nth-child(3){animation-delay:.14s}
+.kpi-grid .kpi:nth-child(4){animation-delay:.19s}
+/* card entrance on page load */
+.page.active .card{animation:fadeUp .3s cubic-bezier(.4,0,.2,1) both}
+.page.active .card:nth-child(1){animation-delay:.05s}
+.page.active .card:nth-child(2){animation-delay:.10s}
+.page.active .card:nth-child(3){animation-delay:.15s}
+.page.active .card:nth-child(4){animation-delay:.20s}
+/* table row stagger */
+@keyframes rowIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+/* sidebar nav active indicator slide */
+.nav-item{transition:background .15s,border-left-color .15s,color .15s,transform .12s}
+.nav-item:active{transform:translateX(3px)}
+.nav-item.active{border-left-width:4px;transition:background .15s,border-left-color .15s,color .15s}
+/* topbar page title transition */
+#tbTitle{transition:opacity .18s,transform .18s;display:inline-block}
+/* content area scroll reset */
+.content{scroll-behavior:smooth}
 /* CARDS */
-.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius)}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);transition:box-shadow .18s cubic-bezier(.4,0,.2,1),transform .18s cubic-bezier(.4,0,.2,1)}
 .card-hdr{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
 .card-title{font-size:13px;font-weight:600;color:var(--text)}
 .card-body{padding:16px}
 /* KPI */
 .kpi-grid{display:grid;gap:12px;margin-bottom:16px}
 .g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}
-.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1),border-color .2s}
+.kpi:hover{box-shadow:0 4px 16px rgba(0,0,0,.10);transform:translateY(-2px);border-color:var(--blue-lt)}
 .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
 .kpi.c-blue::before{background:var(--blue)}.kpi.c-green::before{background:var(--green)}
 .kpi.c-red::before{background:var(--red)}.kpi.c-orange::before{background:var(--orange)}
@@ -87,7 +120,7 @@ table{width:100%;border-collapse:collapse}
 thead th{font-size:11px;font-weight:600;color:var(--text2);padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);background:var(--surface2);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
 tbody td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text);font-size:12.5px;vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--blue-xlt)}
+tbody tr{transition:background .12s cubic-bezier(.4,0,.2,1)}tbody tr:hover td{background:var(--blue-xlt)}
 tfoot td{padding:9px 12px;font-weight:600;background:var(--surface2);border-top:2px solid var(--border);font-size:12.5px}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 /* BADGES */
@@ -96,17 +129,31 @@ tfoot td{padding:9px 12px;font-weight:600;background:var(--surface2);border-top:
 .b-red{background:var(--red-lt);color:var(--red)}.b-orange{background:var(--orange-lt);color:var(--orange)}
 .b-purple{background:var(--purple-lt);color:var(--purple)}.b-teal{background:var(--teal-lt);color:var(--teal)}
 .b-grey{background:var(--surface3);color:var(--text2)}.b-yellow{background:var(--yellow-lt);color:#5D4037}
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:inherit;transition:all .1s;white-space:nowrap;line-height:1.4}
-.btn:active{transform:translateY(1px)}
-.btn-p{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-p:hover{background:var(--blue-dk)}
-.btn-s{background:#fff;color:var(--blue);border-color:var(--blue)}.btn-s:hover{background:var(--blue-xlt)}
-.btn-g{background:transparent;color:var(--text2);border-color:var(--border)}.btn-g:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-xlt)}
-.btn-d{background:var(--red);color:#fff;border-color:var(--red)}.btn-d:hover{background:#8B1D22}
-.btn-ok{background:var(--green);color:#fff;border-color:var(--green)}.btn-ok:hover{background:#0A5F0A}
-.btn-w{background:var(--orange);color:#fff;border-color:var(--orange)}
-.sm{padding:4px 10px;font-size:11.5px}.xs{padding:2px 7px;font-size:11px}
-.btn-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* ── PAGE HEADER ── */
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.page-hdr h1{font-size:18px;font-weight:600;color:var(--text)}
+.page-hdr p{font-size:12px;color:var(--text3);margin-top:2px}
+/* ── BUTTONS — Professional with ripple, depth, shimmer ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 16px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid transparent;font-family:inherit;white-space:nowrap;line-height:1.4;position:relative;overflow:hidden;letter-spacing:.01em;transition:background .18s cubic-bezier(.4,0,.2,1),border-color .18s,color .18s,box-shadow .18s,transform .12s;user-select:none}
+.btn::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at var(--rx,50%) var(--ry,50%),rgba(255,255,255,.36) 0%,transparent 62%);opacity:0;transform:scale(0);transition:transform .5s cubic-bezier(.4,0,.2,1),opacity .5s;pointer-events:none;border-radius:inherit}
+.btn:active::after{transform:scale(2.5);opacity:1;transition:transform .12s,opacity .12s}
+.btn:active{transform:translateY(1.5px) scale(.982)}
+.btn-p{background:linear-gradient(135deg,#1e96f0 0%,#0078D4 55%,#005fa3 100%);color:#fff;border-color:#0078D4;box-shadow:0 2px 6px rgba(0,120,212,.30),inset 0 1px 0 rgba(255,255,255,.18)}
+.btn-p:hover{background:linear-gradient(135deg,#2aa2f8 0%,#008bea 55%,#006ec4 100%);box-shadow:0 4px 14px rgba(0,120,212,.42),inset 0 1px 0 rgba(255,255,255,.22);transform:translateY(-1.5px)}
+.btn-p:active{box-shadow:0 1px 4px rgba(0,120,212,.22)}
+.btn-s{background:#fff;color:var(--blue);border-color:var(--blue);box-shadow:0 1px 4px rgba(0,120,212,.10)}
+.btn-s:hover{background:var(--blue-xlt);box-shadow:0 3px 10px rgba(0,120,212,.18);transform:translateY(-1.5px)}
+.btn-g{background:rgba(255,255,255,.7);color:var(--text2);border-color:var(--border2)}
+.btn-g:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-xlt);box-shadow:0 2px 8px rgba(0,120,212,.12);transform:translateY(-1.5px)}
+.btn-d{background:linear-gradient(135deg,#c83838 0%,#A4262C 55%,#8a1c22 100%);color:#fff;border-color:var(--red);box-shadow:0 2px 6px rgba(164,38,44,.28),inset 0 1px 0 rgba(255,255,255,.12)}
+.btn-d:hover{background:linear-gradient(135deg,#d44040 0%,#b52c33 55%,#952029 100%);box-shadow:0 4px 14px rgba(164,38,44,.38);transform:translateY(-1.5px)}
+.btn-ok{background:linear-gradient(135deg,#1a8a1a 0%,#107C10 55%,#0a5e0a 100%);color:#fff;border-color:var(--green);box-shadow:0 2px 6px rgba(16,124,16,.28),inset 0 1px 0 rgba(255,255,255,.12)}
+.btn-ok:hover{background:linear-gradient(135deg,#219421 0%,#148614 55%,#0c680c 100%);box-shadow:0 4px 14px rgba(16,124,16,.36);transform:translateY(-1.5px)}
+.btn-w{background:linear-gradient(135deg,#d96020 0%,#CA5010 55%,#a8400e 100%);color:#fff;border-color:var(--orange);box-shadow:0 2px 6px rgba(202,80,16,.26),inset 0 1px 0 rgba(255,255,255,.12)}
+.btn-w:hover{box-shadow:0 4px 14px rgba(202,80,16,.36);transform:translateY(-1.5px)}
+.sm{padding:4px 11px;font-size:11.5px;border-radius:5px}
+.xs{padding:2px 8px;font-size:11px;border-radius:4px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 /* FORMS */
 .fr{display:grid;gap:12px;margin-bottom:14px}
 .fr2{grid-template-columns:1fr 1fr}.fr3{grid-template-columns:1fr 1fr 1fr}.fr4{grid-template-columns:1fr 1fr 1fr 1fr}
@@ -122,12 +169,13 @@ textarea.fc{resize:vertical;min-height:68px}
 .fsec-t{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
 /* TABS */
 .tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;background:#fff;overflow-x:auto}
-.tab{padding:9px 16px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .1s;white-space:nowrap}
-.tab:hover{color:var(--text)}.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tab{padding:9px 16px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:color .18s cubic-bezier(.4,0,.2,1),border-color .18s cubic-bezier(.4,0,.2,1),background .18s;white-space:nowrap;position:relative}
+.tab:hover{color:var(--text);background:var(--blue-xlt)}.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
 /* MODAL */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
-.overlay.open{display:flex}
-.modal{background:#fff;border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.2);width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.0);z-index:1000;align-items:center;justify-content:center;padding:20px;transition:background .24s cubic-bezier(.4,0,.2,1)}
+.overlay.open{display:flex;background:rgba(0,0,0,.45)}
+.modal{background:#fff;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.22),0 4px 16px rgba(0,0,0,.12);width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;transform:scale(.94) translateY(14px);opacity:0;transition:transform .28s cubic-bezier(.34,1.26,.64,1),opacity .22s cubic-bezier(.4,0,.2,1)}
+.overlay.open .modal{transform:scale(1) translateY(0);opacity:1}
 .modal-lg{max-width:820px}
 .modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .modal-title{font-size:14px;font-weight:600}
@@ -143,7 +191,7 @@ textarea.fc{resize:vertical;min-height:68px}
 .a-err{background:var(--red-lt);border-color:var(--red);color:var(--red)}
 /* PROGRESS */
 .prog{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;min-width:60px}
-.prog-bar{height:100%;border-radius:3px;transition:width .4s}
+.prog-bar{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
 .pb-blue{background:var(--blue)}.pb-green{background:var(--green)}.pb-orange{background:var(--orange)}.pb-red{background:var(--red)}
 /* FINANCIAL STATEMENT */
 .fs-co{font-size:15px;font-weight:700;color:var(--text);text-align:center}
@@ -162,7 +210,7 @@ textarea.fc{resize:vertical;min-height:68px}
 .cs-lbl{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.8px;padding:6px 8px 4px}
 /* AGING */
 .aging-bar{height:28px;display:flex;border-radius:var(--radius);overflow:hidden;gap:2px}
-.a-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
+.a-seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;transition:flex .6s cubic-bezier(.4,0,.2,1)}
 /* JE */
 .je-grid{display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px}
 .je-bal{display:flex;justify-content:flex-end;gap:20px;padding:10px 0;border-top:1px solid var(--border);margin-top:4px;font-size:12px}
@@ -186,9 +234,12 @@ textarea.fc{resize:vertical;min-height:68px}
 .w100{width:100%}
 /* TOAST */
 #toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.toast{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow);font-size:12.5px;max-width:360px;display:flex;gap:8px;align-items:flex-start;border-left:4px solid;animation:sIn .2s ease}
+.toast{background:#fff;border:1px solid var(--border);border-radius:8px;padding:11px 16px;box-shadow:0 8px 28px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.08);font-size:12.5px;max-width:380px;display:flex;gap:10px;align-items:flex-start;border-left:4px solid;animation:toastIn .28s cubic-bezier(.34,1.3,.64,1) both}
+@keyframes toastOut{to{opacity:0;transform:translateX(100%);max-height:0;padding:0;margin:0}}
+.toast.removing{animation:toastOut .22s cubic-bezier(.4,0,.6,1) forwards}
 .ti{border-left-color:var(--blue)}.to{border-left-color:var(--green)}.tw2{border-left-color:var(--orange)}.te{border-left-color:var(--red)}
 @keyframes sIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes toastIn{from{transform:translateX(80%) scale(.9);opacity:0}to{transform:translateX(0) scale(1);opacity:1}}
 /* WIZARD */
 .wiz-ov{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
 .wiz-card{background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.15);width:660px;max-height:92vh;overflow-y:auto}
@@ -216,7 +267,55 @@ textarea.fc{resize:vertical;min-height:68px}
 .acc-group{font-weight:600;background:var(--blue-xlt)}
 /* WH cards */
 .wh-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:box-shadow .15s}
-.wh-card:hover{box-shadow:var(--shadow)}
+.wh-card{transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}.wh-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.12);transform:translateY(-3px)}
+/* ── LOGIN SCREEN ── */
+.login-ov{position:fixed;inset:0;background:var(--bg);z-index:3000;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.15);width:400px;overflow:hidden}
+.login-header{background:var(--blue);padding:28px 32px 24px;text-align:center}
+.login-logo{width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px}
+.login-title{color:#fff;font-size:18px;font-weight:600}
+.login-sub{color:rgba(255,255,255,.75);font-size:12px;margin-top:4px}
+.login-body{padding:28px 32px}
+.login-error{background:var(--red-lt);color:var(--red);border:1px solid var(--red);border-radius:var(--radius);padding:9px 12px;font-size:12.5px;margin-bottom:14px;display:none}
+.login-footer{padding:12px 32px 20px;text-align:center;font-size:11.5px;color:var(--text3)}
+/* ── USER PILL ── */
+.user-pill{display:flex;align-items:center;gap:7px;padding:4px 10px 4px 6px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:#fff;transition:all .1s;font-size:12px}
+.user-pill:hover{border-color:var(--blue);background:var(--blue-xlt)}
+.user-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+/* ── USER DROPDOWN ── */
+.user-dd{position:fixed;background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:220px;z-index:500;display:none}
+.user-dd.open{display:block}
+.ud-hdr{padding:12px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.ud-item{padding:9px 14px;font-size:12.5px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:8px}
+.ud-item:hover{background:var(--blue-xlt);color:var(--blue)}
+.ud-div{height:1px;background:var(--border);margin:4px 0}
+/* ── APPROVAL MATRIX ── */
+.apr-status-pending  {background:var(--yellow-lt);color:#856404;border:1px solid #f0c040;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.apr-status-approved {background:var(--green-lt);color:var(--green);border:1px solid #a8d8a8;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.apr-status-rejected {background:var(--red-lt);color:var(--red);border:1px solid #f0b0b0;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.apr-status-draft    {background:var(--surface3);color:var(--text3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.apr-status-escalated{background:var(--purple-lt);color:var(--purple);border:1px solid #d0b0f0;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.apr-trail{display:flex;flex-direction:column;gap:0}
+.apr-trail-step{display:grid;grid-template-columns:32px 1fr;gap:0 12px;position:relative}
+.apr-trail-step:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border);z-index:0}
+.apr-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;position:relative;z-index:1}
+.apr-dot.done {background:var(--green);color:#fff}
+.apr-dot.active{background:var(--blue);color:#fff}
+.apr-dot.wait {background:var(--surface2);color:var(--text3);border:2px solid var(--border)}
+.apr-dot.reject{background:var(--red);color:#fff}
+.apr-dot.skip {background:var(--surface3);color:var(--text3);border:2px dashed var(--border)}
+.apr-step-body{padding:8px 0 16px}
+.apr-step-title{font-size:13px;font-weight:600;color:var(--text)}
+.apr-step-meta{font-size:11.5px;color:var(--text3);margin-top:2px}
+.apr-step-comment{background:var(--blue-xlt);border-left:3px solid var(--blue);padding:6px 10px;border-radius:0 var(--radius) var(--radius) 0;font-size:12px;margin-top:6px;color:var(--text2)}
+.apr-matrix-row{display:grid;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12.5px;transition:background .1s}
+.apr-matrix-row:hover{background:var(--blue-xlt)}
+.apr-matrix-row:last-child{border-bottom:none}
+.apr-matrix-hdr{display:grid;padding:8px 14px;background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border)}
+.apr-tier-badge{padding:3px 9px;border-radius:var(--radius);font-size:11px;font-weight:600;white-space:nowrap}
+.limit-pill{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:var(--blue-xlt);color:var(--blue-dk)}
+/* notification dot */
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--red);position:absolute;top:0;right:0}
 /* PERIOD CLOSING */
 .period-row{display:grid;grid-template-columns:90px 110px 1fr 80px 90px 110px;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12.5px}
 .period-row:last-child{border-bottom:none}
@@ -237,6 +336,51 @@ textarea.fc{resize:vertical;min-height:68px}
 </style>
 </head>
 <body>
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div class="login-ov" id="loginOv" style="display:none">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">M</div>
+      <div class="login-title">ManuCost ERP</div>
+      <div class="login-sub" id="loginCompanyName">Manufacturing Management System</div>
+    </div>
+    <div class="login-body">
+      <div class="login-error" id="loginError"></div>
+      <div class="fr mb12">
+        <div class="fg">
+          <label class="fl req">Username</label>
+          <input class="fc" id="loginUser" placeholder="Enter your username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+      </div>
+      <div class="fr mb16">
+        <div class="fg">
+          <label class="fl req">Password</label>
+          <div style="position:relative">
+            <input class="fc" id="loginPass" type="password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:36px">
+            <button onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--text3);font-size:13px" id="pwToggle">👁</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-p w100" onclick="doLogin()" id="loginBtn" style="padding:10px;font-size:13px">Sign In →</button>
+    </div>
+    <div class="login-footer">ManuCost ERP · Secured · <span id="loginYear">2025</span></div>
+  </div>
+</div>
+
+<!-- USER DROPDOWN -->
+<div class="user-dd" id="userDropdown">
+  <div class="ud-hdr">
+    <div class="fw6" id="ddUserName" style="font-size:13px"></div>
+    <div class="t-sm t-muted" id="ddUserRole"></div>
+    <div class="t-xs t-muted" id="ddUserEmail"></div>
+  </div>
+  <div class="ud-item" onclick="nav('users');closeUserDD()">👥 User Management</div>
+  <div class="ud-item" onclick="openM('mChangePass');closeUserDD()">🔑 Change Password</div>
+  <div class="ud-item" onclick="nav('setup');closeUserDD()">⚙ Company Setup</div>
+  <div class="ud-div"></div>
+  <div class="ud-item" style="color:var(--red)" onclick="doLogout()">⇤ Sign Out</div>
+</div>
+
 <!-- ═══ WIZARD ═══ -->
 <div class="wiz-ov" id="wizOv">
   <div class="wiz-card">
@@ -261,7 +405,7 @@ textarea.fc{resize:vertical;min-height:68px}
   <!-- SIDEBAR -->
   <nav class="sidebar" id="sidebar">
     <div class="sb-header">
-      <div class="sb-logo">M</div>
+      <div class="sb-logo" id="sbLogoLetter" style="overflow:hidden">M<img id="sbLogoImg" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:3px"></div>
       <div><div class="sb-title" id="sbCo">ManuCost ERP</div><div class="sb-sub" id="sbFY">FY 2025</div></div>
     </div>
     <div class="nav-scroll">
@@ -305,6 +449,10 @@ textarea.fc{resize:vertical;min-height:68px}
       <div class="nav-item" data-page="invrpt"><span class="nav-icon">◧</span><span class="nav-text">Inventory Reports</span></div>
       <div class="nav-item" data-page="adhoc"><span class="nav-icon">⊕</span><span class="nav-text">Ad-Hoc Reports</span></div>
       <div class="nav-label">Settings</div>
+      <div class="nav-item" data-page="users"><span class="nav-icon">👥</span><span class="nav-text">User Management</span></div>
+      <div class="nav-item" data-page="approvals"><span class="nav-icon">✅</span><span class="nav-text">Approval Matrix</span></div>
+      <div class="nav-item" data-page="myrequests"><span class="nav-icon">📋</span><span class="nav-text">My Approvals</span></div>
+      <div class="nav-item" data-page="currencies"><span class="nav-icon">💱</span><span class="nav-text">Currencies</span></div>
       <div class="nav-item" data-page="fiscalyear"><span class="nav-icon">📅</span><span class="nav-text">Fiscal Year</span></div>
       <div class="nav-item" data-page="periodclose"><span class="nav-icon">🔒</span><span class="nav-text">Period Closing</span></div>
       <div class="nav-item" data-page="setup"><span class="nav-icon">⚙</span><span class="nav-text">Company Setup</span></div>
@@ -323,6 +471,14 @@ textarea.fc{resize:vertical;min-height:68px}
           <button class="mode-btn" id="mABC" onclick="setMode('abc')">ABC Costing</button>
         </div>
         <button class="icon-btn" onclick="nav('setup')" title="Settings">⚙</button>
+        <button class="icon-btn" onclick="nav('myrequests')" title="Approval Inbox" style="position:relative" id="aprBellBtn">
+          🔔<span id="aprBellDot" class="notif-dot" style="display:none"></span>
+        </button>
+        <div class="user-pill" id="userPill" onclick="toggleUserDD(event)">
+          <div class="user-avatar" id="userAvatar" style="background:var(--blue)">?</div>
+          <span id="userPillName">User</span>
+          <span style="color:var(--text3);font-size:10px">▾</span>
+        </div>
       </div>
     </div>
     <div class="content" id="content">
@@ -632,6 +788,167 @@ textarea.fc{resize:vertical;min-height:68px}
         <div style="display:flex;flex-direction:column;gap:6px" id="pcGuardList"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ════ APPROVAL MATRIX CONFIG ════ -->
+<div class="page" id="page-approvals">
+  <div class="page-hdr">
+    <div><h1>Approval Matrix</h1><p>Define multi-level approval policies for all modules — aligned with IAS, IFRS, and SOX standards</p></div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="exportApprovalPolicy()">Export Policy PDF</button>
+      <button class="btn btn-p" onclick="openM('mAddPolicy')">+ New Policy</button>
+    </div>
+  </div>
+
+  <!-- Module tabs -->
+  <div class="tab-bar" id="aprModuleTabs">
+    <div class="tab active" onclick="switchAprModule('procurement',this)">Procurement</div>
+    <div class="tab" onclick="switchAprModule('ap',this)">Accounts Payable</div>
+    <div class="tab" onclick="switchAprModule('gl',this)">General Ledger</div>
+    <div class="tab" onclick="switchAprModule('ar',this)">Accounts Receivable</div>
+    <div class="tab" onclick="switchAprModule('inventory',this)">Inventory</div>
+    <div class="tab" onclick="switchAprModule('hr',this)">HR &amp; Payroll</div>
+    <div class="tab" onclick="switchAprModule('manufacturing',this)">Manufacturing</div>
+    <div class="tab" onclick="switchAprModule('finance',this)">Finance</div>
+  </div>
+
+  <div id="aprModuleContent"></div>
+</div>
+
+<!-- ════ MY APPROVALS (INBOX) ════ -->
+<div class="page" id="page-myrequests">
+  <div class="page-hdr">
+    <div><h1>Approval Inbox</h1><p>Pending approvals, requests submitted by you, and full audit trail</p></div>
+    <div class="btn-row">
+      <button class="btn btn-g sm" onclick="renderMyApprovals()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid g4 mb16" id="aprInboxKPIs"></div>
+
+  <div class="tab-bar" id="aprInboxTabs">
+    <div class="tab active" onclick="switchAprInbox('pending',this)">⏳ Pending My Action <span id="pendingCount" class="b b-orange" style="margin-left:4px;font-size:10px">0</span></div>
+    <div class="tab" onclick="switchAprInbox('submitted',this)">📤 Submitted by Me</div>
+    <div class="tab" onclick="switchAprInbox('approved',this)">✓ Approved</div>
+    <div class="tab" onclick="switchAprInbox('rejected',this)">✗ Rejected</div>
+    <div class="tab" onclick="switchAprInbox('all',this)">All Requests</div>
+  </div>
+  <div id="aprInboxContent"></div>
+</div>
+
+<!-- ════ CURRENCIES ════ -->
+<div class="page" id="page-currencies">
+  <div class="page-hdr">
+    <div><h1>Currency Management</h1><p>Exchange rates, multi-currency transactions, and conversion</p></div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="openM('mUpdateRates')">↻ Update Rates</button>
+      <button class="btn btn-p" onclick="openM('mAddCurrency')">+ Add Currency</button>
+    </div>
+  </div>
+
+  <!-- Base currency banner -->
+  <div class="alert a-info mb16" id="baseCurrBanner"></div>
+
+  <div class="g2c mb16">
+    <!-- Exchange rate table -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Exchange Rates</span>
+        <span class="t-xs t-muted" id="ratesAsOf"></span>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Currency</th><th>Code</th><th>Symbol</th><th>Rate vs Base</th><th>Inverse</th><th>Last Updated</th><th>Status</th><th></th></tr></thead>
+        <tbody id="currTbl"></tbody>
+      </table></div>
+    </div>
+
+    <!-- Live converter -->
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Live Converter</span></div>
+      <div class="card-body">
+        <div class="fr mb12">
+          <div class="fg">
+            <label class="fl">Amount</label>
+            <input class="fc" type="number" id="convAmt" value="1000" oninput="runConverter()">
+          </div>
+        </div>
+        <div class="fr fr2 mb16">
+          <div class="fg">
+            <label class="fl">From</label>
+            <select class="fc" id="convFrom" onchange="runConverter()"></select>
+          </div>
+          <div class="fg">
+            <label class="fl">To</label>
+            <select class="fc" id="convTo" onchange="runConverter()"></select>
+          </div>
+        </div>
+        <div id="convResult" style="background:var(--blue-xlt);border:1px solid var(--blue-lt);border-radius:var(--radius);padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:300;color:var(--blue)" id="convResultAmt">—</div>
+          <div class="t-sm t-muted mt12" id="convResultRate"></div>
+        </div>
+        <div id="convAllResult" class="mt16"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-currency transaction preview -->
+  <div class="card mb16">
+    <div class="card-hdr">
+      <span class="card-title">Multi-Currency Transaction Preview</span>
+      <span class="b b-blue">Converts to base currency on posting</span>
+    </div>
+    <div class="card-body">
+      <div class="fr fr2 mb12">
+        <div class="fg">
+          <label class="fl">Transaction Amount</label>
+          <input class="fc" type="number" id="txAmt" value="50000" oninput="updateTxPreview()">
+        </div>
+        <div class="fg">
+          <label class="fl">Transaction Currency</label>
+          <select class="fc" id="txCurr" onchange="updateTxPreview()"></select>
+        </div>
+      </div>
+      <div id="txPreview"></div>
+    </div>
+  </div>
+
+  <!-- Rate history chart (text-based sparkline) -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Rate Trend (Last 7 Days)</span>
+      <select class="fc" style="width:160px" id="trendCurr" onchange="renderRateTrend()"></select>
+    </div>
+    <div class="card-body" id="rateTrend"></div>
+  </div>
+</div>
+
+<!-- ════ USER MANAGEMENT ════ -->
+<div class="page" id="page-users">
+  <div class="page-hdr">
+    <div><h1>User Management</h1><p>Manage user accounts, roles, and access permissions</p></div>
+    <button class="btn btn-p" onclick="openM('mAddUser')">+ Add User</button>
+  </div>
+
+  <div class="kpi-grid g4 mb16" id="userKPIs"></div>
+
+  <div class="g2c mb16">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">System Users</span><div class="sbox"><span>🔍</span><input placeholder="Search users..." oninput="filterUsersTable(this.value)"></div></div>
+      <div class="tw"><table>
+        <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Department</th><th>Last Login</th><th>Status</th><th></th></tr></thead>
+        <tbody id="usersTbl"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Role Definitions</span></div>
+      <div class="card-body" id="roleCards"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">Permission Matrix</span><span class="b b-blue">Read-only for Viewer · Write restricted by role</span></div>
+    <div class="tw" id="permMatrix"></div>
   </div>
 </div>
 
@@ -959,43 +1276,86 @@ function seedData(){
 }
 
 // ── WIZARD ──
-let wStep=1; const WS=5;
-const wStepDefs=[
-  {title:'Company Information',html:`<div class="fr fr2"><div class="fg"><label class="fl req">Company Name (English)</label><input class="fc" id="w1" placeholder="e.g. Al-Masna'a Manufacturing Co."></div><div class="fg"><label class="fl">Company Name (Arabic)</label><input class="fc" id="w2" placeholder="اسم الشركة"></div></div><div class="fr fr2"><div class="fg"><label class="fl req">Commercial Registration #</label><input class="fc" id="w3" placeholder="1010xxxxxx"></div><div class="fg"><label class="fl req">VAT Number</label><input class="fc" id="w4" placeholder="3xxxxxxxxx00003"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Industry</label><select class="fc" id="w5"><option>Manufacturing</option><option>Engineering & Fabrication</option><option>Food & Beverage</option><option>Chemicals</option><option>Electronics</option></select></div><div class="fg"><label class="fl">Country</label><select class="fc" id="w6"><option>Saudi Arabia</option><option>UAE</option><option>Kuwait</option><option>Bahrain</option><option>Qatar</option></select></div></div><div class="fg"><label class="fl">Address</label><textarea class="fc" id="w7" rows="2" placeholder="Street, City, Postal Code"></textarea></div>`},
-  {title:'Fiscal Year Settings',html:`<div class="fr fr2"><div class="fg"><label class="fl req">Fiscal Year Type</label><select class="fc" id="w8"><option>Calendar Year (Jan–Dec)</option><option>Hijri Year</option><option>Custom</option></select></div><div class="fg"><label class="fl">Current Year</label><input class="fc" id="w9" type="number" value="2025"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Reporting Period</label><select class="fc" id="w10"><option>Monthly</option><option>Quarterly</option></select></div><div class="fg"><label class="fl">Period Locking</label><select class="fc"><option>Manual Lock</option><option>Auto-lock after 30 days</option></select></div></div><div class="alert a-info">Fiscal year setting affects period closing and financial reporting. Cannot be changed once transactions are posted.</div>`},
-  {title:'Currency & Localization',html:`<div class="fr fr2"><div class="fg"><label class="fl req">Base Currency</label><select class="fc" id="w11"><option>SAR — Saudi Riyal</option><option>USD — US Dollar</option><option>AED — UAE Dirham</option><option>EUR — Euro</option></select></div><div class="fg"><label class="fl">Number Format</label><select class="fc"><option>1,234,567.89</option><option>1.234.567,89</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">VAT Rate %</label><input class="fc" id="w12" type="number" value="15"></div><div class="fg"><label class="fl">Zakat Applicable?</label><select class="fc"><option>Yes — Saudi Entity</option><option>No</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">GOSI — Employer %</label><input class="fc" id="w13" type="number" value="12"></div><div class="fg"><label class="fl">GOSI — Employee %</label><input class="fc" id="w14" type="number" value="10"></div></div>`},
-  {title:'Costing Method',html:`<div class="fr mb12"><div class="fg"><label class="fl req">Primary Costing Method</label><select class="fc" id="w15"><option value="job">Job Order Costing</option><option value="abc">Activity-Based Costing (ABC)</option><option value="both">Both (switchable per WO)</option><option value="process">Process Costing</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Inventory Valuation</label><select class="fc" id="w16"><option>FIFO</option><option>Weighted Average</option></select></div><div class="fg"><label class="fl">Overhead Allocation Base</label><select class="fc" id="w17"><option>Direct Labor Cost</option><option>Direct Labor Hours</option><option>Machine Hours</option><option>Units Produced</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">WIP Tracking</label><select class="fc"><option>Per Job Order</option><option>By Department</option></select></div><div class="fg"><label class="fl">Default FG Warehouse</label><input class="fc" id="w18" value="WH-C"></div></div><div class="alert a-info">Job Order tracks costs per individual production order. ABC uses activity cost drivers for more accurate multi-product overhead allocation.</div>`},
-  {title:'Setup Complete!',html:`<div style="text-align:center;padding:20px 0"><div style="font-size:52px;margin-bottom:12px">✅</div><div style="font-size:18px;font-weight:600;margin-bottom:8px">Your ERP is ready</div><div style="font-size:13px;color:var(--text2);margin-bottom:24px">Company profile saved. Update anytime from Company Setup in the navigation menu.</div><div class="g2c" style="text-align:left"><div class="fsec"><div class="fsec-t">Quick Start Guide</div><div style="font-size:12.5px;color:var(--text2);line-height:2">1. Add your Items in Item Master<br>2. Set up Warehouses &amp; Bins<br>3. Enter Suppliers &amp; Customers<br>4. Create a Work Order<br>5. Issue materials to production<br>6. Run Payroll and post JEs</div></div><div class="fsec"><div class="fsec-t">Modules Included</div><div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Chart of Accounts &amp; GL<br>✓ Procurement PO → GRN<br>✓ Sales Quote → Invoice<br>✓ Manufacturing &amp; Job Costing<br>✓ Inventory &amp; Warehouses<br>✓ Payroll · Aging · Reports</div></div></div></div>`}
-];
+// ══════════════════════════════════════════════════════════════
+//  SETUP WIZARD — 7 steps, admin-only, first-time only
+// ══════════════════════════════════════════════════════════════
+let wStep = 1;
+const WS   = 8;
+const W_LABELS = ['Welcome','Company','Logo','Fiscal Year','Currency','Costing','Admin User','Done'];
 
-function wRender(){
-  const s=wStepDefs[wStep-1];
-  document.getElementById('wizBody').innerHTML=`<div class="wiz-step-title">${s.title}</div>${s.html}`;
-  document.getElementById('wizBack').style.display=wStep>1?'block':'none';
-  document.getElementById('wizNext').textContent=wStep===WS?'🚀 Launch ERP':'Next →';
-  document.getElementById('wizSteps').innerHTML=wStepDefs.map((_,i)=>{
-    const n=i+1,cls=n<wStep?'done':n===wStep?'act':'';
-    return`<div class="wiz-step"><div class="ws-dot ${cls}">${n<wStep?'✓':n}</div><div class="ws-lbl">${['Company','Fiscal Year','Currency','Costing','Done'][i]}</div></div>`;
+function wRender() {
+  const body = document.getElementById('wizBody');
+  const steps = document.getElementById('wizSteps');
+  if (!body || !steps) return;
+  body.innerHTML = `<div class="wiz-step-title">${W_LABELS[wStep-1]}</div>` + wStepHTML(wStep);
+  document.getElementById('wizBack').style.display = wStep > 1 ? 'block' : 'none';
+  document.getElementById('wizNext').textContent = wStep === WS ? '🚀 Launch ERP' : 'Next →';
+  steps.innerHTML = W_LABELS.map((lbl, i) => {
+    const n = i + 1, cls = n < wStep ? 'done' : n === wStep ? 'act' : '';
+    return `<div class="wiz-step"><div class="ws-dot ${cls}">${n < wStep ? '✓' : n}</div><div class="ws-lbl">${lbl}</div></div>`;
   }).join('');
-  // pre-fill
+  if (wStep === 2) wPrefillCompany();
+  if (wStep === 3) wRenderLogoPreview();
+  if (wStep === 7) wPrefillAdmin();
+}
+
+function wStepHTML(step) {
+  switch(step) {
+    case 1: return `<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:16px">🏭</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">Welcome to ManuCost ERP</div><div style="font-size:13px;color:var(--text2);max-width:420px;margin:0 auto 24px;line-height:1.8">This wizard runs <strong>only once</strong>. After setup, only an Administrator can change these settings.</div><div class="g2c" style="text-align:left;max-width:480px;margin:0 auto"><div class="fsec"><div class="fsec-t">What you will set up</div><div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Company name, logo &amp; details<br>✓ Fiscal year &amp; reporting periods<br>✓ Base currency &amp; exchange rates<br>✓ Costing method &amp; inventory<br>✓ Administrator account</div></div><div class="fsec"><div class="fsec-t">You will need</div><div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Commercial Registration number<br>✓ VAT / Tax number<br>✓ Company logo (optional)<br>✓ Admin password (remember it!)<br>✓ About 5 minutes</div></div></div><div class="alert a-warn" style="margin-top:20px;text-align:left">⚠ Only the <strong>Administrator</strong> can re-run this wizard or reset company data.</div></div>`;
+    case 2: return `<div class="fr fr2"><div class="fg"><label class="fl req">Company Name (English)</label><input class="fc" id="w_name" placeholder="e.g. Al-Masna'a Manufacturing Co."></div><div class="fg"><label class="fl">Company Name (Arabic)</label><input class="fc" id="w_nameAr" placeholder="اسم الشركة بالعربي"></div></div><div class="fr fr2"><div class="fg"><label class="fl req">Commercial Registration #</label><input class="fc" id="w_cr" placeholder="1010xxxxxx"></div><div class="fg"><label class="fl req">VAT / Tax Number</label><input class="fc" id="w_vat" placeholder="3xxxxxxxxx00003"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Industry</label><select class="fc" id="w_ind"><option>Manufacturing</option><option>Engineering &amp; Fabrication</option><option>Food &amp; Beverage</option><option>Chemicals</option><option>Electronics</option><option>Construction</option><option>Other</option></select></div><div class="fg"><label class="fl">Country</label><select class="fc" id="w_country"><option>Saudi Arabia</option><option>Egypt</option><option>UAE</option><option>Kuwait</option><option>Bahrain</option><option>Qatar</option><option>Oman</option><option>Jordan</option><option>Other</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Phone</label><input class="fc" id="w_phone" placeholder="+966-11-xxxxxxx"></div><div class="fg"><label class="fl">Email</label><input class="fc" id="w_email" type="email" placeholder="info@company.com"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Website</label><input class="fc" id="w_web" placeholder="www.company.com"></div><div class="fg"><label class="fl">Postal / ZIP Code</label><input class="fc" id="w_zip" placeholder="11564"></div></div><div class="fr"><div class="fg"><label class="fl">Address</label><textarea class="fc" id="w_addr" rows="2" placeholder="Street, District, City"></textarea></div></div>`;
+    case 3: return `<div style="text-align:center;margin-bottom:20px"><div id="logoPreviewWrap" style="width:120px;height:120px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;cursor:pointer;background:var(--surface2);overflow:hidden" onclick="document.getElementById('logoFileInput').click()"><div id="logoPlaceholder" style="color:var(--text3);font-size:12px;text-align:center;padding:12px"><div style="font-size:32px;margin-bottom:4px">🖼</div>Click to upload</div><img id="logoPreviewImg" style="display:none;width:100%;height:100%;object-fit:contain;padding:8px"></div><input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="handleLogoUpload(event)"><button class="btn btn-s sm" onclick="document.getElementById('logoFileInput').click()">Choose Image</button> <button class="btn btn-g sm" id="logoClearBtn" onclick="clearLogo()" style="display:none">Remove</button><div class="t-xs t-muted" style="margin-top:8px">PNG, JPG, SVG · Max 500KB</div></div><div class="fr fr2"><div class="fg"><label class="fl">Brand Color</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="w_brandColor" value="#0078D4" style="width:44px;height:34px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;padding:2px"><input class="fc" id="w_brandColorHex" value="#0078D4" placeholder="#0078D4" style="flex:1" oninput="syncColorHex()"></div></div><div class="fg"><label class="fl">Report Header Style</label><select class="fc" id="w_hdrStyle"><option value="logo_left">Logo Left · Name Right</option><option value="logo_center">Logo &amp; Name Centered</option><option value="name_only">Company Name Only</option></select></div></div><div class="alert a-info" style="margin-top:8px">Logo appears on reports and in the sidebar. You can change it anytime from Company Setup.</div>`;
+    case 4: return `<div class="fr fr2"><div class="fg"><label class="fl req">Fiscal Year Type</label><select class="fc" id="w_fyType"><option value="calendar">Calendar Year (Jan – Dec)</option><option value="hijri">Hijri Year</option><option value="custom">Custom</option></select></div><div class="fg"><label class="fl req">First Fiscal Year</label><input class="fc" id="w_fyYear" type="number" value="2025" min="2020" max="2035"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Reporting Period</label><select class="fc" id="w_period"><option value="monthly">Monthly (12 periods/year)</option><option value="quarterly">Quarterly (4 periods/year)</option></select></div><div class="fg"><label class="fl">Period Locking</label><select class="fc" id="w_lock"><option value="manual">Manual — lock when ready</option><option value="auto">Auto-lock after 30 days</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Week Start Day</label><select class="fc" id="w_weekstart"><option value="sunday">Sunday</option><option value="monday">Monday</option><option value="saturday">Saturday</option></select></div><div class="fg"><label class="fl">Date Format</label><select class="fc" id="w_dateformat"><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option><option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option></select></div></div><div class="alert a-info">Fiscal year and period settings affect financial statements and period closing. Cannot be changed after transactions are posted.</div>`;
+    case 5: return `<div class="fr fr2"><div class="fg"><label class="fl req">Base Currency</label><select class="fc" id="w_curr">${Object.entries(CURRENCY_MASTER).map(([k,v])=>`<option value="${k}" ${k==='SAR'?'selected':''}>${v.flag} ${k} — ${v.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Number Format</label><select class="fc" id="w_numfmt"><option value="en">1,234,567.89  (English)</option><option value="ar">1.234.567,89  (European)</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl req">VAT / Tax Rate %</label><input class="fc" id="w_vatrate" type="number" value="15" min="0" max="100"></div><div class="fg"><label class="fl">Zakat Applicable?</label><select class="fc" id="w_zakat"><option value="yes">Yes — Saudi Entity (2.5%)</option><option value="no">No</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">GOSI — Employer %</label><input class="fc" id="w_gosiEmp" type="number" value="12"></div><div class="fg"><label class="fl">GOSI — Employee %</label><input class="fc" id="w_gosiEe" type="number" value="10"></div></div><div class="fsec mt12"><div class="fsec-t">Active Currencies (add more later in Settings → Currencies)</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${Object.entries(CURRENCY_MASTER).map(([k,v])=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius)"><input type="checkbox" id="wc_${k}" ${['SAR','EGP','USD','AED','EUR'].includes(k)?'checked':''} style="accent-color:var(--blue)"><span>${v.flag} ${k}</span></label>`).join('')}</div></div>`;
+    case 6: return `<div class="fr"><div class="fg"><label class="fl req">Primary Costing Method</label><select class="fc" id="w_cost"><option value="job">Job Order Costing — track cost per individual job/batch</option><option value="abc">Activity-Based Costing (ABC) — allocate via activity drivers</option><option value="both">Both — switchable per work order</option><option value="process">Process Costing — for continuous production</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Inventory Valuation</label><select class="fc" id="w_invval"><option value="FIFO">FIFO (First In, First Out) — IFRS compliant</option><option value="wavg">Weighted Average Cost</option></select></div><div class="fg"><label class="fl">Overhead Allocation Base</label><select class="fc" id="w_ohbase"><option value="dl_cost">Direct Labor Cost</option><option value="dl_hours">Direct Labor Hours</option><option value="mh">Machine Hours</option><option value="units">Units Produced</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">WIP Tracking</label><select class="fc" id="w_wip"><option value="job">Per Job Order</option><option value="dept">By Department</option><option value="process">By Process</option></select></div><div class="fg"><label class="fl">Default FG Warehouse Code</label><input class="fc" id="w_fgwh" value="WH-C"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Depreciation Method</label><select class="fc" id="w_depr"><option value="sl">Straight-Line (SL)</option><option value="db">Declining Balance</option></select></div><div class="fg"><label class="fl">Cost Centre Structure</label><select class="fc" id="w_cc"><option value="dept">By Department</option><option value="prod">By Product Line</option><option value="proj">By Project</option></select></div></div><div class="alert a-info">FIFO is required for IFRS compliance. Job Order Costing tracks cost per production order.</div>`;
+    case 7: return `<div class="alert a-warn mb16">This will be the <strong>only Administrator</strong> account. Keep these credentials safe.</div><div class="fr fr2"><div class="fg"><label class="fl req">Full Name</label><input class="fc" id="w_aname" placeholder="Your full name"></div><div class="fg"><label class="fl req">Username</label><input class="fc" id="w_auser" placeholder="admin" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')"></div></div><div class="fr fr2"><div class="fg"><label class="fl req">Password</label><div style="position:relative"><input class="fc" id="w_apass" type="password" placeholder="Min 8 characters" oninput="wCheckPassStrength()" style="padding-right:36px"><button onclick="wTogglePw('w_apass')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--text3)">👁</button></div><div id="wPassStrength" class="fhint"></div></div><div class="fg"><label class="fl req">Confirm Password</label><div style="position:relative"><input class="fc" id="w_apass2" type="password" placeholder="Repeat password" style="padding-right:36px"><button onclick="wTogglePw('w_apass2')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--text3)">👁</button></div></div></div><div class="fr fr2"><div class="fg"><label class="fl req">Email</label><input class="fc" id="w_aemail" type="email" placeholder="admin@company.com"></div><div class="fg"><label class="fl">Department</label><input class="fc" id="w_adept" value="Management"></div></div>`;
+    case 8: return `<div style="text-align:center;padding:10px 0 24px"><div id="wDoneLogoWrap" style="width:80px;height:80px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;overflow:hidden"><img id="wDoneLogo" style="display:none;width:100%;height:100%;object-fit:contain;padding:6px"><span style="font-size:32px;font-weight:700;color:#fff" id="wDoneLogoInitial">M</span></div><div style="font-size:20px;font-weight:600;margin-bottom:6px" id="wDoneCoName">Company Name</div><div class="t-sm t-muted mb20" id="wDoneCoDetail"></div><div class="alert a-ok" style="text-align:left;max-width:440px;margin:0 auto 20px">✅ <strong>Setup complete!</strong> Sign in with your admin credentials to start using the ERP.</div><div class="g2c" style="text-align:left;max-width:500px;margin:0 auto"><div class="fsec"><div class="fsec-t">Configuration Summary</div><div id="wDoneSummary" style="font-size:12.5px;color:var(--text2);line-height:2"></div></div><div class="fsec"><div class="fsec-t">Next Steps</div><div style="font-size:12.5px;color:var(--text2);line-height:2">1. Sign in with admin account<br>2. Add suppliers &amp; customers<br>3. Set up Item Master<br>4. Add team members<br>5. Enter opening balances<br>6. Create first Work Order</div></div></div></div>`;
+    default: return '';
+  }
+}
+
+function wPrefillCompany(){const co=S.get('company')||{};gSet('w_name',co.name);gSet('w_nameAr',co.nameAr);gSet('w_cr',co.cr);gSet('w_vat',co.vat);gSet('w_phone',co.phone);gSet('w_email',co.email);gSet('w_web',co.website);gSet('w_zip',co.zip);gSet('w_addr',co.address);}
+function wPrefillAdmin(){const u=(S.get('users')||[]).find(x=>x.role==='admin')||{};gSet('w_aname',u.name);gSet('w_auser',u.username);gSet('w_aemail',u.email);}
+function wRenderLogoPreview(){const co=S.get('company')||{};if(co.logo){const img=document.getElementById('logoPreviewImg');const ph=document.getElementById('logoPlaceholder');const btn=document.getElementById('logoClearBtn');if(img){img.src=co.logo;img.style.display='block';}if(ph)ph.style.display='none';if(btn)btn.style.display='inline-flex';}if(co.brandColor){const bc=document.getElementById('w_brandColor');const bch=document.getElementById('w_brandColorHex');if(bc)bc.value=co.brandColor;if(bch)bch.value=co.brandColor;}}
+function handleLogoUpload(e){const file=e.target.files[0];if(!file)return;if(file.size>512000){toast('Image too large. Max 500 KB.','warn');return;}const r=new FileReader();r.onload=function(ev){const data=ev.target.result;const co=S.get('company')||{};co.logo=data;S.set('company',co);const img=document.getElementById('logoPreviewImg');const ph=document.getElementById('logoPlaceholder');const btn=document.getElementById('logoClearBtn');if(img){img.src=data;img.style.display='block';}if(ph)ph.style.display='none';if(btn)btn.style.display='inline-flex';updateSidebarLogo();toast('Logo uploaded.','success');};r.readAsDataURL(file);}
+function clearLogo(){const co=S.get('company')||{};delete co.logo;S.set('company',co);const img=document.getElementById('logoPreviewImg');const ph=document.getElementById('logoPlaceholder');const btn=document.getElementById('logoClearBtn');if(img)img.style.display='none';if(ph)ph.style.display='flex';if(btn)btn.style.display='none';updateSidebarLogo();}
+function syncColorHex(){const hex=gv('w_brandColorHex');if(/^#[0-9A-Fa-f]{6}$/.test(hex)){const bc=document.getElementById('w_brandColor');if(bc)bc.value=hex;}}
+function wCheckPassStrength(){const pw=gv('w_apass');const el=document.getElementById('wPassStrength');if(!el)return;const checks=[pw.length>=8,/[A-Z]/.test(pw),/[0-9]/.test(pw),/[^A-Za-z0-9]/.test(pw)];const score=checks.filter(Boolean).length;const labels=['Too short','Weak','Fair','Good','Strong'];const colors=['var(--red)','var(--red)','var(--orange)','var(--blue)','var(--green)'];el.innerHTML=pw?`<span style="color:${colors[score]}">● ${labels[score]} password</span>`:'';}
+function wTogglePw(id){const el=document.getElementById(id);if(el)el.type=el.type==='password'?'text':'password';}
+function wFillDoneScreen(){const co=S.get('company')||{};const dn=document.getElementById('wDoneCoName');const dd=document.getElementById('wDoneCoDetail');const dl=document.getElementById('wDoneLogo');const di=document.getElementById('wDoneLogoInitial');const dw=document.getElementById('wDoneLogoWrap');const ds=document.getElementById('wDoneSummary');if(dn)dn.textContent=co.name||'Company';if(dd)dd.textContent=`${co.industry||''} · ${co.country||''} · ${co.currency||'SAR'}`;if(di)di.textContent=(co.name||'M').charAt(0).toUpperCase();if(co.logo&&dl){dl.src=co.logo;dl.style.display='block';if(di)di.style.display='none';}if(co.brandColor&&dw)dw.style.background=co.brandColor;if(ds)ds.innerHTML=`Currency: <strong>${co.currency||'SAR'}</strong><br>Fiscal Year: <strong>${co.fyType||'Calendar'} ${co.fyYear||2025}</strong><br>Costing: <strong>${co.costMethod||'Job Order'}</strong><br>Inventory: <strong>${co.invVal||'FIFO'}</strong><br>VAT Rate: <strong>${co.vatRate||15}%</strong>`;}
+
+function wValidate(step){
+  if(step===2){if(!gv('w_name').trim()){toast('Company name is required.','error');return false;}}
+  if(step===7){const pw=gv('w_apass'),pw2=gv('w_apass2');if(!gv('w_aname').trim()||!gv('w_auser').trim()){toast('Admin name and username are required.','error');return false;}if(!pw||pw.length<8){toast('Password must be at least 8 characters.','error');return false;}if(pw!==pw2){toast('Passwords do not match.','error');return false;}}
+  return true;
+}
+
+function wSave(step){
   const co=S.get('company')||{};
-  if(wStep===1){gSet('w1',co.name);gSet('w2',co.nameAr);gSet('w3',co.cr);gSet('w4',co.vat);gSet('w7',co.address);}
+  if(step===2){co.name=gv('w_name');co.nameAr=gv('w_nameAr');co.cr=gv('w_cr');co.vat=gv('w_vat');co.industry=gv('w_ind');co.country=gv('w_country');co.phone=gv('w_phone');co.email=gv('w_email');co.website=gv('w_web');co.zip=gv('w_zip');co.address=gv('w_addr');S.set('company',co);}
+  if(step===3){co.brandColor=gv('w_brandColor')||'#0078D4';co.hdrStyle=gv('w_hdrStyle');S.set('company',co);}
+  if(step===4){co.fyType=gv('w_fyType');co.fyYear=parseInt(gv('w_fyYear'))||2025;co.period=gv('w_period');co.lock=gv('w_lock');co.weekStart=gv('w_weekstart');co.dateFormat=gv('w_dateformat');S.set('company',co);}
+  if(step===5){co.currency=gv('w_curr');co.numFormat=gv('w_numfmt');co.vatRate=parseFloat(gv('w_vatrate'))||15;co.zakat=gv('w_zakat');co.gosiEmp=parseFloat(gv('w_gosiEmp'))||12;co.gosiEe=parseFloat(gv('w_gosiEe'))||10;S.set('company',co);const currs=S.get('currencies')||[];currs.forEach(c=>{const cb=document.getElementById('wc_'+c.code);if(cb)c.active=cb.checked;});S.set('currencies',currs);}
+  if(step===6){co.costMethod=gv('w_cost');co.invVal=gv('w_invval');co.ohBase=gv('w_ohbase');co.wipTracking=gv('w_wip');co.fgWH=gv('w_fgwh');co.deprMethod=gv('w_depr');co.ccStructure=gv('w_cc');S.set('company',co);}
+  if(step===7){const users=S.get('users')||[];const ea=users.find(u=>u.role==='admin');const ad={id:ea?.id||'USR-001',name:gv('w_aname'),username:gv('w_auser').toLowerCase(),password:hashPw(gv('w_apass')),role:'admin',dept:gv('w_adept')||'Management',email:gv('w_aemail'),status:'Active',lastLogin:'—',created:today()};if(ea)Object.assign(ea,ad);else users.unshift(ad);S.set('users',users);S.set('company',co);}
 }
-function wNext(){
-  if(wStep===1){const n=gv('w1');if(!n.trim()){toast('Company name is required.','error');return;}const co=S.get('company')||{};co.name=n;co.nameAr=gv('w2');co.cr=gv('w3');co.vat=gv('w4');co.industry=gv('w5');co.country=gv('w6');co.address=gv('w7');S.set('company',co);}
-  if(wStep===2){const co=S.get('company')||{};co.fyType=gv('w8');co.fyYear=parseInt(gv('w9'))||2025;S.set('company',co);}
-  if(wStep===3){const co=S.get('company')||{};co.currency=(gv('w11')||'SAR').split(' ')[0];co.vatRate=parseFloat(gv('w12'))||15;co.gosiEmp=parseFloat(gv('w13'))||12;co.gosiEe=parseFloat(gv('w14'))||10;S.set('company',co);}
-  if(wStep===4){const co=S.get('company')||{};co.costMethod=gv('w15');co.invVal=gv('w16');co.ohBase=gv('w17');co.fgWH=gv('w18');S.set('company',co);}
-  if(wStep===WS){launchApp();return;}
-  wStep++;wRender();
-}
+
+function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchApp();return;}wStep++;wRender();if(wStep===WS)wFillDoneScreen();}
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
 function launchApp(){
   document.getElementById('wizOv').style.display='none';
-  document.getElementById('app').style.display='flex';
-  initApp();
+  showLogin();
 }
+
+function updateSidebarLogo(){
+  const co=S.get('company')||{};
+  const sbLogo=document.getElementById('sbLogoImg');
+  const sbLetter=document.getElementById('sbLogoLetter');
+  if(co.logo&&sbLogo){sbLogo.src=co.logo;sbLogo.style.display='block';if(sbLetter)sbLetter.style.display='none';}
+  else{if(sbLogo)sbLogo.style.display='none';if(sbLetter){sbLetter.style.display='flex';sbLetter.textContent=(co.name||'M').charAt(0).toUpperCase();}}
+  if(co.brandColor){const sb=document.getElementById('sidebar');if(sb)sb.style.background=co.brandColor;}
+}
+
 
 // ── APP INIT ──
 function initApp(){
@@ -1014,7 +1374,9 @@ function initApp(){
   buildSetupForms();
   buildAHTemplates();
   updateTopbarLock();
-  checkSync(); // check Google Sheets connection status
+  updateSidebarLogo();
+  checkSync();
+  updateAprBell(); // check Google Sheets connection status
 }
 
 // ── NAVIGATION ──
@@ -1023,13 +1385,58 @@ const ON_NAV={coa:renderCOA,journal:renderJE,ledger:()=>{buildGLSel();renderGL()
 let curPage='dashboard';
 function setupNav(){document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));}
 function nav(page){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');
+  const prev = document.getElementById('page-' + curPage);
+  const next = document.getElementById('page-' + page);
+
+  // Animate title out
+  const titleEl = document.getElementById('tbTitle');
+  if (titleEl && curPage !== page) {
+    titleEl.style.opacity = '0';
+    titleEl.style.transform = 'translateY(-4px)';
+  }
+
+  // Exit animation on previous page
+  if (prev && curPage !== page) {
+    prev.classList.add('page-exit');
+    setTimeout(() => {
+      prev.classList.remove('active', 'page-exit');
+      prev.style.cssText = '';
+    }, 140);
+  } else if (prev) {
+    prev.classList.remove('active');
+  }
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
-  document.getElementById('tbTitle').textContent=PT[page]||page;
-  curPage=page;
-  if(ON_NAV[page])ON_NAV[page]();
+
+  // Enter animation
+  if (next) {
+    next.style.display = 'block';
+    next.style.opacity = '0';
+    next.style.transform = 'translateY(14px)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        next.classList.add('active');
+        next.style.cssText = '';
+      });
+    });
+  }
+
+  // Animate title in
+  setTimeout(() => {
+    if (titleEl) {
+      titleEl.textContent = PT[page] || page;
+      titleEl.style.opacity = '';
+      titleEl.style.transform = '';
+    }
+  }, 80);
+
+  // Scroll content to top smoothly
+  const contentEl = document.getElementById('content');
+  if (contentEl) contentEl.scrollTo({ top: 0, behavior: 'smooth' });
+
+  curPage = page;
+  if (ON_NAV[page]) ON_NAV[page]();
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('collapsed');}
 let costMode='job';
@@ -1254,16 +1661,48 @@ const mTemplatesExtra = {
 function buildSetupForms(){
   const c=S.get('company')||{};
   document.getElementById('setupF1').innerHTML=`<div class="fr fr2">${inp('Company Name','s_name','text','',c.name)}</div><div class="fr fr2">${inp('Company Name (Arabic)','s_ar','text','',c.nameAr)}${inp('CR Number','s_cr','text','',c.cr)}</div><div class="fr fr2">${inp('VAT Number','s_vat','text','',c.vat)}${inp('Phone','s_ph','text','',c.phone)}</div>${inp('Email','s_em','email','',c.email)}${ta('Address','s_addr',c.address||'')}`;
-  document.getElementById('setupF2').innerHTML=`<div class="fr fr2">${inp('Base Currency','s_cur','text','',c.currency||'SAR')}${inp('VAT Rate %','s_vr','number','',c.vatRate||15)}</div><div class="fr fr2">${inp('GOSI Employer %','s_ge','number','',c.gosiEmp||12)}${inp('GOSI Employee %','s_gee','number','',c.gosiEe||10)}</div>`;
+  document.getElementById('setupF2').innerHTML=`<div class="fr fr2"><div class="fg"><label class="fl">Base Currency</label><select class="fc" id="s_cur"><option value="SAR" ${(c.currency||'SAR')==='SAR'?'selected':''}>🇸🇦 SAR — Saudi Riyal</option><option value="EGP" ${c.currency==='EGP'?'selected':''}>🇪🇬 EGP — Egyptian Pound</option><option value="USD" ${c.currency==='USD'?'selected':''}>🇺🇸 USD — US Dollar</option><option value="AED" ${c.currency==='AED'?'selected':''}>🇦🇪 AED — UAE Dirham</option><option value="EUR" ${c.currency==='EUR'?'selected':''}>🇪🇺 EUR — Euro</option><option value="GBP" ${c.currency==='GBP'?'selected':''}>🇬🇧 GBP — British Pound</option><option value="KWD" ${c.currency==='KWD'?'selected':''}>🇰🇼 KWD — Kuwaiti Dinar</option><option value="QAR" ${c.currency==='QAR'?'selected':''}>🇶🇦 QAR — Qatari Riyal</option><option value="BHD" ${c.currency==='BHD'?'selected':''}>🇧🇭 BHD — Bahraini Dinar</option><option value="OMR" ${c.currency==='OMR'?'selected':''}>🇴🇲 OMR — Omani Rial</option></select></div>${inp('VAT Rate %','s_vr','number','',c.vatRate||15)}</div><div class="fr fr2">${inp('GOSI Employer %','s_ge','number','',c.gosiEmp||12)}${inp('GOSI Employee %','s_gee','number','',c.gosiEe||10)}</div><div class="alert a-info" style="margin-top:8px">Changing base currency will update display across all modules. Go to <strong>Settings → Currencies</strong> to manage exchange rates.</div>`;
   document.getElementById('setupF3').innerHTML=`<div class="fr fr2">${sel('Costing Method','s_cm',['job — Job Order','abc — ABC Costing','both — Both'])}${sel('Inventory Valuation','s_iv',['FIFO','Weighted Average'])}</div><div class="fr fr2">${sel('OH Allocation Base','s_oh',['Direct Labor Cost','Direct Labor Hours','Machine Hours'])}${inp('Default FG Warehouse','s_fgwh','text','',c.fgWH||'WH-C')}</div>`;
   document.getElementById('setupF4').innerHTML=`<div class="fr fr2">${sel('Auto-post Procurement JE','s_apje',['Yes','No — Manual Review'])}${sel('Require JE Approval','s_jea',['No','Yes — Manager'])}</div><div class="divider"></div><div class="alert a-warn">Danger Zone — these actions cannot be undone.</div><div class="btn-row"><button class="btn btn-g sm" onclick="if(confirm('Re-run wizard?'))rerunWizard()">Re-run Setup Wizard</button><button class="btn btn-d sm" onclick="if(confirm('RESET ALL DATA? Clears localStorage + Sheets.'))resetAllFull()">🗑 Reset All Data</button></div>`;
   // Initialize Google Sheets UI after DOM is ready
   setTimeout(initGSUI, 50);
 }
-function saveSetup(){const c=S.get('company')||{};c.name=gv('s_name')||c.name;c.nameAr=gv('s_ar');c.cr=gv('s_cr');c.vat=gv('s_vat');c.phone=gv('s_ph');c.email=gv('s_em');c.address=gv('s_addr');c.currency=gv('s_cur');c.vatRate=parseFloat(gv('s_vr'))||15;c.gosiEmp=parseFloat(gv('s_ge'))||12;c.gosiEe=parseFloat(gv('s_gee'))||10;c.fgWH=gv('s_fgwh');S.set('company',c);document.getElementById('sbCo').textContent=c.name||'ManuCost ERP';toast('Settings saved.','success');}
-function resetAll(){localStorage.clear();location.reload();}
-async function resetAllFull(){localStorage.clear();if(GS_URL){await GS.reset();toast('All data cleared from localStorage and Sheets.','success');}location.reload();}
-function rerunWizard(){document.getElementById('app').style.display='none';document.getElementById('wizOv').style.display='flex';wStep=1;wRender();}
+function saveSetup(){const c=S.get('company')||{};c.name=gv('s_name')||c.name;c.nameAr=gv('s_ar');c.cr=gv('s_cr');c.vat=gv('s_vat');c.phone=gv('s_ph');c.email=gv('s_em');c.address=gv('s_addr');c.currency=gv('s_cur');c.vatRate=parseFloat(gv('s_vr'))||15;c.gosiEmp=parseFloat(gv('s_ge'))||12;c.gosiEe=parseFloat(gv('s_gee'))||10;c.fgWH=gv('s_fgwh');S.set('company',c);document.getElementById('sbCo').textContent=c.name||'ManuCost ERP';updateSidebarLogo();toast('Settings saved. Some changes require a page reload.','success');}
+function resetAll(){
+  const s=getSession();
+  if(!s||s.role!=='admin'){toast('Only an Administrator can reset company data.','error');return;}
+  openM('_resetConfirm');
+  document.getElementById('mTitle').textContent='🗑 Reset All Data';
+  document.getElementById('mBody').innerHTML=`
+    <div class="alert a-err mb12">This will permanently delete ALL company data including transactions, users, and settings. This action cannot be undone.</div>
+    <div class="fg mb12"><label class="fl req">Type RESET to confirm</label><input class="fc" id="resetConfirmInput" placeholder="Type RESET here"></div>
+    <div class="fg"><label class="fl req">Admin Password</label><input class="fc" id="resetPassInput" type="password" placeholder="Enter your password"></div>`;
+  document.getElementById('mSaveBtn').textContent='🗑 Reset Everything';
+  document.getElementById('mSaveBtn').style.display='flex';
+  document.getElementById('mSaveBtn').className='btn btn-d';
+  mSaveFn=()=>{
+    if(gv('resetConfirmInput')!=='RESET'){toast('You must type RESET to confirm.','error');return;}
+    const users=S.get('users')||[];
+    const admin=users.find(u=>u.id===s.userId);
+    if(!admin||!checkPw(gv('resetPassInput'),admin.password)){toast('Incorrect password.','error');return;}
+    clearSession();
+    localStorage.clear();
+    if(GS_URL)GS.reset();
+    toast('All data cleared. Reloading...','success');
+    setTimeout(()=>location.reload(),1000);
+  };
+  document.getElementById('mShell').classList.add('open');
+}
+async function resetAllFull(){resetAll();}
+function rerunWizard(){
+  const s=getSession();
+  if(!s||s.role!=='admin'){toast('Only an Administrator can re-run the setup wizard.','error');return;}
+  if(!confirm('Re-run setup wizard? Your existing company settings will be preserved and you can update them.'))return;
+  clearSession();
+  document.getElementById('app').style.display='none';
+  document.getElementById('wizOv').style.display='flex';
+  wStep=1;wRender();
+}
 
 // ── FISCAL YEAR + PERIOD CLOSING ENGINE ──
 
@@ -1743,6 +2182,1972 @@ function initGSUI() {
 }
 
 // Patch setupF4 to include GS reset
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  AUTH SYSTEM — Users, Roles, Session, Access Control        ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ── ROLE DEFINITIONS ──
+const ROLES = {
+  admin: {
+    label: 'Administrator', color: '#5C2D91', bg: '#F4EBF9',
+    desc: 'Full access to all modules including user management',
+    perms: '*' // all
+  },
+  manager: {
+    label: 'Finance Manager', color: '#0078D4', bg: '#EBF3FB',
+    desc: 'Full financial access, no user management',
+    perms: ['dashboard','coa','journal','ledger','tb','suppliers','payterms','po','grn','aging-ap','items','warehouses','stockledger','transfers','bom','workorders','jobcost','overhead','abc','customers','quotation','salesorder','invoices','aging-ar','employees','timesheets','payroll','pnl','bs','cf','invrpt','adhoc','fiscalyear','periodclose','setup']
+  },
+  accountant: {
+    label: 'Accountant', color: '#038387', bg: '#E0F3F3',
+    desc: 'Accounts, payroll, reports. No purchasing or sales creation',
+    perms: ['dashboard','coa','journal','ledger','tb','payterms','aging-ap','aging-ar','employees','timesheets','payroll','pnl','bs','cf','invrpt','adhoc','periodclose']
+  },
+  warehouse: {
+    label: 'Warehouse Staff', color: '#CA5010', bg: '#FDEDDE',
+    desc: 'Stock, inventory, transfers, GRN only',
+    perms: ['dashboard','items','warehouses','stockledger','transfers','grn','invrpt']
+  },
+  viewer: {
+    label: 'Viewer (Read-Only)', color: '#605E5C', bg: '#F8F8F8',
+    desc: 'Can view all modules but cannot create or edit anything',
+    perms: ['dashboard','coa','ledger','tb','suppliers','payterms','aging-ap','items','warehouses','stockledger','workorders','jobcost','customers','invoices','aging-ar','pnl','bs','cf','invrpt','adhoc']
+  }
+};
+
+// Pages that require WRITE access (blocked for viewer)
+const WRITE_PAGES = new Set(['journal','po','grn','transfers','bom','workorders','jobcost','quotation','salesorder','invoices','employees','timesheets','payroll','periodclose','fiscalyear','setup','users']);
+
+// ── SEED DEFAULT USERS ──
+function seedUsers() {
+  if (S.get('users')) return;
+  S.set('users', [
+    { id:'USR-001', name:'Mahdi Al-Finance', username:'admin',    password:hashPw('Admin@1234'),  role:'admin',      dept:'Finance',    email:'admin@company.sa',    status:'Active', lastLogin:'—', created: today() },
+    { id:'USR-002', name:'Ahmed Al-Rashid',  username:'ahmed',    password:hashPw('Ahmed@2025'),  role:'manager',    dept:'Finance',    email:'ahmed@company.sa',     status:'Active', lastLogin:'—', created: today() },
+    { id:'USR-003', name:'Sara Al-Accounts', username:'sara',     password:hashPw('Sara@2025'),   role:'accountant', dept:'Finance',    email:'sara@company.sa',      status:'Active', lastLogin:'—', created: today() },
+    { id:'USR-004', name:'Omar Al-Zahrani',  username:'omar',     password:hashPw('Omar@2025'),   role:'warehouse',  dept:'Warehouse',  email:'omar@company.sa',      status:'Active', lastLogin:'—', created: today() },
+    { id:'USR-005', name:'Viewer Account',   username:'viewer',   password:hashPw('View@2025'),   role:'viewer',     dept:'Management', email:'view@company.sa',      status:'Active', lastLogin:'—', created: today() },
+  ]);
+}
+
+// ── SIMPLE HASH (not cryptographic — for demo; use bcrypt server-side in production) ──
+function hashPw(pw) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < pw.length; i++) {
+    h ^= pw.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return 'h' + h.toString(16).padStart(8,'0') + pw.length;
+}
+function checkPw(plain, hash) { return hashPw(plain) === hash; }
+
+// ── SESSION ──
+let SESSION = null; // { userId, username, name, role, loginTime }
+
+function getSession() {
+  if (SESSION) return SESSION;
+  const stored = sessionStorage.getItem('mce_session');
+  if (stored) { try { SESSION = JSON.parse(stored); } catch {} }
+  return SESSION;
+}
+function setSession(user) {
+  SESSION = { userId: user.id, username: user.username, name: user.name, role: user.role, loginTime: new Date().toISOString() };
+  sessionStorage.setItem('mce_session', JSON.stringify(SESSION));
+}
+function clearSession() {
+  SESSION = null;
+  sessionStorage.removeItem('mce_session');
+}
+
+// ── CAN ACCESS PAGE? ──
+function canAccess(page) {
+  const s = getSession();
+  if (!s) return false;
+  const role = ROLES[s.role];
+  if (!role) return false;
+  if (role.perms === '*') return true;
+  return role.perms.includes(page);
+}
+function canWrite() {
+  const s = getSession();
+  if (!s) return false;
+  return s.role !== 'viewer';
+}
+
+// ── LOGIN / LOGOUT ──
+function showLogin() {
+  document.getElementById('loginOv').style.display = 'flex';
+  document.getElementById('wizOv').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginYear').textContent = new Date().getFullYear();
+  const co = S.get('company');
+  if (co && co.name) document.getElementById('loginCompanyName').textContent = co.name;
+  setTimeout(() => document.getElementById('loginUser').focus(), 100);
+}
+
+function doLogin() {
+  const username = document.getElementById('loginUser').value.trim().toLowerCase();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if (!username || !password) { showLoginError('Please enter username and password.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  const users = S.get('users') || [];
+  const user = users.find(u => u.username.toLowerCase() === username && u.status === 'Active');
+
+  setTimeout(() => { // slight delay for UX
+    if (!user || !checkPw(password, user.password)) {
+      btn.disabled = false; btn.textContent = 'Sign In →';
+      showLoginError('Invalid username or password.');
+      document.getElementById('loginPass').value = '';
+      return;
+    }
+    // Update last login
+    user.lastLogin = new Date().toLocaleString('en-GB');
+    S.set('users', users);
+    setSession(user);
+    errEl.style.display = 'none';
+    btn.textContent = '✓ Welcome, ' + user.name.split(' ')[0];
+    setTimeout(() => {
+      document.getElementById('loginOv').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      updateUserPill();
+      initApp();
+    }, 400);
+  }, 300);
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'flex';
+}
+
+function doLogout() {
+  clearSession();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginBtn').textContent = 'Sign In →';
+  document.getElementById('loginBtn').disabled = false;
+  closeUserDD();
+  showLogin();
+  toast('Signed out successfully.', 'info');
+}
+
+function togglePw() {
+  const inp = document.getElementById('loginPass');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ── USER PILL & DROPDOWN ──
+function updateUserPill() {
+  const s = getSession();
+  if (!s) return;
+  const role = ROLES[s.role] || {};
+  const initials = s.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userAvatar').style.background = role.color || '#0078D4';
+  document.getElementById('userPillName').textContent = s.name.split(' ')[0];
+  document.getElementById('ddUserName').textContent = s.name;
+  document.getElementById('ddUserRole').textContent = role.label || s.role;
+  document.getElementById('ddUserEmail').textContent = (S.get('users')||[]).find(u=>u.id===s.userId)?.email || '';
+  // Hide User Management from non-admins
+  document.querySelectorAll('.nav-item[data-page="users"]').forEach(el => {
+    el.style.display = s.role === 'admin' ? '' : 'none';
+  });
+}
+
+function toggleUserDD(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('userDropdown');
+  const pill = document.getElementById('userPill');
+  const rect = pill.getBoundingClientRect();
+  dd.style.top = (rect.bottom + 6) + 'px';
+  dd.style.right = (window.innerWidth - rect.right) + 'px';
+  dd.classList.toggle('open');
+}
+function closeUserDD() { document.getElementById('userDropdown').classList.remove('open'); }
+document.addEventListener('click', closeUserDD);
+
+// ── NAVIGATION GUARD ──
+const _origNav = typeof nav === 'function' ? nav : null;
+function navGuarded(page) {
+  const s = getSession();
+  if (!s) { showLogin(); return; }
+  if (!canAccess(page)) {
+    // Show access denied inside the page area
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const pg = document.getElementById('page-' + page);
+    if (pg) {
+      pg.innerHTML = `<div class="access-denied">
+        <div style="font-size:48px;margin-bottom:16px">🔒</div>
+        <h2>Access Restricted</h2>
+        <p>Your role (<strong>${ROLES[s.role]?.label||s.role}</strong>) does not have permission to access <strong>${PT[page]||page}</strong>.</p>
+        <p style="margin-top:8px">Contact your system administrator if you need access.</p>
+        <button class="btn btn-s mt12" onclick="nav('dashboard')">← Back to Dashboard</button>
+      </div>`;
+      pg.classList.add('active');
+    }
+    document.getElementById('tbTitle').textContent = PT[page] || page;
+    return;
+  }
+  if (_origNav) _origNav(page);
+}
+
+// ── RENDER: USER MANAGEMENT ──
+function renderUsers() {
+  const users = S.get('users') || [];
+  const s = getSession();
+
+  // KPIs
+  document.getElementById('userKPIs').innerHTML = [
+    { l:'Total Users', v: users.length, c:'c-blue' },
+    { l:'Active', v: users.filter(u=>u.status==='Active').length, c:'c-green' },
+    { l:'Inactive', v: users.filter(u=>u.status==='Inactive').length, c:'c-orange' },
+    { l:'Roles Defined', v: Object.keys(ROLES).length, c:'c-teal' },
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Users table
+  document.getElementById('usersTbl').innerHTML = users.map(u => {
+    const role = ROLES[u.role] || {};
+    const isMe = s && s.userId === u.id;
+    return `<tr>
+      <td>
+        <div class="flex ic gap8">
+          <div class="user-avatar" style="background:${role.color||'#666'}">${u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
+          <span class="fw6">${u.name}${isMe?' <span class="b b-blue" style="font-size:10px">You</span>':''}</span>
+        </div>
+      </td>
+      <td class="t-blue fw6">${u.username}</td>
+      <td><span class="b" style="background:${role.bg||'#eee'};color:${role.color||'#333'}">${role.label||u.role}</span></td>
+      <td>${u.dept||'—'}</td>
+      <td class="t-muted t-sm">${u.lastLogin||'Never'}</td>
+      <td>${sBadge(u.status)}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn btn-g xs" onclick="openM('mEditUser','${u.id}')">Edit</button>
+          ${!isMe ? `<button class="btn btn-g xs" onclick="toggleUserStatus('${u.id}')">${u.status==='Active'?'Deactivate':'Activate'}</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Role cards
+  document.getElementById('roleCards').innerHTML = Object.entries(ROLES).map(([key, r]) => `
+    <div class="fsec mb8" style="border-left:3px solid ${r.color};border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px">
+      <div class="fw6 t-sm mb8" style="color:${r.color}">${r.label}</div>
+      <div class="t-xs t-muted">${r.desc}</div>
+      <div class="t-xs mt8" style="color:${r.color}">${r.perms==='*'?'All modules':'${r.perms.length} modules'}</div>
+    </div>`).join('');
+
+  // Permission matrix
+  const modules = [
+    {key:'dashboard',label:'Dashboard'},{key:'coa',label:'Chart of Accounts'},{key:'journal',label:'Journal Entry'},
+    {key:'po',label:'Purchase Orders'},{key:'grn',label:'Goods Receipt'},{key:'aging-ap',label:'AP Aging'},
+    {key:'items',label:'Item Master'},{key:'stockledger',label:'Stock Ledger'},{key:'transfers',label:'Stock Transfers'},
+    {key:'workorders',label:'Work Orders'},{key:'jobcost',label:'Job Cost Sheet'},{key:'invoices',label:'Sales Invoices'},
+    {key:'aging-ar',label:'AR Aging'},{key:'payroll',label:'Payroll Run'},{key:'pnl',label:'Income Statement'},
+    {key:'periodclose',label:'Period Closing'},{key:'users',label:'User Management'},
+  ];
+  const roleKeys = Object.keys(ROLES);
+  document.getElementById('permMatrix').innerHTML = `<table>
+    <thead><tr><th>Module</th>${roleKeys.map(k=>`<th style="color:${ROLES[k].color};text-align:center">${ROLES[k].label.split(' ')[0]}</th>`).join('')}</tr></thead>
+    <tbody>${modules.map(m=>`<tr>
+      <td>${m.label}</td>
+      ${roleKeys.map(k=>{
+        const has = ROLES[k].perms==='*' || ROLES[k].perms.includes(m.key);
+        const write = has && k !== 'viewer' && WRITE_PAGES.has(m.key);
+        const icon = !has ? '<span style="color:var(--border2)">—</span>'
+          : WRITE_PAGES.has(m.key) && k==='viewer' ? '<span style="color:var(--orange)">👁</span>'
+          : has ? '<span style="color:var(--green)">✓</span>' : '—';
+        return `<td style="text-align:center">${icon}</td>`;
+      }).join('')}
+    </tr>`).join('')}</tbody>
+  </table><div class="t-xs t-muted" style="padding:10px 12px">✓ Full access &nbsp; 👁 Read-only &nbsp; — No access</div>`;
+}
+
+function filterUsersTable(q) {
+  document.querySelectorAll('#usersTbl tr').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function toggleUserStatus(id) {
+  const users = S.get('users') || [];
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  u.status = u.status === 'Active' ? 'Inactive' : 'Active';
+  S.set('users', users);
+  renderUsers();
+  toast(`${u.name} ${u.status === 'Active' ? 'activated' : 'deactivated'}.`, 'success');
+}
+
+// ── USER MODALS ──
+const mUserTemplates = {
+  mAddUser: {
+    title: 'Add New User', saveLabel: 'Create User',
+    body: () => `
+      <div class="fr fr2">${inp('Full Name','au_name','text','',undefined,true)}${inp('Username','au_user','text','',undefined,true)}</div>
+      <div class="fr fr2">${inp('Email','au_email','email','')}${inp('Department','au_dept','text','e.g. Finance')}</div>
+      <div class="fr fr2">${sel('Role','au_role',Object.entries(ROLES).map(([k,v])=>k+'|'+v.label),true)}${inp('Temporary Password','au_pass','password','',undefined,true)}</div>
+      <div class="alert a-info" style="margin-top:8px">User will be prompted to change password on first login.</div>`,
+    save: () => {
+      const name=gv('au_name'), user=gv('au_user').toLowerCase(), pass=gv('au_pass');
+      if (!name||!user||!pass) { toast('Name, username, and password required','error'); return; }
+      const users = S.get('users')||[];
+      if (users.find(u=>u.username===user)) { toast('Username already exists','error'); return; }
+      const roleVal = gv('au_role').split('|')[0];
+      users.push({ id:'USR-'+(users.length+1).toString().padStart(3,'0'), name, username:user, password:hashPw(pass), role:roleVal, dept:gv('au_dept'), email:gv('au_email'), status:'Active', lastLogin:'Never', created:today() });
+      S.set('users', users);
+      closeM(); renderUsers();
+      toast(`User "${name}" created with role ${ROLES[roleVal]?.label}.`, 'success');
+    }
+  },
+  mEditUser: {
+    title: 'Edit User', saveLabel: 'Save Changes',
+    body: (id) => {
+      const u = (S.get('users')||[]).find(x=>x.id===id) || {};
+      return `<input type="hidden" id="eu_id" value="${u.id||''}">
+        <div class="fr fr2">${inp('Full Name','eu_name','text','',u.name,true)}${inp('Username','eu_user','text','',u.username,true)}</div>
+        <div class="fr fr2">${inp('Email','eu_email','email','',u.email)}${inp('Department','eu_dept','text','',u.dept)}</div>
+        <div class="fr fr2">${sel('Role','eu_role',Object.entries(ROLES).map(([k,v])=>k+'|'+v.label))}${sel('Status','eu_status',['Active','Inactive'])}</div>
+        <div class="fr"><div class="fg"><label class="fl">New Password <span class="t-muted">(leave blank to keep current)</span></label><input class="fc" id="eu_pass" type="password" placeholder="Enter new password to change"></div></div>`;
+    },
+    save: () => {
+      const id=gv('eu_id'), name=gv('eu_name'), user=gv('eu_user').toLowerCase();
+      if (!name||!user) { toast('Name and username required','error'); return; }
+      const users = S.get('users')||[];
+      const u = users.find(x=>x.id===id);
+      if (!u) return;
+      const roleVal = gv('eu_role').split('|')[0];
+      u.name=name; u.username=user; u.email=gv('eu_email'); u.dept=gv('eu_dept');
+      u.role=roleVal; u.status=gv('eu_status');
+      if (gv('eu_pass').trim()) u.password = hashPw(gv('eu_pass'));
+      S.set('users', users);
+      // Update session if editing self
+      const s = getSession();
+      if (s && s.userId === id) { s.name=name; s.role=roleVal; setSession({...u}); updateUserPill(); }
+      closeM(); renderUsers();
+      toast(`User "${name}" updated.`, 'success');
+    }
+  },
+  mChangePass: {
+    title: 'Change Password', saveLabel: 'Update Password',
+    body: () => `
+      <div class="fr">${inp('Current Password','cp_cur','password','',undefined,true)}</div>
+      <div class="fr">${inp('New Password','cp_new','password','',undefined,true)}</div>
+      <div class="fr">${inp('Confirm New Password','cp_conf','password','',undefined,true)}</div>
+      <div class="fhint">Password must be at least 8 characters.</div>`,
+    save: () => {
+      const cur=gv('cp_cur'), nw=gv('cp_new'), conf=gv('cp_conf');
+      if (!cur||!nw||!conf) { toast('All fields required','error'); return; }
+      if (nw !== conf) { toast('New passwords do not match','error'); return; }
+      if (nw.length < 8) { toast('Password must be at least 8 characters','error'); return; }
+      const s = getSession();
+      const users = S.get('users')||[];
+      const u = users.find(x=>x.id===s?.userId);
+      if (!u || !checkPw(cur, u.password)) { toast('Current password is incorrect','error'); return; }
+      u.password = hashPw(nw);
+      S.set('users', users);
+      closeM();
+      toast('Password updated successfully.', 'success');
+    }
+  }
+};
+
+// Override openM to handle user modals
+const _openMBase = openM;
+function openM(name, idOrClass, wideClass) {
+  // Check if it's a user modal
+  const umt = mUserTemplates[name];
+  if (umt) {
+    document.getElementById('mBox').className = 'modal';
+    document.getElementById('mTitle').textContent = umt.title;
+    document.getElementById('mBody').innerHTML = umt.body(idOrClass);
+    document.getElementById('mSaveBtn').textContent = umt.saveLabel || 'Save';
+    document.getElementById('mSaveBtn').style.display = 'flex';
+    mSaveFn = umt.save;
+    document.getElementById('mShell').classList.add('open');
+    return;
+  }
+  _openMBase(name, idOrClass, wideClass);
+}
+
+// ── EXTEND ON_NAV & PT FOR USERS ──
+PT['users'] = 'User Management';
+ON_NAV['users'] = renderUsers;
+
+// ── WRITE GUARD — wraps save buttons ──
+// Called at the start of any write operation
+function requireWrite(action) {
+  if (!canWrite()) {
+    toast('Your role (Viewer) cannot make changes. Contact your administrator.', 'warn');
+    return false;
+  }
+  return true;
+}
+
+function updateAprBell() {
+  const s = getSession();
+  if (!s) return;
+  const requests = S.get('aprRequests') || [];
+  const pending = requests.filter(r => r.status === 'pending' && isMyTurn(r, s)).length;
+  const dot = document.getElementById('aprBellDot');
+  if (dot) dot.style.display = pending > 0 ? 'block' : 'none';
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CURRENCY ENGINE — Multi-currency, rates, formatting        ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ── CURRENCY MASTER (all supported currencies) ──
+const CURRENCY_MASTER = {
+  SAR: { name:'Saudi Riyal',       symbol:'﷼',  flag:'🇸🇦', decimals:2, position:'after'  },
+  EGP: { name:'Egyptian Pound',    symbol:'E£', flag:'🇪🇬', decimals:2, position:'before' },
+  USD: { name:'US Dollar',         symbol:'$',  flag:'🇺🇸', decimals:2, position:'before' },
+  AED: { name:'UAE Dirham',        symbol:'د.إ',flag:'🇦🇪', decimals:2, position:'after'  },
+  EUR: { name:'Euro',              symbol:'€',  flag:'🇪🇺', decimals:2, position:'before' },
+  GBP: { name:'British Pound',     symbol:'£',  flag:'🇬🇧', decimals:2, position:'before' },
+  KWD: { name:'Kuwaiti Dinar',     symbol:'د.ك',flag:'🇰🇼', decimals:3, position:'after'  },
+  BHD: { name:'Bahraini Dinar',    symbol:'BD', flag:'🇧🇭', decimals:3, position:'before' },
+  QAR: { name:'Qatari Riyal',      symbol:'QR', flag:'🇶🇦', decimals:2, position:'before' },
+  OMR: { name:'Omani Rial',        symbol:'OMR',flag:'🇴🇲', decimals:3, position:'before' },
+  JOD: { name:'Jordanian Dinar',   symbol:'JD', flag:'🇯🇴', decimals:3, position:'before' },
+  TRY: { name:'Turkish Lira',      symbol:'₺',  flag:'🇹🇷', decimals:2, position:'before' },
+  CNY: { name:'Chinese Yuan',      symbol:'¥',  flag:'🇨🇳', decimals:2, position:'before' },
+  INR: { name:'Indian Rupee',      symbol:'₹',  flag:'🇮🇳', decimals:2, position:'before' },
+};
+
+// ── SEED DEFAULT CURRENCIES & RATES ──
+function seedCurrencies() {
+  if (S.get('currencies')) return;
+  // Rates expressed as: 1 unit of this currency = X units of base currency (SAR)
+  // If base is SAR: SAR rate = 1.0 always
+  S.set('currencies', [
+    { code:'SAR', rate:1.0000,     active:true,  isBase:true,  updated:today() },
+    { code:'EGP', rate:0.0735,     active:true,  isBase:false, updated:today() },
+    { code:'USD', rate:3.7500,     active:true,  isBase:false, updated:today() },
+    { code:'AED', rate:1.0200,     active:true,  isBase:false, updated:today() },
+    { code:'EUR', rate:4.0800,     active:true,  isBase:false, updated:today() },
+    { code:'GBP', rate:4.7600,     active:false, isBase:false, updated:today() },
+    { code:'KWD', rate:12.2100,    active:true,  isBase:false, updated:today() },
+    { code:'QAR', rate:1.0300,     active:false, isBase:false, updated:today() },
+  ]);
+}
+
+// ── CURRENCY HELPERS ──
+
+// Get base currency code from company settings
+function baseCurr() {
+  return (S.get('company') || {}).currency || 'SAR';
+}
+
+// Get exchange rate: how many base units = 1 unit of `code`
+function getRate(code) {
+  const base = baseCurr();
+  if (code === base) return 1;
+  const currs = S.get('currencies') || [];
+  const c = currs.find(x => x.code === code);
+  const b = currs.find(x => x.code === base);
+  if (!c || !b) return 1;
+  // c.rate and b.rate are both "X SAR per 1 unit"
+  // To convert: amount_in_code × c.rate / b.rate = amount_in_base
+  return c.rate / b.rate;
+}
+
+// Convert amount FROM any currency TO base currency
+function toBase(amount, fromCode) {
+  return amount * getRate(fromCode);
+}
+
+// Convert amount FROM base currency TO any currency
+function fromBase(amount, toCode) {
+  const r = getRate(toCode);
+  return r > 0 ? amount / r : amount;
+}
+
+// Convert between any two currencies
+function convert(amount, fromCode, toCode) {
+  if (fromCode === toCode) return amount;
+  return fromBase(toBase(amount, fromCode), toCode);
+}
+
+// ── FORMAT CURRENCY — replaces all hardcoded "SAR X" in render functions ──
+// fC(1234.5)           → uses base currency, e.g. "SAR 1,234.50"
+// fC(1234.5, 'USD')    → "$ 1,234.50"
+// fC(1234.5, 'EGP')    → "1,234.50 E£"
+// fC(1234.5, 'SAR', 'USD') → converts SAR→USD then formats as USD
+function fC(amount, currCode, displayAs) {
+  if (amount == null || isNaN(amount)) return '—';
+  const base = baseCurr();
+  const useCurr = currCode || base;
+  let displayAmt = amount;
+  if (displayAs && displayAs !== useCurr) {
+    displayAmt = convert(amount, useCurr, displayAs);
+  }
+  const meta = CURRENCY_MASTER[useCurr] || CURRENCY_MASTER[base] || { symbol: useCurr, decimals: 2, position: 'before' };
+  const displayMeta = displayAs ? (CURRENCY_MASTER[displayAs] || meta) : meta;
+  const formatted = Number(displayAmt).toLocaleString('en-US', {
+    minimumFractionDigits: displayMeta.decimals,
+    maximumFractionDigits: displayMeta.decimals
+  });
+  const code = displayAs || useCurr;
+  if (displayMeta.position === 'before') return `${code} ${formatted}`;
+  return `${formatted} ${code}`;
+}
+
+// Short format (K/M) with currency
+function fCM(amount, currCode) {
+  const base = baseCurr();
+  const code = currCode || base;
+  if (Math.abs(amount) >= 1e6) return `${code} ${(amount/1e6).toFixed(1)}M`;
+  if (Math.abs(amount) >= 1e3) return `${code} ${(amount/1e3).toFixed(0)}K`;
+  return fC(amount, code);
+}
+
+// Get currency symbol only
+function currSymbol(code) {
+  const c = CURRENCY_MASTER[code || baseCurr()];
+  return c ? c.symbol : (code || baseCurr());
+}
+
+// Get active currencies as options array
+function activeCurrOpts() {
+  return (S.get('currencies') || [])
+    .filter(c => c.active)
+    .map(c => {
+      const meta = CURRENCY_MASTER[c.code] || {};
+      return `${c.code} — ${meta.name || c.code}`;
+    });
+}
+
+// ── RENDER: CURRENCIES PAGE ──
+function renderCurrencies() {
+  const base = baseCurr();
+  const currs = S.get('currencies') || [];
+  const meta = CURRENCY_MASTER[base] || {};
+
+  document.getElementById('baseCurrBanner').innerHTML =
+    `Base currency: <strong>${meta.flag||''} ${base} — ${meta.name||base}</strong>. All transactions are stored in ${base}. Foreign currency amounts are auto-converted at posting using the rates below.`;
+  document.getElementById('ratesAsOf').textContent = 'As of ' + today();
+
+  // Table
+  document.getElementById('currTbl').innerHTML = currs.map(c => {
+    const m = CURRENCY_MASTER[c.code] || {};
+    const rateVsBase = c.isBase ? 1 : (c.rate / (currs.find(x=>x.code===base)?.rate||1));
+    const inverse = rateVsBase > 0 ? (1/rateVsBase).toFixed(4) : '—';
+    return `<tr>
+      <td><span style="font-size:16px">${m.flag||'🏳'}</span> ${m.name||c.code}</td>
+      <td class="t-blue fw6">${c.code}</td>
+      <td style="font-size:15px">${m.symbol||c.code}</td>
+      <td class="num fw6 ${c.isBase?'t-green':''}">${c.isBase?'1.0000 (Base)':rateVsBase.toFixed(4)}</td>
+      <td class="num t-muted">${c.isBase?'—':inverse}</td>
+      <td class="t-muted t-sm">${c.updated}</td>
+      <td>${c.isBase?'<span class="b b-green">Base</span>':sBadge(c.active?'Active':'Inactive')}</td>
+      <td>
+        ${!c.isBase ? `<button class="btn btn-g xs" onclick="openM('mEditRate','${c.code}')">Edit Rate</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Populate converter selects
+  const opts = currs.filter(c=>c.active).map(c=>`<option value="${c.code}" ${c.code===base?'selected':''}>${c.code} — ${CURRENCY_MASTER[c.code]?.name||c.code}</option>`).join('');
+  ['convFrom','convTo','txCurr','trendCurr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = opts; }
+  });
+  // Default "To" to USD if base is SAR
+  const convTo = document.getElementById('convTo');
+  if (convTo && base === 'SAR') convTo.value = 'USD';
+
+  runConverter();
+  updateTxPreview();
+  renderRateTrend();
+}
+
+function runConverter() {
+  const amt = parseFloat(document.getElementById('convAmt')?.value) || 0;
+  const from = document.getElementById('convFrom')?.value || baseCurr();
+  const to = document.getElementById('convTo')?.value || 'USD';
+  const result = convert(amt, from, to);
+  const rate = convert(1, from, to);
+
+  document.getElementById('convResultAmt').textContent = fC(result, to);
+  document.getElementById('convResultRate').textContent =
+    `1 ${from} = ${rate.toFixed(6)} ${to}  ·  1 ${to} = ${(1/rate).toFixed(6)} ${from}`;
+
+  // Show all currency results
+  const base = baseCurr();
+  const currs = (S.get('currencies')||[]).filter(c=>c.active&&c.code!==from);
+  document.getElementById('convAllResult').innerHTML = currs.length ? `
+    <div class="t-xs t-muted mb8">All currencies (from ${fC(amt,from)}):</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${currs.map(c=>{
+        const m = CURRENCY_MASTER[c.code]||{};
+        const val = convert(amt, from, c.code);
+        return `<div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius);font-size:12.5px">
+          <span style="font-size:13px">${m.flag||''}</span>
+          <span class="t-blue fw6">${c.code}</span>
+          <span class="fw6" style="float:right">${fC(val,c.code)}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+}
+
+function updateTxPreview() {
+  const amt = parseFloat(document.getElementById('txAmt')?.value) || 0;
+  const curr = document.getElementById('txCurr')?.value || baseCurr();
+  const base = baseCurr();
+  const baseAmt = toBase(amt, curr);
+  const rate = getRate(curr);
+
+  document.getElementById('txPreview').innerHTML = `
+    <div class="g3c" style="gap:10px">
+      <div class="fsec t-sm">
+        <div class="fsec-t">Transaction Amount</div>
+        <div style="font-size:20px;font-weight:300;color:var(--blue)">${fC(amt, curr)}</div>
+        <div class="t-xs t-muted mt8">Entered in ${CURRENCY_MASTER[curr]?.name||curr}</div>
+      </div>
+      <div class="fsec t-sm">
+        <div class="fsec-t">Exchange Rate</div>
+        <div style="font-size:20px;font-weight:300;color:var(--teal)">1 ${curr} = ${rate.toFixed(4)} ${base}</div>
+        <div class="t-xs t-muted mt8">Rate as of ${today()}</div>
+      </div>
+      <div class="fsec t-sm" style="border-left:3px solid var(--green)">
+        <div class="fsec-t">Booked in Base Currency</div>
+        <div style="font-size:20px;font-weight:300;color:var(--green)">${fC(baseAmt, base)}</div>
+        <div class="t-xs t-muted mt8">Posted to GL in ${base}</div>
+      </div>
+    </div>
+    ${curr !== base ? `<div class="alert a-info mt12">
+      Exchange gain/loss will be recognised if the rate changes between invoice date and payment date.
+    </div>` : ''}`;
+}
+
+function renderRateTrend() {
+  const code = document.getElementById('trendCurr')?.value;
+  if (!code) return;
+  const base = baseCurr();
+  const currs = S.get('currencies')||[];
+  const c = currs.find(x=>x.code===code);
+  if (!c) return;
+  const baseRate = currs.find(x=>x.code===base)?.rate || 1;
+  const currentRate = c.rate / baseRate;
+
+  // Generate simulated 7-day history (±1% random walk from current)
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Today'];
+  const rates = [];
+  let r = currentRate * (0.97 + Math.random()*0.02);
+  for (let i = 0; i < 7; i++) {
+    r = r * (0.995 + Math.random()*0.01);
+    rates.push(parseFloat(r.toFixed(4)));
+  }
+  rates[6] = parseFloat(currentRate.toFixed(4)); // today is exact
+
+  const min = Math.min(...rates), max = Math.max(...rates), range = max - min || 0.001;
+  const barH = 60;
+
+  document.getElementById('rateTrend').innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:12px;height:${barH+40}px;padding:10px 0">
+      ${days.map((d,i) => {
+        const pct = ((rates[i]-min)/range);
+        const h = Math.max(8, Math.round(pct*barH));
+        const isToday = i===6;
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div class="t-xs t-muted fw6">${rates[i].toFixed(4)}</div>
+          <div style="width:100%;height:${h}px;background:${isToday?'var(--blue)':'var(--blue-lt)'};border-radius:3px 3px 0 0;transition:height .3s"></div>
+          <div class="t-xs t-muted">${d}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="t-xs t-muted" style="text-align:center">
+      1 ${code} in ${base} · Min: ${min.toFixed(4)} · Max: ${max.toFixed(4)} · Current: <strong>${currentRate.toFixed(4)}</strong>
+    </div>`;
+}
+
+// ── UPDATE PT AND ON_NAV FOR CURRENCIES ──
+PT['currencies'] = 'Currencies';
+ON_NAV['currencies'] = renderCurrencies;
+
+// ── CURRENCY MODALS ──
+const mCurrTemplates = {
+  mAddCurrency: {
+    title: 'Add Currency', saveLabel: 'Add Currency',
+    body: () => {
+      const existing = (S.get('currencies')||[]).map(c=>c.code);
+      const available = Object.entries(CURRENCY_MASTER)
+        .filter(([k]) => !existing.includes(k))
+        .map(([k,v]) => `${k}|${v.flag} ${k} — ${v.name}`);
+      return `<div class="fr">${sel('Currency','ac_code',available,true)}</div>
+        <div class="fr fr2">${inp('Exchange Rate vs Base','ac_rate','number','e.g. 3.75',undefined,true)}${inp('Rate Date','ac_date','date','',today())}</div>
+        <div class="alert a-info" style="margin-top:8px">Rate = how many base currency units equal 1 unit of the selected currency. E.g. if base is SAR and adding USD: enter 3.75 (1 USD = 3.75 SAR).</div>`;
+    },
+    save: () => {
+      const raw = gv('ac_code').split('|')[0];
+      const rate = parseFloat(gv('ac_rate'));
+      if (!raw || !rate) { toast('Currency and rate required','error'); return; }
+      const currs = S.get('currencies')||[];
+      if (currs.find(c=>c.code===raw)) { toast('Currency already added','warn'); return; }
+      currs.push({ code:raw, rate, active:true, isBase:false, updated:gv('ac_date')||today() });
+      S.set('currencies', currs);
+      closeM(); renderCurrencies();
+      toast(`${raw} added at rate ${rate}.`, 'success');
+    }
+  },
+  mEditRate: {
+    title: 'Update Exchange Rate', saveLabel: 'Update Rate',
+    body: (code) => {
+      const currs = S.get('currencies')||[];
+      const c = currs.find(x=>x.code===code)||{};
+      const base = baseCurr();
+      const baseRate = currs.find(x=>x.code===base)?.rate||1;
+      const currentRate = (c.rate||1)/baseRate;
+      const meta = CURRENCY_MASTER[code]||{};
+      return `<input type="hidden" id="er_code" value="${code}">
+        <div class="kpi c-blue mb12" style="padding:10px 14px">
+          <div class="kpi-lbl">${meta.flag||''} ${meta.name||code}</div>
+          <div class="kpi-val" style="font-size:18px">Current: 1 ${code} = ${currentRate.toFixed(4)} ${base}</div>
+        </div>
+        <div class="fr fr2">${inp('New Rate (1 '+code+' = ? '+base+')','er_rate','number','',currentRate.toFixed(4),true)}${inp('Effective Date','er_date','date','',today())}</div>
+        <div class="fr">${sel('Status','er_status',['Active','Inactive'])}</div>
+        <div class="fhint">Changing this rate will affect all new transactions. Posted transactions are not affected.</div>`;
+    },
+    save: () => {
+      const code = gv('er_code');
+      const rate = parseFloat(gv('er_rate'));
+      if (!rate || rate <= 0) { toast('Valid rate required','error'); return; }
+      const base = baseCurr();
+      const currs = S.get('currencies')||[];
+      const c = currs.find(x=>x.code===code);
+      const baseRate = currs.find(x=>x.code===base)?.rate||1;
+      if (c) {
+        // Store as absolute rate (vs original SAR base)
+        c.rate = rate * baseRate;
+        c.updated = gv('er_date')||today();
+        c.active = gv('er_status')==='Active';
+      }
+      S.set('currencies', currs);
+      closeM(); renderCurrencies();
+      toast(`${code} rate updated to ${rate} ${base}.`, 'success');
+    }
+  },
+  mUpdateRates: {
+    title: 'Bulk Update Exchange Rates', saveLabel: 'Save All Rates',
+    body: () => {
+      const base = baseCurr();
+      const currs = (S.get('currencies')||[]).filter(c=>!c.isBase&&c.active);
+      const baseRate = (S.get('currencies')||[]).find(x=>x.code===base)?.rate||1;
+      return `<div class="alert a-info mb12">Update rates for all active currencies vs <strong>${base}</strong>.</div>
+        ${currs.map(c=>{
+          const r = (c.rate/baseRate).toFixed(4);
+          return `<div class="fr fr2 mb8">
+            <div class="fg"><label class="fl">${CURRENCY_MASTER[c.code]?.flag||''} ${c.code} — ${CURRENCY_MASTER[c.code]?.name||c.code}</label><input class="fc" id="ur_${c.code}" type="number" value="${r}" step="0.0001"></div>
+            <div class="fg"><label class="fl">Date</label><input class="fc" id="urdt_${c.code}" type="date" value="${today()}"></div>
+          </div>`;
+        }).join('')}`;
+    },
+    save: () => {
+      const base = baseCurr();
+      const currs = S.get('currencies')||[];
+      const baseRate = currs.find(x=>x.code===base)?.rate||1;
+      currs.filter(c=>!c.isBase&&c.active).forEach(c=>{
+        const newRate = parseFloat(document.getElementById('ur_'+c.code)?.value);
+        if (newRate && newRate > 0) {
+          c.rate = newRate * baseRate;
+          c.updated = document.getElementById('urdt_'+c.code)?.value || today();
+        }
+      });
+      S.set('currencies', currs);
+      closeM(); renderCurrencies();
+      toast('All exchange rates updated.', 'success');
+    }
+  }
+};
+
+// Extend openM for currency modals
+const _openMWithAuth = openM;
+function openM(name, idOrClass, wideClass) {
+  const ct = mCurrTemplates[name];
+  if (ct) {
+    document.getElementById('mBox').className = 'modal';
+    document.getElementById('mTitle').textContent = ct.title;
+    document.getElementById('mBody').innerHTML = ct.body(idOrClass);
+    document.getElementById('mSaveBtn').textContent = ct.saveLabel || 'Save';
+    document.getElementById('mSaveBtn').style.display = 'flex';
+    mSaveFn = ct.save;
+    document.getElementById('mShell').classList.add('open');
+    return;
+  }
+  _openMWithAuth(name, idOrClass, wideClass);
+}
+
+// ── PATCH fN to use fC when showing monetary values ──
+// fC is the new standard — fN still works for non-monetary numbers
+// Existing render functions that call "SAR " + fN(x) can be gradually
+// replaced; for new features always use fC(x) or fC(x,'SAR')
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  APPROVAL MATRIX ENGINE                                         ║
+// ║  Standards: IAS 7, IFRS, SOX Section 302/404, ISO 9001         ║
+// ║  Supports: Multi-tier, Amount-based, Role-based, Escalation     ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ── MODULE DEFINITIONS ──
+const APR_MODULES = {
+  procurement: {
+    label: 'Procurement', icon: '◫', color: 'var(--blue)',
+    transactions: [
+      { id: 'PR',  label: 'Purchase Requisition',     docPrefix: 'PR-',  standard: 'SOX 302' },
+      { id: 'PO',  label: 'Purchase Order',            docPrefix: 'PO-',  standard: 'SOX 302' },
+      { id: 'GRN', label: 'Goods Receipt Note (GRN)',  docPrefix: 'GRN-', standard: 'IAS 2'   },
+      { id: 'RFQ', label: 'Request for Quotation',     docPrefix: 'RFQ-', standard: 'ISO 9001'},
+      { id: 'VAPP',label: 'Vendor/Supplier Approval',  docPrefix: 'VA-',  standard: 'SOX 302' },
+    ]
+  },
+  ap: {
+    label: 'Accounts Payable', icon: '◐', color: 'var(--red)',
+    transactions: [
+      { id: 'APINV', label: 'Supplier Invoice',         docPrefix: 'SINV-', standard: 'IAS 37'  },
+      { id: 'APPAY', label: 'Payment Voucher',           docPrefix: 'PV-',   standard: 'IAS 7'   },
+      { id: 'APCN',  label: 'Credit Note (AP)',          docPrefix: 'APCN-', standard: 'IAS 37'  },
+      { id: 'APREF', label: 'Supplier Refund',           docPrefix: 'REF-',  standard: 'IAS 7'   },
+      { id: 'WIPAY', label: 'Wire / Bank Transfer',      docPrefix: 'WT-',   standard: 'SOX 302' },
+    ]
+  },
+  gl: {
+    label: 'General Ledger', icon: '▣', color: 'var(--teal)',
+    transactions: [
+      { id: 'MANJE',  label: 'Manual Journal Entry',    docPrefix: 'JE-',  standard: 'IAS 8'   },
+      { id: 'RECJV',  label: 'Recurring Journal',       docPrefix: 'RJE-', standard: 'IAS 8'   },
+      { id: 'ADJJV',  label: 'Adjusting Entry',         docPrefix: 'AJE-', standard: 'IAS 8'   },
+      { id: 'INTERCO',label: 'Intercompany Transaction', docPrefix: 'IC-',  standard: 'IAS 27'  },
+      { id: 'PERCLOSE',label: 'Period Close Entry',     docPrefix: 'PCE-', standard: 'IAS 1'   },
+      { id: 'ASSETDEP',label: 'Asset Write-down / Impairment',docPrefix:'WD-',standard:'IAS 36'},
+    ]
+  },
+  ar: {
+    label: 'Accounts Receivable', icon: '◓', color: 'var(--green)',
+    transactions: [
+      { id: 'QUOTE',  label: 'Quotation',               docPrefix: 'QT-',  standard: 'IFRS 15' },
+      { id: 'SO',     label: 'Sales Order',              docPrefix: 'SO-',  standard: 'IFRS 15' },
+      { id: 'SINV',   label: 'Sales Invoice',            docPrefix: 'SI-',  standard: 'IFRS 15' },
+      { id: 'ARCN',   label: 'Credit Note (AR)',         docPrefix: 'ARCN-',standard: 'IFRS 15' },
+      { id: 'ARWOFF', label: 'Bad Debt Write-off',       docPrefix: 'BDW-', standard: 'IFRS 9'  },
+      { id: 'DISC',   label: 'Discount / Price Override',docPrefix: 'DIS-', standard: 'IFRS 15' },
+    ]
+  },
+  inventory: {
+    label: 'Inventory', icon: '◧', color: 'var(--orange)',
+    transactions: [
+      { id: 'STKO',  label: 'Stock Issue / Transfer',   docPrefix: 'STK-', standard: 'IAS 2'   },
+      { id: 'INVADJ',label: 'Inventory Adjustment',     docPrefix: 'ADJ-', standard: 'IAS 2'   },
+      { id: 'WRTDN', label: 'Stock Write-down',         docPrefix: 'WDN-', standard: 'IAS 2'   },
+      { id: 'SCRP',  label: 'Scrap / Disposal',         docPrefix: 'SCR-', standard: 'IAS 16'  },
+      { id: 'BOMMDF',label: 'BOM Modification',         docPrefix: 'BOMM-',standard: 'ISO 9001'},
+    ]
+  },
+  hr: {
+    label: 'HR & Payroll', icon: '◯', color: 'var(--purple)',
+    transactions: [
+      { id: 'HIRE',  label: 'New Hire / Onboarding',    docPrefix: 'EMP-', standard: 'Labor Law'},
+      { id: 'TERM',  label: 'Termination / Resignation',docPrefix: 'TRM-', standard: 'Labor Law'},
+      { id: 'PROMO', label: 'Promotion / Grade Change',  docPrefix: 'PRO-', standard: 'Labor Law'},
+      { id: 'SALCHG',label: 'Salary Change',            docPrefix: 'SAL-', standard: 'SOX 302' },
+      { id: 'PAYRUN',label: 'Payroll Run',              docPrefix: 'PAY-', standard: 'SOX 302' },
+      { id: 'BONUS', label: 'Bonus / Incentive Payment',docPrefix: 'BON-', standard: 'SOX 302' },
+      { id: 'LEAVE', label: 'Leave / Vacation Request', docPrefix: 'LV-',  standard: 'Labor Law'},
+      { id: 'OTIME', label: 'Overtime Authorization',   docPrefix: 'OT-',  standard: 'Labor Law'},
+      { id: 'EXPNS', label: 'Expense Claim',            docPrefix: 'EXP-', standard: 'IAS 7'   },
+    ]
+  },
+  manufacturing: {
+    label: 'Manufacturing', icon: '◎', color: '#038387',
+    transactions: [
+      { id: 'WO',    label: 'Work Order',               docPrefix: 'WO-',  standard: 'IAS 2'   },
+      { id: 'WOMOD', label: 'Work Order Modification',   docPrefix: 'WOM-', standard: 'IAS 2'   },
+      { id: 'OHRATE',label: 'Overhead Rate Change',      docPrefix: 'OHR-', standard: 'IAS 2'   },
+      { id: 'PRODST',label: 'Production Scrap Report',   docPrefix: 'PSR-', standard: 'IAS 2'   },
+      { id: 'CAPEX', label: 'Capital Expenditure (CAPEX)',docPrefix:'CAP-', standard: 'IAS 16'  },
+    ]
+  },
+  finance: {
+    label: 'Finance', icon: '▲', color: '#CA5010',
+    transactions: [
+      { id: 'BUDG',  label: 'Budget Approval',          docPrefix: 'BUD-', standard: 'IAS 1'   },
+      { id: 'BDGVAR',label: 'Budget Variance Acceptance',docPrefix: 'BVA-', standard: 'IAS 1'   },
+      { id: 'BANKR', label: 'Bank Reconciliation Sign-off',docPrefix:'BR-', standard: 'SOX 404' },
+      { id: 'FINSTMT',label: 'Financial Statement Sign-off',docPrefix:'FS-',standard: 'IAS 1'  },
+      { id: 'LOAN',  label: 'Loan / Financing Approval', docPrefix: 'LN-',  standard: 'IAS 32'  },
+      { id: 'CURRHG',label: 'Currency Hedge Approval',   docPrefix: 'FX-',  standard: 'IFRS 9'  },
+    ]
+  }
+};
+
+// ── DEFAULT APPROVAL POLICIES ──
+function seedApprovalPolicies() {
+  if (S.get('aprPolicies')) return;
+
+  const tiers = (t1Role, t1limit, t2Role, t2limit, t3Role, t3limit, finalRole) => [
+    { level: 1, roleName: t1Role,   limitBase: t1limit, action: 'approve', escalateAfterHours: 24 },
+    ...(t2Role ? [{ level: 2, roleName: t2Role, limitBase: t2limit, action: 'approve', escalateAfterHours: 48 }] : []),
+    ...(t3Role ? [{ level: 3, roleName: t3Role, limitBase: t3limit, action: 'approve', escalateAfterHours: 72 }] : []),
+    ...(finalRole ? [{ level: (t3Role?4:t2Role?3:2), roleName: finalRole, limitBase: null, action: 'final_approve', escalateAfterHours: 72 }] : []),
+  ];
+
+  const policies = [];
+  let seq = 1;
+
+  // ── PROCUREMENT ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'procurement', txType:'PO', name:'Purchase Order Approval',
+      description:'Three-tier approval for purchase orders based on value thresholds',
+      standard:'SOX 302', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'accountant',    limitBase:10000,  action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'manager',       limitBase:50000,  action:'approve',       escalateAfterHours:48},
+        {level:3,roleName:'admin',         limitBase:null,   action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[
+        {label:'Small (<10K)',   min:0,      max:10000,  minLevel:1},
+        {label:'Medium (10–50K)',min:10000,  max:50000,  minLevel:2},
+        {label:'Large (>50K)',   min:50000,  max:null,   minLevel:3},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'procurement', txType:'GRN', name:'Goods Receipt Approval',
+      description:'Warehouse staff confirms receipt; Finance Manager approves value variance >5%',
+      standard:'IAS 2', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'warehouse', limitBase:null, action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'manager',   limitBase:null, action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[
+        {label:'All GRNs', min:0, max:null, minLevel:1},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'procurement', txType:'VAPP', name:'Vendor Approval',
+      description:'New vendor registration requires Finance Manager + Admin approval',
+      standard:'SOX 302', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All vendor registrations', min:0, max:null, minLevel:1}],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── AP ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'ap', txType:'APPAY', name:'Payment Voucher Approval',
+      description:'Four-tier payment approval — critical SOX 302 control',
+      standard:'SOX 302 / IAS 7', active:true, requireAllApprovers:false, autoApproveBelow:500,
+      tiers:[
+        {level:1,roleName:'accountant', limitBase:5000,  action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'manager',    limitBase:25000, action:'approve',       escalateAfterHours:48},
+        {level:3,roleName:'admin',      limitBase:null,  action:'final_approve', escalateAfterHours:24},
+      ],
+      amountRules:[
+        {label:'Petty cash (<500)',    min:0,     max:500,   minLevel:0, autoApprove:true},
+        {label:'Small (500–5K)',       min:500,   max:5000,  minLevel:1},
+        {label:'Medium (5K–25K)',      min:5000,  max:25000, minLevel:2},
+        {label:'Large (>25K)',         min:25000, max:null,  minLevel:3},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'ap', txType:'WIPAY', name:'Wire Transfer Approval',
+      description:'All bank wire transfers require dual-authority approval (4-eyes principle)',
+      standard:'SOX 302 / IAS 7', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:24},
+      ],
+      amountRules:[{label:'All wire transfers', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'ap', txType:'APREF', name:'Supplier Refund',
+      description:'Supplier refunds require Finance Manager verification of original invoice',
+      standard:'IAS 37', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'accountant', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'manager',    limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All refunds', min:0, max:null, minLevel:1}],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── GL ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'gl', txType:'MANJE', name:'Manual Journal Entry Approval',
+      description:'All manual JEs require dual control — preparer cannot approve own entry (SOX 404)',
+      standard:'SOX 404 / IAS 8', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'accountant', limitBase:10000, action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'manager',    limitBase:null,  action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[
+        {label:'Small JE (<10K)',  min:0,     max:10000, minLevel:1},
+        {label:'Large JE (>10K)',  min:10000, max:null,  minLevel:2},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'gl', txType:'PERCLOSE', name:'Period Close Approval',
+      description:'Period close requires Finance Manager sign-off after checklist completion',
+      standard:'IAS 1 / SOX 404', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'accountant', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'manager',    limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:3,roleName:'admin',      limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All period closes', min:0, max:null, minLevel:3}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'gl', txType:'ASSETDEP', name:'Asset Write-down / Impairment',
+      description:'IAS 36 impairment — requires independent assessment review and Admin approval',
+      standard:'IAS 36', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:72},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All impairments', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── AR ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'ar', txType:'DISC', name:'Discount / Price Override',
+      description:'Any deviation from standard pricing requires approval to protect margin',
+      standard:'IFRS 15', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'final_approve', escalateAfterHours:24},
+      ],
+      amountRules:[
+        {label:'Disc ≤5%',   min:0, max:5,   minLevel:0, autoApprove:true},
+        {label:'Disc 5–15%', min:5, max:15,  minLevel:1},
+        {label:'Disc >15%',  min:15,max:null, minLevel:1, requireAdmin:true},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'ar', txType:'ARWOFF', name:'Bad Debt Write-off',
+      description:'IFRS 9 expected credit loss — dual approval required for all write-offs',
+      standard:'IFRS 9', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:72},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All write-offs', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── INVENTORY ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'inventory', txType:'INVADJ', name:'Inventory Adjustment',
+      description:'Stock adjustments require warehouse + finance dual approval (IAS 2)',
+      standard:'IAS 2', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'warehouse',  limitBase:5000,  action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'manager',    limitBase:null,  action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[
+        {label:'Minor adj (<5K)',  min:0,    max:5000, minLevel:1},
+        {label:'Major adj (>5K)',  min:5000, max:null, minLevel:2},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'inventory', txType:'WRTDN', name:'Stock Write-down',
+      description:'IAS 2 NRV write-downs require Finance Manager approval and audit documentation',
+      standard:'IAS 2', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All write-downs', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── HR ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'hr', txType:'HIRE', name:'New Hire Approval',
+      description:'Headcount approval required before onboarding — three-tier',
+      standard:'Labor Law / SOX', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager',    limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'admin',      limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All new hires', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'hr', txType:'SALCHG', name:'Salary Change Approval',
+      description:'All salary modifications require Finance Manager + Admin dual approval',
+      standard:'SOX 302', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[{label:'All salary changes', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'hr', txType:'PAYRUN', name:'Payroll Run Approval',
+      description:'Payroll requires preparer→reviewer→approver chain before bank file release',
+      standard:'SOX 302 / IAS 19', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'accountant', limitBase:null, action:'approve',       escalateAfterHours:24},
+        {level:2,roleName:'manager',    limitBase:null, action:'approve',       escalateAfterHours:24},
+        {level:3,roleName:'admin',      limitBase:null, action:'final_approve', escalateAfterHours:24},
+      ],
+      amountRules:[{label:'All payroll runs', min:0, max:null, minLevel:3}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'hr', txType:'BONUS', name:'Bonus / Incentive Approval',
+      description:'Discretionary payments require Finance Manager + Admin before processing',
+      standard:'SOX 302', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[{label:'All bonuses', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'hr', txType:'TERM', name:'Termination Approval',
+      description:'Employee termination requires dual approval — protects against wrongful dismissal',
+      standard:'Labor Law', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:48},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[{label:'All terminations', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'hr', txType:'EXPNS', name:'Expense Claim Approval',
+      description:'Employee expense reimbursements',
+      standard:'IAS 7', active:true, requireAllApprovers:false, autoApproveBelow:500,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[
+        {label:'Petty (<500)',   min:0,   max:500,  minLevel:0, autoApprove:true},
+        {label:'Standard (>500)',min:500, max:null, minLevel:1},
+      ],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── MANUFACTURING ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'manufacturing', txType:'WO', name:'Work Order Approval',
+      description:'Work orders linked to sales orders are auto-approved; standalone WOs need manager sign-off',
+      standard:'IAS 2', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'final_approve', escalateAfterHours:24},
+      ],
+      amountRules:[
+        {label:'WO linked to SO',       min:0,     max:null, minLevel:0, autoApprove:true, condition:'linkedSO'},
+        {label:'Standalone WO (<100K)', min:0,     max:100000, minLevel:1},
+        {label:'Standalone WO (>100K)', min:100000,max:null,   minLevel:1, requireAdmin:true},
+      ],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'manufacturing', txType:'CAPEX', name:'Capital Expenditure (CAPEX)',
+      description:'IAS 16 — capital expenditure requires full financial review and Admin approval',
+      standard:'IAS 16', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:50000,  action:'approve',       escalateAfterHours:72},
+        {level:2,roleName:'admin',   limitBase:null,   action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[
+        {label:'Minor CAPEX (<50K)', min:0,     max:50000, minLevel:1},
+        {label:'Major CAPEX (>50K)', min:50000, max:null,  minLevel:2},
+      ],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  // ── FINANCE ──
+  policies.push(
+    { id:`APR-${seq++}`, module:'finance', txType:'FINSTMT', name:'Financial Statement Sign-off',
+      description:'IAS 1 — quarterly/annual financial statements require CEO/CFO certification (SOX 302)',
+      standard:'IAS 1 / SOX 302', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'approve',       escalateAfterHours:72},
+        {level:2,roleName:'admin',   limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All financial statements', min:0, max:null, minLevel:2}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'finance', txType:'BANKR', name:'Bank Reconciliation Sign-off',
+      description:'SOX 404 — monthly bank reconciliation requires independent reviewer sign-off',
+      standard:'SOX 404', active:true, requireAllApprovers:false, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'manager', limitBase:null, action:'final_approve', escalateAfterHours:48},
+      ],
+      amountRules:[{label:'All bank reconciliations', min:0, max:null, minLevel:1}],
+      created: today(), createdBy: 'System'
+    },
+    { id:`APR-${seq++}`, module:'finance', txType:'BUDG', name:'Budget Approval',
+      description:'Annual/quarterly budgets require full management approval chain',
+      standard:'IAS 1', active:true, requireAllApprovers:true, autoApproveBelow:0,
+      tiers:[
+        {level:1,roleName:'accountant', limitBase:null, action:'approve',       escalateAfterHours:72},
+        {level:2,roleName:'manager',    limitBase:null, action:'approve',       escalateAfterHours:72},
+        {level:3,roleName:'admin',      limitBase:null, action:'final_approve', escalateAfterHours:72},
+      ],
+      amountRules:[{label:'All budgets', min:0, max:null, minLevel:3}],
+      created: today(), createdBy: 'System'
+    }
+  );
+
+  S.set('aprPolicies', policies);
+}
+
+// ── SEED SAMPLE REQUESTS ──
+function seedApprovalRequests() {
+  if (S.get('aprRequests')) return;
+  const base = baseCurr();
+  S.set('aprRequests', [
+    { id:'REQ-0001', policyId:'APR-1', module:'procurement', txType:'PO', docRef:'PO-0052', amount:31500, currency:base, submittedBy:'USR-002', submittedOn:'2025-06-10', status:'pending', priority:'normal', description:'Global Bearings KSA — 4 component items', currentLevel:1, trail:[{level:1,status:'pending',assignedRole:'accountant',assignedAt:'2025-06-10',comment:''}] },
+    { id:'REQ-0002', policyId:'APR-4', module:'ap', txType:'APPAY', docRef:'PV-0088', amount:98000, currency:base, submittedBy:'USR-003', submittedOn:'2025-06-09', status:'pending', priority:'urgent', description:'Al-Nasser Steel payment — overdue 7 days', currentLevel:2, trail:[{level:1,status:'approved',assignedRole:'accountant',assignedAt:'2025-06-09',approvedAt:'2025-06-09',approvedBy:'Sara Al-Accounts',comment:'Invoice verified, payment authorized.'},{level:2,status:'pending',assignedRole:'manager',assignedAt:'2025-06-09',comment:''}] },
+    { id:'REQ-0003', policyId:'APR-7', module:'gl', txType:'MANJE', docRef:'JE-0090', amount:12400, currency:base, submittedBy:'USR-003', submittedOn:'2025-06-10', status:'pending', priority:'normal', description:'Accrued expenses Q2 — rental & utilities', currentLevel:1, trail:[{level:1,status:'pending',assignedRole:'accountant',assignedAt:'2025-06-10',comment:''}] },
+    { id:'REQ-0004', policyId:'APR-14', module:'hr', txType:'PAYRUN', docRef:'PAY-JUN25', amount:0, currency:base, submittedBy:'USR-003', submittedOn:'2025-06-08', status:'approved', priority:'normal', description:'June 2025 Payroll Run — 5 employees', currentLevel:3, trail:[{level:1,status:'approved',assignedRole:'accountant',assignedAt:'2025-06-08',approvedAt:'2025-06-08',approvedBy:'Sara Al-Accounts',comment:'Timesheets verified.'},{level:2,status:'approved',assignedRole:'manager',assignedAt:'2025-06-08',approvedAt:'2025-06-08',approvedBy:'Ahmed Al-Rashid',comment:'Approved — net SAR 31,909.'},{level:3,status:'approved',assignedRole:'admin',assignedAt:'2025-06-08',approvedAt:'2025-06-08',approvedBy:'Mahdi Al-Finance',comment:'Final approval. Release to bank.'}] },
+    { id:'REQ-0005', policyId:'APR-5', module:'ap', txType:'WIPAY', docRef:'WT-0021', amount:284000, currency:base, submittedBy:'USR-002', submittedOn:'2025-06-11', status:'rejected', priority:'urgent', description:'Wire transfer — Al-Nasser Steel overdue balance', currentLevel:2, trail:[{level:1,status:'approved',assignedRole:'manager',assignedAt:'2025-06-11',approvedAt:'2025-06-11',approvedBy:'Ahmed Al-Rashid',comment:'Vendor verified.'},{level:2,status:'rejected',assignedRole:'admin',assignedAt:'2025-06-11',approvedAt:'2025-06-11',approvedBy:'Mahdi Al-Finance',comment:'Insufficient bank balance. Defer to next week.'}] },
+  ]);
+}
+
+// ── RENDER: APPROVAL MATRIX CONFIG PAGE ──
+function renderApprovals() {
+  switchAprModule('procurement', document.querySelector('#aprModuleTabs .tab'));
+}
+
+function switchAprModule(module, el) {
+  document.querySelectorAll('#aprModuleTabs .tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const mod = APR_MODULES[module];
+  const policies = (S.get('aprPolicies') || []).filter(p => p.module === module);
+  const cur = baseCurr();
+
+  document.getElementById('aprModuleContent').innerHTML = `
+    <!-- Module header -->
+    <div class="card mb14">
+      <div class="card-hdr">
+        <div>
+          <span class="card-title" style="color:${mod.color}">${mod.icon} ${mod.label} — Approval Policies</span>
+          <div class="t-xs t-muted" style="margin-top:3px">
+            ${policies.length} active polic${policies.length===1?'y':'ies'} · Standards: ${[...new Set(policies.map(p=>p.standard))].join(' · ')}
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-g sm" onclick="openM('mAprSettings','${module}')">⚙ Module Settings</button>
+          <button class="btn btn-p sm" onclick="openM('mAddPolicy','${module}')">+ Add Policy</button>
+        </div>
+      </div>
+      <!-- Summary tiles -->
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(${mod.transactions.length},1fr);gap:8px">
+          ${mod.transactions.map(tx => {
+            const pol = policies.find(p => p.txType === tx.id);
+            return `<div style="padding:10px 12px;border-radius:var(--radius);border:1px solid ${pol ? 'var(--green)' : 'var(--border)'};background:${pol ? 'var(--green-lt)' : 'var(--surface2)'}">
+              <div class="fw6 t-sm" style="color:${pol?'var(--green)':'var(--text3)'};margin-bottom:3px">${tx.label}</div>
+              <div class="t-xs" style="color:${pol?'var(--green)':'var(--text3)'}">
+                ${pol ? `${pol.tiers.length} tier${pol.tiers.length>1?'s':''} · ${pol.active?'Active':'Inactive'}` : 'No policy'}
+              </div>
+              <div class="t-xs t-muted">${tx.standard}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Policy cards -->
+    ${policies.length === 0
+      ? `<div class="alert a-warn">No approval policies defined for ${mod.label}. Click "+ Add Policy" to create one.</div>`
+      : policies.map(p => renderPolicyCard(p, cur)).join('')
+    }`;
+}
+
+function renderPolicyCard(p, cur) {
+  const mod = APR_MODULES[p.module];
+  const tx = mod?.transactions.find(t => t.id === p.txType);
+  const tierColors = {1:'var(--blue)',2:'var(--orange)',3:'var(--red)',4:'var(--purple)'};
+  const tierLabels = {
+    approve:       'Approve',
+    final_approve: 'Final Approve',
+    review:        'Review',
+    countersign:   'Counter-sign',
+  };
+
+  return `
+    <div class="card mb14">
+      <div class="card-hdr">
+        <div>
+          <div class="flex ic gap8">
+            <span class="card-title">${p.name}</span>
+            <span class="b ${p.active?'b-green':'b-grey'}">${p.active?'Active':'Inactive'}</span>
+            <span class="b b-purple" style="font-size:10px">${p.standard}</span>
+          </div>
+          <div class="t-xs t-muted" style="margin-top:3px">${p.description}</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-g xs" onclick="openM('mEditPolicy','${p.id}')">Edit</button>
+          <button class="btn btn-g xs" onclick="togglePolicyActive('${p.id}')">${p.active?'Disable':'Enable'}</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="g2c" style="gap:16px">
+
+          <!-- Approval tiers -->
+          <div>
+            <div class="fsec-t mb8">Approval Chain — ${p.requireAllApprovers?'All Approvers Required':'Sequential (Stop at Met Level)'}</div>
+            ${p.tiers.map((t,i) => {
+              const role = ROLES[t.roleName] || {};
+              return `<div class="apr-matrix-row ${i===0?'':''}` +
+                (i===0?`" style="grid-template-columns:28px 160px 1fr 120px 100px;border-radius:var(--radius) var(--radius) 0 0;background:var(--surface2)`:
+                        `" style="grid-template-columns:28px 160px 1fr 120px 100px`) + `">
+                <div class="apr-dot done" style="background:${tierColors[t.level]||'var(--blue)'};width:24px;height:24px;font-size:10px">${t.level}</div>
+                <div>
+                  <span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;background:${role.bg||'#eee'};color:${role.color||'#333'}">${role.label||t.roleName}</span>
+                </div>
+                <div class="t-sm">${tierLabels[t.action]||t.action}</div>
+                <div>${t.limitBase!=null ? `<span class="limit-pill">Up to ${fC(t.limitBase,cur)}</span>` : '<span class="b b-green" style="font-size:10px">Unlimited</span>'}</div>
+                <div class="t-xs t-muted">⏱ ${t.escalateAfterHours}h escalation</div>
+              </div>`;
+            }).join('')}
+          </div>
+
+          <!-- Amount rules -->
+          <div>
+            <div class="fsec-t mb8">Amount-Based Routing</div>
+            <div class="apr-matrix-hdr" style="grid-template-columns:1fr 100px 100px 110px">
+              <span>Bracket</span><span>Min</span><span>Max</span><span>Min. Level</span>
+            </div>
+            ${p.amountRules.map(r => `
+              <div class="apr-matrix-row" style="grid-template-columns:1fr 100px 100px 110px">
+                <span class="fw6 t-sm">${r.label}</span>
+                <span class="t-sm">${r.min!=null?fC(r.min,cur):'—'}</span>
+                <span class="t-sm">${r.max!=null?fC(r.max,cur):'∞'}</span>
+                <span>${r.autoApprove?'<span class="b b-green" style="font-size:10px">Auto-Approve</span>':`<span class="b b-blue" style="font-size:10px">Level ${r.minLevel}</span>`}</span>
+              </div>`).join('')}
+            ${p.autoApproveBelow > 0 ? `<div class="alert a-ok" style="margin-top:8px;padding:6px 10px;font-size:11.5px">Auto-approved below ${fC(p.autoApproveBelow,cur)}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function togglePolicyActive(id) {
+  const policies = S.get('aprPolicies') || [];
+  const p = policies.find(x => x.id === id);
+  if (p) { p.active = !p.active; S.set('aprPolicies', policies); }
+  renderApprovals();
+  toast(`Policy ${p?.active ? 'enabled' : 'disabled'}.`, 'success');
+}
+
+// ── RENDER: APPROVAL INBOX ──
+function renderMyApprovals() {
+  const s = getSession();
+  if (!s) return;
+  const requests = S.get('aprRequests') || [];
+  const policies = S.get('aprPolicies') || [];
+
+  const pending  = requests.filter(r => r.status === 'pending' && isMyTurn(r, s));
+  const submitted = requests.filter(r => r.submittedBy === s.userId);
+  const approved  = requests.filter(r => r.status === 'approved');
+  const rejected  = requests.filter(r => r.status === 'rejected');
+
+  // Update pending count badge
+  const pcEl = document.getElementById('pendingCount');
+  if (pcEl) { pcEl.textContent = pending.length; pcEl.style.display = pending.length ? 'inline-flex' : 'none'; }
+
+  // KPIs
+  document.getElementById('aprInboxKPIs').innerHTML = [
+    {l:'Pending My Action', v:pending.length,   c:'c-orange'},
+    {l:'Submitted by Me',   v:submitted.length, c:'c-blue'},
+    {l:'Approved',          v:approved.length,  c:'c-green'},
+    {l:'Rejected',          v:rejected.length,  c:'c-red'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  switchAprInbox('pending', document.querySelector('#aprInboxTabs .tab'));
+}
+
+function isMyTurn(req, session) {
+  if (req.status !== 'pending') return false;
+  const currentTier = req.trail.find(t => t.status === 'pending');
+  if (!currentTier) return false;
+  return ROLES[session.role]?.label === ROLES[currentTier.assignedRole]?.label ||
+         session.role === currentTier.assignedRole ||
+         session.role === 'admin';
+}
+
+function switchAprInbox(filter, el) {
+  document.querySelectorAll('#aprInboxTabs .tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  const s = getSession();
+  const requests = S.get('aprRequests') || [];
+  let filtered;
+  if (filter === 'pending')   filtered = requests.filter(r => r.status === 'pending' && isMyTurn(r, s));
+  else if (filter === 'submitted') filtered = requests.filter(r => r.submittedBy === s?.userId);
+  else if (filter === 'approved')  filtered = requests.filter(r => r.status === 'approved');
+  else if (filter === 'rejected')  filtered = requests.filter(r => r.status === 'rejected');
+  else filtered = requests;
+
+  const cur = baseCurr();
+  document.getElementById('aprInboxContent').innerHTML = filtered.length === 0
+    ? `<div class="alert a-info" style="margin-top:12px">No requests in this view.</div>`
+    : `<div class="card mt12">
+        <div class="tw"><table>
+          <thead><tr>
+            <th>Request</th><th>Document</th><th>Description</th><th>Amount</th>
+            <th>Submitted</th><th>Priority</th><th>Status</th><th>Trail</th><th></th>
+          </tr></thead>
+          <tbody>${filtered.map(r => renderRequestRow(r, cur, s)).join('')}</tbody>
+        </table></div>
+      </div>`;
+}
+
+function aprPriorityBadge(p) {
+  return p === 'urgent' ? '<span class="b b-red">🔴 Urgent</span>' :
+         p === 'high'   ? '<span class="b b-orange">🟠 High</span>' :
+                          '<span class="b b-grey">Normal</span>';
+}
+
+function aprStatusEl(status) {
+  if (status === 'pending')   return '<span class="apr-status-pending">⏳ Pending</span>';
+  if (status === 'approved')  return '<span class="apr-status-approved">✓ Approved</span>';
+  if (status === 'rejected')  return '<span class="apr-status-rejected">✗ Rejected</span>';
+  if (status === 'escalated') return '<span class="apr-status-escalated">⬆ Escalated</span>';
+  return '<span class="apr-status-draft">Draft</span>';
+}
+
+function renderRequestRow(r, cur, s) {
+  const mod = APR_MODULES[r.module] || {};
+  const done = r.trail.filter(t => t.status === 'approved').length;
+  const total = r.trail.length;
+  const myTurn = s && isMyTurn(r, s);
+
+  return `<tr ${myTurn?'style="background:var(--blue-xlt)"':''}>
+    <td>
+      <div class="fw6 t-blue">${r.id}</div>
+      <div class="t-xs t-muted">${mod.label||r.module}</div>
+    </td>
+    <td class="t-blue fw6">${r.docRef}</td>
+    <td><div class="fw6" style="font-size:12px">${r.description}</div></td>
+    <td class="num fw6">${r.amount > 0 ? fC(r.amount, cur) : '—'}</td>
+    <td class="t-muted t-sm">${r.submittedOn}</td>
+    <td>${aprPriorityBadge(r.priority)}</td>
+    <td>${aprStatusEl(r.status)}</td>
+    <td>
+      <div class="flex ic gap4">
+        ${r.trail.map(t => `<div class="apr-dot ${t.status==='approved'?'done':t.status==='pending'?'active':t.status==='rejected'?'reject':'wait'}" style="width:20px;height:20px;font-size:9px" title="L${t.level}: ${t.assignedRole} — ${t.status}">${t.level}</div>`).join('')}
+        <span class="t-xs t-muted">${done}/${total}</span>
+      </div>
+    </td>
+    <td>
+      <div class="btn-row">
+        <button class="btn btn-g xs" onclick="openM('mViewRequest','${r.id}')">View</button>
+        ${myTurn ? `<button class="btn btn-ok xs" onclick="openM('mActOnRequest','${r.id}','approve')">Approve</button>
+                    <button class="btn btn-d xs" onclick="openM('mActOnRequest','${r.id}','reject')">Reject</button>` : ''}
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ── SUBMIT A TRANSACTION FOR APPROVAL ──
+function submitForApproval(moduleKey, txType, docRef, amount, description, extra) {
+  const policies = S.get('aprPolicies') || [];
+  const s = getSession();
+  if (!s) return { blocked: false };
+
+  const policy = policies.find(p => p.module === moduleKey && p.txType === txType && p.active);
+  if (!policy) return { blocked: false }; // no policy = no approval needed
+
+  // Auto-approve check
+  if (policy.autoApproveBelow > 0 && amount < policy.autoApproveBelow) {
+    return { blocked: false, autoApproved: true, policyName: policy.name };
+  }
+
+  // Determine starting level from amount rules
+  let minLevel = 1;
+  for (const rule of policy.amountRules) {
+    if (rule.autoApprove && (rule.max == null || amount <= rule.max) && amount >= rule.min) {
+      return { blocked: false, autoApproved: true };
+    }
+    if ((rule.min == null || amount >= rule.min) && (rule.max == null || amount <= rule.max)) {
+      minLevel = rule.minLevel;
+      break;
+    }
+  }
+
+  if (minLevel === 0) return { blocked: false, autoApproved: true };
+
+  // Create request
+  const requests = S.get('aprRequests') || [];
+  const id = 'REQ-' + String(requests.length + 1).padStart(4, '0');
+  const activeTiers = policy.tiers.filter(t => t.level >= minLevel);
+  const trail = activeTiers.map(t => ({
+    level: t.level, status: t.level === activeTiers[0].level ? 'pending' : 'waiting',
+    assignedRole: t.roleName, assignedAt: today(), approvedAt: null,
+    approvedBy: null, comment: ''
+  }));
+
+  requests.unshift({
+    id, policyId: policy.id, module: moduleKey, txType, docRef,
+    amount, currency: baseCurr(), submittedBy: s.userId, submittedOn: today(),
+    status: 'pending', priority: amount > 50000 ? 'urgent' : 'normal',
+    description, currentLevel: activeTiers[0]?.level || 1, trail, extra: extra || {}
+  });
+  S.set('aprRequests', requests);
+
+  return { blocked: true, requestId: id, policyName: policy.name };
+}
+
+// ── ACT ON REQUEST (approve / reject / return) ──
+function actOnRequest(requestId, action, comment) {
+  const requests = S.get('aprRequests') || [];
+  const policies = S.get('aprPolicies') || [];
+  const s = getSession();
+  const req = requests.find(r => r.id === requestId);
+  const pol = req ? policies.find(p => p.id === req.policyId) : null;
+  if (!req || !s) return false;
+
+  const users = S.get('users') || [];
+  const user = users.find(u => u.id === s.userId);
+  const currentStep = req.trail.find(t => t.status === 'pending');
+  if (!currentStep) return false;
+
+  currentStep.status = action === 'approve' ? 'approved' : 'rejected';
+  currentStep.approvedAt = today();
+  currentStep.approvedBy = user?.name || s.name;
+  currentStep.comment = comment || '';
+
+  if (action === 'reject') {
+    req.status = 'rejected';
+    req.trail.filter(t => t.status === 'waiting').forEach(t => t.status = 'skip');
+  } else {
+    const nextStep = req.trail.find(t => t.status === 'waiting');
+    if (nextStep) {
+      nextStep.status = 'pending';
+      req.currentLevel = nextStep.level;
+    } else {
+      req.status = 'approved';
+    }
+  }
+
+  S.set('aprRequests', requests);
+  return true;
+}
+
+// ── APPROVAL MODALS ──
+const mAprTemplates = {
+  mViewRequest: {
+    title: 'Request Detail', saveLabel: 'Close',
+    body: (id) => {
+      const req = (S.get('aprRequests') || []).find(r => r.id === id);
+      if (!req) return '<div class="alert a-warn">Request not found.</div>';
+      const mod = APR_MODULES[req.module] || {};
+      const pol = (S.get('aprPolicies') || []).find(p => p.id === req.policyId) || {};
+      const cur = baseCurr();
+      return `
+        <div class="g2c mb14">
+          <div>
+            <div class="t-xs t-muted mb8">REQUEST INFORMATION</div>
+            ${[['Request ID',req.id],['Document',req.docRef],['Module',mod.label||req.module],['Policy',pol.name||'—'],['Submitted',req.submittedOn],['Amount',req.amount>0?fC(req.amount,cur):'N/A'],['Priority',req.priority],['Standard',pol.standard||'—']].map(([k,v])=>`<div class="cs-row"><span class="t-muted">${k}</span><span class="fw6">${v}</span></div>`).join('')}
+          </div>
+          <div>
+            <div class="t-xs t-muted mb8">DESCRIPTION</div>
+            <div class="fsec" style="font-size:12.5px">${req.description}</div>
+            <div class="t-xs t-muted mt12 mb8">CURRENT STATUS</div>
+            <div>${aprStatusEl(req.status)}</div>
+          </div>
+        </div>
+        <div class="t-xs t-muted mb8">APPROVAL TRAIL</div>
+        <div class="apr-trail">
+          ${req.trail.map(t => {
+            const role = ROLES[t.assignedRole] || {};
+            const stateClass = t.status === 'approved' ? 'done' : t.status === 'pending' ? 'active' : t.status === 'rejected' ? 'reject' : t.status === 'skip' ? 'skip' : 'wait';
+            const icon = t.status === 'approved' ? '✓' : t.status === 'rejected' ? '✗' : t.status === 'skip' ? '—' : t.level;
+            return `<div class="apr-trail-step">
+              <div class="apr-dot ${stateClass}">${icon}</div>
+              <div class="apr-step-body">
+                <div class="apr-step-title">Level ${t.level} — <span style="color:${role.color||'#333'}">${role.label||t.assignedRole}</span></div>
+                <div class="apr-step-meta">
+                  ${t.status === 'approved' ? `✓ Approved by ${t.approvedBy} on ${t.approvedAt}` :
+                    t.status === 'rejected' ? `✗ Rejected by ${t.approvedBy} on ${t.approvedAt}` :
+                    t.status === 'pending'  ? `⏳ Awaiting action since ${t.assignedAt}` :
+                    t.status === 'skip'     ? `— Skipped (request rejected upstream)` :
+                    `⏸ Waiting for Level ${t.level - 1} completion`}
+                </div>
+                ${t.comment ? `<div class="apr-step-comment">"${t.comment}"</div>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+    },
+    save: () => closeM()
+  },
+  mActOnRequest: {
+    title: 'Review Request', saveLabel: 'Submit Decision',
+    body: (idAction) => {
+      const [id, action] = (idAction || '').split('|');
+      const req = (S.get('aprRequests') || []).find(r => r.id === (id || idAction));
+      if (!req) return '<div class="alert a-warn">Request not found.</div>';
+      const cur = baseCurr();
+      const isApprove = action !== 'reject';
+      return `<input type="hidden" id="actr_id" value="${req.id}">
+        <input type="hidden" id="actr_action" value="${isApprove?'approve':'reject'}">
+        <div class="kpi ${isApprove?'c-blue':'c-red'} mb14" style="padding:10px 14px">
+          <div class="kpi-lbl">${req.docRef} — ${req.description}</div>
+          <div class="kpi-val" style="font-size:18px">${req.amount > 0 ? fC(req.amount, cur) : 'No amount'}</div>
+        </div>
+        <div class="${isApprove?'alert a-ok':'alert a-err'} mb12">
+          ${isApprove ? '✓ You are about to <strong>APPROVE</strong> this request. This action is logged and cannot be undone.' : '✗ You are about to <strong>REJECT</strong> this request. The submitter will be notified.'}
+        </div>
+        <div class="fr"><div class="fg"><label class="fl ${isApprove?'':'req'}">Comment / Justification</label>
+          <textarea class="fc" id="actr_comment" rows="3" placeholder="${isApprove?'Optional note (recommended for audit trail)...':'Required: State reason for rejection...'}"></textarea>
+        </div></div>
+        <div class="fg"><label class="fl">Your Authority</label>
+          <div style="padding:8px 12px;background:var(--surface2);border-radius:var(--radius);font-size:12.5px">
+            ${(()=>{const s=getSession();const role=ROLES[s?.role]||{};return`<span style="color:${role.color||'#333'};font-weight:600">${role.label||s?.role}</span> · ${s?.name}`;})()}
+          </div>
+        </div>`;
+    },
+    save: () => {
+      const id = gv('actr_id'), action = gv('actr_action'), comment = gv('actr_comment');
+      if (action === 'reject' && !comment.trim()) { toast('A reason is required when rejecting.', 'error'); return; }
+      const ok = actOnRequest(id, action, comment);
+      if (ok) {
+        closeM();
+        renderMyApprovals();
+        toast(action === 'approve' ? '✓ Request approved and trail updated.' : '✗ Request rejected. Submitter notified.', action === 'approve' ? 'success' : 'warn');
+      } else {
+        toast('Unable to process — you may not have authority for this step.', 'error');
+      }
+    }
+  },
+  mAddPolicy: {
+    title: 'New Approval Policy', saveLabel: 'Save Policy',
+    body: (module) => `
+      <div class="fr fr2">${inp('Policy Name','np_name','text','e.g. Purchase Order Approval',undefined,true)}${sel('Module','np_module',Object.entries(APR_MODULES).map(([k,v])=>k+'|'+v.label))}</div>
+      <div class="fr fr2">${sel('Transaction Type','np_tx',['PO|Purchase Order','APPAY|Payment Voucher','MANJE|Journal Entry','HIRE|New Hire','PAYRUN|Payroll Run','WO|Work Order','SINV|Sales Invoice'])}${inp('Regulatory Standard','np_std','text','e.g. SOX 302, IAS 2')}</div>
+      <div class="fr"><div class="fg"><label class="fl">Description</label><textarea class="fc" id="np_desc" rows="2" placeholder="Describe purpose and controls"></textarea></div></div>
+      <div class="fr fr2">
+        <div class="fg"><label class="fl">Auto-approve below (0 = never)</label><input class="fc" id="np_auto" type="number" value="0" min="0"></div>
+        <div class="fg"><label class="fl">Require ALL approvers?</label><select class="fc" id="np_all"><option value="false">Sequential (stop at met level)</option><option value="true">All approvers required</option></select></div>
+      </div>
+      <div class="fsec-t mt12 mb8">Approval Tiers (add up to 4 levels)</div>
+      <div id="np_tiers">
+        <div class="fr" style="display:grid;grid-template-columns:60px 160px 1fr 120px 80px;gap:8px;margin-bottom:6px">
+          ${sel('Level','np_l1',['1','2','3','4'])}${sel('Role','np_r1',Object.entries(ROLES).map(([k,v])=>k+'|'+v.label))}${sel('Action','np_a1',['approve|Approve','final_approve|Final Approve'])}${inp('Limit (0=unlimited)','np_lim1','number','','0')}<div style="display:flex;align-items:flex-end;padding-bottom:4px"><span class="t-xs t-muted">Tier 1</span></div>
+        </div>
+      </div>
+      <button class="btn btn-g sm mt12" onclick="addPolicyTierRow()">+ Add Tier</button>`,
+    save: () => {
+      const name = gv('np_name');
+      if (!name.trim()) { toast('Policy name required', 'error'); return; }
+      const modVal = gv('np_module').split('|')[0];
+      const txVal = gv('np_tx').split('|')[0];
+      const tiers = [];
+      for (let i = 1; i <= 4; i++) {
+        const r = gv('np_r' + i);
+        if (r) tiers.push({ level: parseInt(gv('np_l' + i)) || i, roleName: r.split('|')[0], limitBase: parseFloat(gv('np_lim' + i)) || null, action: gv('np_a' + i).split('|')[0] || 'approve', escalateAfterHours: 48 });
+      }
+      if (tiers.length === 0) { toast('At least one approval tier required', 'error'); return; }
+      const policies = S.get('aprPolicies') || [];
+      policies.push({ id: 'APR-' + (policies.length + 1), module: modVal, txType: txVal, name, description: gv('np_desc'), standard: gv('np_std') || 'Internal Policy', active: true, requireAllApprovers: gv('np_all') === 'true', autoApproveBelow: parseFloat(gv('np_auto')) || 0, tiers, amountRules: [{ label: 'All transactions', min: 0, max: null, minLevel: 1 }], created: today(), createdBy: getSession()?.name || 'Admin' });
+      S.set('aprPolicies', policies);
+      closeM(); renderApprovals();
+      toast('Approval policy created.', 'success');
+    }
+  }
+};
+
+function addPolicyTierRow() {
+  const container = document.getElementById('np_tiers');
+  if (!container) return;
+  const i = container.children.length + 1;
+  if (i > 4) { toast('Maximum 4 tiers', 'warn'); return; }
+  const div = document.createElement('div');
+  div.className = 'fr';
+  div.style.cssText = 'display:grid;grid-template-columns:60px 160px 1fr 120px 80px;gap:8px;margin-bottom:6px';
+  div.innerHTML = `${sel('Level',`np_l${i}`,['1','2','3','4'])}${sel('Role',`np_r${i}`,Object.entries(ROLES).map(([k,v])=>k+'|'+v.label))}${sel('Action',`np_a${i}`,['approve|Approve','final_approve|Final Approve'])}${inp('Limit','np_lim'+i,'number','','0')}<div style="display:flex;align-items:flex-end;padding-bottom:4px"><button class="btn btn-d xs" onclick="this.closest('.fr').remove()">−</button></div>`;
+  container.appendChild(div);
+  const sel2 = div.querySelector(`#np_l${i}`);
+  if (sel2) sel2.value = String(i);
+}
+
+function exportApprovalPolicy() {
+  const policies = S.get('aprPolicies') || [];
+  const co = S.get('company') || {};
+  let txt = `APPROVAL MATRIX POLICY\n${co.name || 'Company'}\nGenerated: ${today()}\n${'═'.repeat(60)}\n\n`;
+  Object.entries(APR_MODULES).forEach(([key, mod]) => {
+    const mPolicies = policies.filter(p => p.module === key && p.active);
+    if (!mPolicies.length) return;
+    txt += `${mod.label.toUpperCase()}\n${'─'.repeat(40)}\n`;
+    mPolicies.forEach(p => {
+      txt += `\n▸ ${p.name} [${p.standard}]\n  ${p.description}\n`;
+      p.tiers.forEach(t => { txt += `  Level ${t.level}: ${ROLES[t.roleName]?.label||t.roleName} → ${t.action}${t.limitBase?` (up to ${fC(t.limitBase,baseCurr())})`:''}  |  Escalate after ${t.escalateAfterHours}h\n`; });
+    });
+    txt += '\n';
+  });
+  const blob = new Blob([txt], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ApprovalPolicy_${(co.name||'Company').replace(/\s+/g,'_')}_${today()}.txt`;
+  a.click();
+  toast('Policy document exported.', 'success');
+}
+
+// Extend openM for approval modals
+const _openMWithCurr = openM;
+function openM(name, idOrClass, wideClass) {
+  const at = mAprTemplates[name];
+  if (at) {
+    const isLg = name === 'mViewRequest' || name === 'mAddPolicy';
+    document.getElementById('mBox').className = 'modal' + (isLg ? ' modal-lg' : '');
+    document.getElementById('mTitle').textContent = at.title;
+    const bodyArg = name === 'mActOnRequest' ? (idOrClass + (wideClass ? '|' + wideClass : '')) : idOrClass;
+    document.getElementById('mBody').innerHTML = at.body(bodyArg);
+    document.getElementById('mSaveBtn').textContent = at.saveLabel || 'Save';
+    document.getElementById('mSaveBtn').style.display = at.saveLabel === 'Close' ? 'none' : 'flex';
+    if (at.saveLabel === 'Close') {
+      document.getElementById('mBody').insertAdjacentHTML('beforeend','<div class="btn-row" style="margin-top:16px"><button class="btn btn-p" onclick="closeM()">Close</button></div>');
+    }
+    mSaveFn = at.save;
+    document.getElementById('mShell').classList.add('open');
+    return;
+  }
+  _openMWithCurr(name, idOrClass, wideClass);
+}
+
+// ── WIRE APPROVAL INTO EXISTING SAVE FUNCTIONS ──
+// Patches the JE, Payroll, PO saves to route through approval engine
+const _origJESave = mTemplates?.mJE?.save;
+if (mTemplates && mTemplates.mJE) {
+  mTemplates.mJE.save = function() {
+    if (!document.getElementById('jeSt')?.textContent.includes('✓')) { toast('Entry must be balanced (Dr = Cr)', 'error'); return; }
+    const jeDate = gv('mje_d') || today();
+    if (checkPeriod(jeDate)) return;
+    const amount = parseFloat(document.getElementById('jeDr')?.textContent?.replace(/,/g,'')) || 0;
+    const result = submitForApproval('gl', 'MANJE', 'JE-DRAFT', amount, gv('mje_desc') || 'Manual Journal Entry');
+    if (result.blocked) {
+      closeM();
+      toast(`Journal Entry submitted for approval — ${result.requestId}. Policy: ${result.policyName}`, 'success', 5000);
+      renderMyApprovals();
+      return;
+    }
+    // Auto-approved or no policy — post directly
+    const l = S.get('journals') || [];
+    l.unshift({ id: 'JE-' + (89 + l.length), date: jeDate, desc: gv('mje_desc') || 'Manual JE', dr: amount, cr: amount, src: gv('mje_src'), status: 'Posted' });
+    S.set('journals', l); closeM(); renderJE();
+    toast(result.autoApproved ? 'Journal Entry auto-approved and posted.' : 'Journal Entry posted.', 'success');
+  };
+}
+
+// ── EXTEND PT AND ON_NAV ──
+PT['approvals']   = 'Approval Matrix';
+PT['myrequests']  = 'Approval Inbox';
+ON_NAV['approvals']  = renderApprovals;
+ON_NAV['myrequests'] = renderMyApprovals;
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  ANIMATIONS & INTERACTION POLISH                            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ── BUTTON RIPPLE — tracks cursor position for directional ripple ──
+document.addEventListener('mousedown', function(e) {
+  const btn = e.target.closest('.btn, .icon-btn');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const rx = ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%';
+  const ry = ((e.clientY - rect.top) / rect.height * 100).toFixed(1) + '%';
+  btn.style.setProperty('--rx', rx);
+  btn.style.setProperty('--ry', ry);
+});
+
+// ── ENHANCED TOAST with auto-dismiss animation ──
+const _origToast = toast;
+function toast(msg, type='info', dur=3500) {
+  const icons = { info:'ℹ', success:'✓', warn:'⚠', error:'✕' };
+  const bgMap = { info:'#EBF3FB', success:'#DFF6DD', warn:'#FFF4CE', error:'#FDE7E9' };
+  const colorMap = { info:'var(--blue)', success:'var(--green)', warn:'var(--orange)', error:'var(--red)' };
+  const el = document.createElement('div');
+  el.className = `toast t${type[0]}`;
+  el.style.cssText = `border-left-color:${colorMap[type]};background:${bgMap[type]}`;
+  el.innerHTML = `
+    <div style="width:24px;height:24px;border-radius:50%;background:${colorMap[type]};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#fff;font-weight:700">${icons[type]||'ℹ'}</div>
+    <div style="flex:1;font-size:12.5px;color:var(--text);line-height:1.4">${msg}</div>
+    <button onclick="dismissToast(this)" style="border:none;background:none;cursor:pointer;color:var(--text3);font-size:16px;padding:0;line-height:1;margin-left:4px;flex-shrink:0">×</button>`;
+  const container = document.getElementById('toasts');
+  if (container) container.appendChild(el);
+  if (dur > 0) setTimeout(() => dismissToast(el.querySelector('button')), dur);
+}
+
+function dismissToast(btn) {
+  const el = btn?.closest ? btn.closest('.toast') : btn;
+  if (!el || el._removing) return;
+  el._removing = true;
+  el.classList.add('removing');
+  setTimeout(() => el.remove(), 220);
+}
+
+// ── CARD STAGGER on page entry ──
+function staggerCards(pageEl) {
+  if (!pageEl) return;
+  const cards = pageEl.querySelectorAll('.card, .kpi');
+  cards.forEach((card, i) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(16px)';
+    card.style.transition = 'none';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.transition = `opacity .28s cubic-bezier(.4,0,.2,1) ${i * 55}ms, transform .28s cubic-bezier(.4,0,.2,1) ${i * 55}ms`;
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      });
+    });
+  });
+}
+
+// ── TABLE ROW STAGGER ──
+function staggerRows(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  Array.from(tbody.rows).forEach((row, i) => {
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(-6px)';
+    setTimeout(() => {
+      row.style.transition = 'opacity .2s ease, transform .2s ease';
+      row.style.opacity = '1';
+      row.style.transform = 'translateX(0)';
+    }, i * 35);
+  });
+}
+
+// ── PROGRESS BAR ANIMATE on render ──
+function animateBars() {
+  document.querySelectorAll('.prog-bar').forEach(bar => {
+    const target = bar.style.width;
+    bar.style.width = '0';
+    bar.style.transition = 'none';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        bar.style.transition = 'width .6s cubic-bezier(.4,0,.2,1)';
+        bar.style.width = target;
+      });
+    });
+  });
+}
+
+// ── KPI NUMBER COUNT-UP ──
+function countUp(el, target, decimals=0, prefix='', suffix='') {
+  if (!el) return;
+  const duration = 800;
+  const start = performance.now();
+  const update = (now) => {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+    const value = target * ease;
+    el.textContent = prefix + value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  };
+  requestAnimationFrame(update);
+}
+
+// ── SIDEBAR NAV INDICATOR ANIMATION ──
+function animateNavIndicator(pageKey) {
+  const active = document.querySelector(`.nav-item[data-page="${pageKey}"]`);
+  if (!active) return;
+  active.style.transition = 'none';
+  active.style.transform = 'translateX(8px)';
+  requestAnimationFrame(() => {
+    active.style.transition = 'transform .22s cubic-bezier(.34,1.3,.64,1), background .15s, color .15s';
+    active.style.transform = 'translateX(0)';
+  });
+}
+
+// ── PATCH nav() TO TRIGGER POST-RENDER ANIMATIONS ──
+const _navWithAnim = nav;
+nav = function(page) {
+  _navWithAnim(page);
+  setTimeout(() => {
+    const pg = document.getElementById('page-' + page);
+    if (pg) staggerCards(pg);
+    animateNavIndicator(page);
+    animateBars();
+  }, 60);
+};
+
+// ── LOADING SPINNER for async operations ──
+function showSpinner(btnEl, label='Loading…') {
+  if (!btnEl) return;
+  btnEl._origHTML = btnEl.innerHTML;
+  btnEl._origDisabled = btnEl.disabled;
+  btnEl.disabled = true;
+  btnEl.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></span> ${label}`;
+}
+function hideSpinner(btnEl) {
+  if (!btnEl || !btnEl._origHTML) return;
+  btnEl.innerHTML = btnEl._origHTML;
+  btnEl.disabled = btnEl._origDisabled || false;
+  delete btnEl._origHTML;
+}
+
+// Add spin keyframe if not present
+if (!document.querySelector('style#spinStyle')) {
+  const s = document.createElement('style');
+  s.id = 'spinStyle';
+  s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+}
+
+// ── SMOOTH NUMBER FORMATTING in KPIs on dashboard render ──
+const _origRenderDash = typeof renderDash === 'function' ? renderDash : null;
+if (_origRenderDash) {
+  renderDash = function() {
+    _origRenderDash();
+    setTimeout(animateBars, 80);
+  };
+}
+
+// ── LOGIN SCREEN entrance animation ──
+function animateLoginCard() {
+  const card = document.querySelector('.login-card');
+  if (!card) return;
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(24px) scale(.97)';
+  card.style.transition = 'none';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      card.style.transition = 'opacity .36s cubic-bezier(.4,0,.2,1), transform .36s cubic-bezier(.34,1.2,.64,1)';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0) scale(1)';
+    });
+  });
+}
+
+// ── PATCH showLogin to animate card ──
+const _showLoginBase = showLogin;
+showLogin = function() {
+  _showLoginBase();
+  setTimeout(animateLoginCard, 30);
+};
+
+// ── FOCUS RING enhancement for accessibility ──
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Tab') document.body.classList.add('kb-nav');
+});
+document.addEventListener('mousedown', function() {
+  document.body.classList.remove('kb-nav');
+});
+
 // ── BOOT ──
 window.addEventListener('error', function(e) {
   var d = document.createElement('div');
@@ -1752,10 +4157,31 @@ window.addEventListener('error', function(e) {
 });
 try {
   seedData();
+  seedUsers();
+  seedCurrencies();
   seedFiscalData();
-  const _co=S.get('company');
-  if(!_co||!_co.name){document.getElementById('wizOv').style.display='flex';wRender();}
-  else{document.getElementById('wizOv').style.display='none';document.getElementById('app').style.display='flex';initApp();}
+  seedApprovalPolicies();
+  seedApprovalRequests();
+  // Override nav with guarded version
+  nav = navGuarded;
+  const _co = S.get('company');
+  if (!_co || !_co.name) {
+    // First time — run wizard, skip login
+    document.getElementById('wizOv').style.display = 'flex';
+    wRender();
+  } else {
+    // Check for existing session
+    const _sess = getSession();
+    if (_sess) {
+      // Resume session
+      document.getElementById('app').style.display = 'flex';
+      updateUserPill();
+      initApp();
+    } else {
+      // Show login
+      showLogin();
+    }
+  }
 } catch(e) {
   var d = document.createElement('div');
   d.style.cssText = 'font-family:monospace;padding:20px;background:#FDE7E9;color:#A4262C;border:2px solid #A4262C;margin:20px;border-radius:4px;position:relative;z-index:9999';
