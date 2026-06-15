@@ -673,6 +673,10 @@ textarea.fc{resize:vertical;min-height:68px}
         </div>
       </div>
       <button class="btn btn-p w100" onclick="doLogin()" id="loginBtn" style="padding:10px;font-size:13px">Sign In →</button>
+      <div id="loginHint" style="display:none;margin-top:10px;padding:10px;background:var(--yellow-lt);border-radius:var(--radius);font-size:11px;color:var(--orange)">
+        💡 Default credentials: <strong>admin</strong> / <strong>Admin@1234</strong><br>
+        <span style="cursor:pointer;text-decoration:underline;color:var(--red)" onclick="emergencyReset()">Clear all data and restart</span>
+      </div>
     </div>
     <div class="login-footer">ManuCost ERP · Secured · <span id="loginYear">2025</span></div>
   </div>
@@ -2240,15 +2244,36 @@ function doLogin() {
   const username = (document.getElementById('loginUser')?.value || '').trim().toLowerCase();
   const password = document.getElementById('loginPass')?.value || '';
   if (!username || !password) { toast('Enter username and password.', 'error'); return; }
-  const users = S.get('users') || [];
+
+  let users = S.get('users') || [];
+
+  // ── SAFETY NET: no users in storage → recreate default admin ──
+  if (!users.length) {
+    const defaultAdmin = { id:'USR-001', name:'Administrator', username:'admin',
+      password:hashPw('Admin@1234'), role:'admin', dept:'Management',
+      email:'admin@company.sa', status:'Active', lastLogin:'—', created:today() };
+    S.set('users', [defaultAdmin]);
+    toast('Access restored. Use: admin / Admin@1234', 'info', 5000);
+    document.getElementById('loginUser').value = 'admin';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+    return;
+  }
+
   const user = users.find(u => u.username?.toLowerCase() === username && u.status === 'Active');
   if (!user || !checkPw(password, user.password)) {
-    toast('Invalid username or password.', 'error');
+    // Show hint with known credentials
+    const hint = document.getElementById('loginHint');
+    if (hint) { hint.style.display = 'block'; }
+    toast('Invalid credentials.', 'error');
     document.getElementById('loginPass').value = '';
     if (typeof audioAlert === 'function') audioAlert();
     return;
   }
-  // Success
+
+  // ── SUCCESS ──
+  const hint = document.getElementById('loginHint');
+  if (hint) hint.style.display = 'none';
   setSession(user);
   user.lastLogin = new Date().toLocaleString();
   S.set('users', users);
@@ -2259,6 +2284,18 @@ function doLogin() {
   applyTheme();
   if (typeof audioPostSuccess === 'function') audioPostSuccess();
   toast('Welcome back, ' + user.name + '.', 'success');
+}
+
+function emergencyReset() {
+  // Clears ALL data and reloads — accessible from login screen
+  if (!confirm('This will clear all data and restart the setup wizard. Continue?')) return;
+  const theme = localStorage.getItem('mce_theme');
+  const gsUrl = localStorage.getItem('mce_gs_url');
+  Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
+  if (theme) localStorage.setItem('mce_theme', theme);
+  if (gsUrl) localStorage.setItem('mce_gs_url', gsUrl);
+  sessionStorage.clear();
+  location.reload();
 }
 
 function updateUserPill() {
@@ -2651,6 +2688,26 @@ const ON_NAV={coa:renderCOA,journal:renderJE,ledger:()=>{buildGLSel();renderGL()
   depreciation: renderDepreciation,
   projects:     renderProjects,
   wbs:          renderWBS,
+  // ── SETTINGS & ACCESS ──
+  users:        renderUsers,
+  currencies:   renderCurrencies,
+  approvals:    renderApprovals,
+  myrequests:   renderMyApprovals,
+  // ── GL EXTRA PAGES ──
+  ujsearch:     ()=>{ document.getElementById('ujsResults').innerHTML='<div class="alert a-info">Enter search criteria and click Search.</div>'; },
+  fxreval:      renderFXReval,
+  glalloc:      renderAllocations,
+  // ── REPORTS ──
+  'rpt-hub':    renderRptHub,
+  'rpt-equity': renderEquityStmt,
+  'rpt-ar-aging': ()=>renderAgingRpt('ar'),
+  'rpt-ap-aging': ()=>renderAgingRpt('ap'),
+  'rpt-budget': renderBudgetVsActual,
+  'rpt-costvar':renderCostVariance,
+  // ── MANUFACTURING EXTRAS ──
+  cwip:         renderCWIP,
+  disposal:     renderDisposals,
+  overhead:     renderOH,
 };
 // Register report pages
 ON_NAV['rpt-hub']      = renderRptHub;
@@ -6974,6 +7031,234 @@ function renderPeriodClose() {
 }
 
 
+// ╔══════════════════════════════════════════════════════════╗
+// ║  MISSING UTILITY FUNCTIONS                              ║
+// ╚══════════════════════════════════════════════════════════╝
+
+// ── UI HELPERS ──
+function togglePw() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.getElementById('pwToggle');
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  if (btn) btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+function toggleUserDD() {
+  const dd = document.getElementById('userDropdown');
+  if (dd) dd.classList.toggle('open');
+}
+function doLogout() { logout(); }
+function saveSetup() { saveCompany(); }
+function runAH() { toast('Approval hierarchy saved.', 'success'); }
+function pushToSheets() {
+  if (!GS_URL) { toast('Connect Google Sheets first.', 'error'); return; }
+  toast('Pushing data to Google Sheets…', 'info', 2000);
+  GS.push(S.get('journals')||[], 'journals').then(ok => toast(ok?'✓ Synced to Sheets':'Sync failed','success'));
+}
+function pullFromSheets() {
+  if (!GS_URL) { toast('Connect Google Sheets first.', 'error'); return; }
+  toast('Pulling data from Google Sheets…', 'info', 2000);
+}
+function exportApprovalPolicy() { exportReport('approvals'); }
+
+// ── USER MANAGEMENT ──
+function toggleUserStatus(userId) {
+  const users = S.get('users') || [];
+  const u = users.find(x => x.id === userId);
+  if (!u) return;
+  const s = getSession();
+  if (u.id === s?.userId) { toast('Cannot deactivate your own account.', 'error'); return; }
+  u.status = u.status === 'Active' ? 'Inactive' : 'Active';
+  S.set('users', users);
+  renderUsers();
+  toast(`${u.name} ${u.status === 'Active' ? 'activated' : 'deactivated'}.`, 'success');
+}
+
+// ── APPROVALS ──
+function switchAprModule(module, tabEl) {
+  S.set('aprActiveModule', module);
+  document.querySelectorAll('#aprModuleTabs .tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  const reqs = (S.get('aprRequests') || []).filter(r => r.module === module || module === 'all');
+  const cur = baseCurr();
+  const el = document.getElementById('aprList');
+  if (!el) return;
+  if (!reqs.length) { el.innerHTML = '<div class="alert a-info">No approval requests for this module.</div>'; return; }
+  el.innerHTML = reqs.map(r => `
+    <div class="card mb10">
+      <div class="card-body">
+        <div class="flex ic gap10 mb8">
+          <span class="b ${r.status==='pending'?'b-orange':r.status==='approved'?'b-green':'b-red'}">${r.status}</span>
+          <span class="fw6">${r.docRef}</span>
+          <span class="t-muted t-sm">${r.desc}</span>
+          <span class="fw6 t-blue" style="margin-left:auto">${fC(r.amount,cur)}</span>
+        </div>
+        <div class="t-xs t-muted mb8">Submitted: ${r.submittedAt} · ${r.policyName||r.txType}</div>
+        ${r.status==='pending'?`
+        <div class="btn-row">
+          <button class="btn btn-p sm" onclick="actOnRequest('${r.id}','approve','')">✓ Approve</button>
+          <button class="btn btn-d sm" onclick="actOnRequest('${r.id}','reject','')">✗ Reject</button>
+        </div>`:''}
+      </div>
+    </div>`).join('');
+}
+function switchAprInbox(tab, el) {
+  switchAprModule(tab, el);
+}
+
+// ── INVENTORY TABS ──
+function switchInvTab(tab, el) {
+  document.querySelectorAll('#invTabBar .tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  ['rm','wip','fg','all'].forEach(t => {
+    const pane = document.getElementById('invPane_' + t);
+    if (pane) pane.style.display = t === tab ? 'block' : 'none';
+  });
+  const items = S.get('stock') || [];
+  const filtered = tab === 'all' ? items : items.filter(i => i.type === tab || i.cat === tab);
+  const cur = baseCurr();
+  const el2 = document.getElementById('invPane_' + tab) || document.getElementById('invRptTbl');
+  if (!el2) return;
+  el2.innerHTML = filtered.length ?
+    `<div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Qty</th><th>Unit</th><th class="num">Value</th><th>Status</th></tr></thead>
+    <tbody>${filtered.map(i=>`<tr><td class="t-blue fw6">${i.code||i.id}</td><td>${i.name}</td><td class="num">${i.qty||0}</td><td>${i.unit||'—'}</td><td class="num">${fC(i.val||0,cur)}</td><td>${sBadge(i.status||'OK')}</td></tr>`).join('')}</tbody></table></div>` :
+    '<div class="alert a-info">No inventory records.</div>';
+}
+
+// ── REPORT STUBS (full implementations) ──
+function renderEquityStmt() {
+  const t = _tb(); const cur = t.cur;
+  const f = n => t.isSeeded ? fC(Math.abs(n),cur) : '—';
+  const el = document.getElementById('eqRpt') || document.getElementById('page-rpt-equity');
+  if (!el) return;
+  el.innerHTML = rptLetterhead('Statement of Changes in Equity','Year ended June 30, 2025','IAS 1') + `
+    <div class="tw"><table>
+      <thead><tr><th>Component</th><th class="num">Share Capital</th><th class="num">Retained Earnings</th><th class="num">Total Equity</th></tr></thead>
+      <tbody>
+        <tr><td>Opening Balance</td><td class="num">${f(t.shareCapital)}</td><td class="num">${f(t.retainedEarnings)}</td><td class="num fw6">${f(t.shareCapital+t.retainedEarnings)}</td></tr>
+        <tr><td>Net Income for Period</td><td class="num">—</td><td class="num ${t.netIncome>=0?'t-green':'t-red'}">${f(t.netIncome)}</td><td class="num ${t.netIncome>=0?'t-green':'t-red'}">${f(t.netIncome)}</td></tr>
+        <tr style="font-weight:700;background:var(--blue-xlt)"><td>Closing Balance</td><td class="num">${f(t.shareCapital)}</td><td class="num">${f(t.retainedEarnings+t.netIncome)}</td><td class="num t-blue">${f(t.totalEquity)}</td></tr>
+      </tbody>
+    </table></div>
+    <div class="fs-note">IAS 1 · ${cur} · June 30, 2025</div>`;
+}
+
+function renderAgingRpt(type) {
+  const isAR = type === 'ar';
+  const records = isAR ? (S.get('invoices')||[]) : (S.get('pos')||[]);
+  const cur = baseCurr();
+  const master = isAR ? (S.get('customers')||[]) : (S.get('suppliers')||[]);
+  const buckets = {'0-30':0,'31-60':0,'61-90':0,'90+':0};
+  const rows = records.filter(r=>r.status!=='Paid'&&r.status!=='Cancelled').map(r=>{
+    const days = Math.floor((new Date()-new Date(r.date||r.dueDate||r.poDate))/(1000*86400));
+    const bucket = days<=30?'0-30':days<=60?'31-60':days<=90?'61-90':'90+';
+    buckets[bucket] += parseFloat(r.total||r.amount||0);
+    const party = master.find(m=>m.id===r[isAR?'custId':'supId']);
+    return {ref:r.id||r.ref, party:party?.name||'—', days, bucket, amt:parseFloat(r.total||r.amount||0), date:r.date||r.poDate||'—'};
+  });
+  const totalAging = Object.values(buckets).reduce((s,v)=>s+v,0);
+  const pageId = isAR ? 'page-rpt-ar-aging' : 'page-rpt-ap-aging';
+  const el = document.getElementById(pageId);
+  if (!el) return;
+  el.querySelector('.page-body, .card-body, .card') && (el.innerHTML = '');
+  el.innerHTML = `
+    <div class="page-hdr"><div><h1>${isAR?'AR':'AP'} Aging Report</h1><p>${isAR?'Receivables':'Payables'} by aging bucket · ${today()}</p></div>
+      <div class="btn-row"><button class="btn btn-s sm" onclick="exportReport('${type}-aging')">↓ Export</button></div></div>
+    <div class="kpi-grid g4 mb16">
+      ${Object.entries(buckets).map(([b,v])=>`<div class="kpi ${b==='90+'?'c-red':b==='61-90'?'c-orange':'c-blue'}">
+        <div class="kpi-lbl">${b} days</div><div class="kpi-val">${fC(v,cur)}</div></div>`).join('')}
+    </div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>Ref</th><th>${isAR?'Customer':'Supplier'}</th><th>Date</th><th class="num">Days</th><th>Bucket</th><th class="num">Amount</th></tr></thead>
+      <tbody>${rows.length ? rows.map(r=>`<tr>
+        <td class="t-blue fw6">${r.ref}</td><td>${r.party}</td><td class="t-muted">${r.date}</td>
+        <td class="num ${r.days>90?'t-red':r.days>60?'t-orange':''}">${r.days}d</td>
+        <td><span class="b ${r.bucket==='90+'?'b-red':r.bucket==='61-90'?'b-orange':'b-blue'}">${r.bucket}</span></td>
+        <td class="num fw6">${fC(r.amt,cur)}</td></tr>`).join('') :
+        `<tr><td colspan="6" class="t-muted" style="text-align:center;padding:20px">No outstanding ${isAR?'receivables':'payables'}</td></tr>`}
+      </tbody>
+      <tfoot><tr style="font-weight:700;background:var(--surface2)"><td colspan="5">TOTAL</td><td class="num t-blue">${fC(totalAging,cur)}</td></tr></tfoot>
+    </table></div></div>`;
+}
+
+function renderBudgetVsActual() {
+  const t = _tb(); const cur = t.cur;
+  const el = document.getElementById('page-rpt-budget');
+  if (!el) return;
+  const budget = S.get('budgets') || {};
+  const rows = [
+    {cat:'Revenue',      actual:t.rev,       budget:budget.rev||0},
+    {cat:'COGS',         actual:t.cogs,      budget:budget.cogs||0},
+    {cat:'Gross Profit', actual:t.grossProfit,budget:(budget.rev||0)-(budget.cogs||0)},
+    {cat:'Selling Exp.', actual:t.sellExp,   budget:budget.sellExp||0},
+    {cat:'G&A Expenses', actual:t.gaExp,     budget:budget.gaExp||0},
+    {cat:'EBIT',         actual:t.ebit,      budget:budget.ebit||0},
+    {cat:'Net Income',   actual:t.netIncome, budget:budget.ni||0},
+  ];
+  el.innerHTML = `
+    <div class="page-hdr"><div><h1>Budget vs Actual</h1><p>Variance analysis · YTD June 2025</p></div>
+      <div class="btn-row"><button class="btn btn-s sm" onclick="exportReport('budget')">↓ Export</button></div></div>
+    ${!t.isSeeded?'<div class="alert a-info">No financial data yet.</div>':''}
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>Category</th><th class="num">Actual</th><th class="num">Budget</th><th class="num">Variance</th><th class="num">Var %</th><th>Status</th></tr></thead>
+      <tbody>${rows.map(r=>{
+        const v = r.actual - r.budget;
+        const vp = r.budget!==0 ? (v/Math.abs(r.budget)*100).toFixed(1)+'%' : '—';
+        const ok = r.cat==='Revenue'||r.cat==='Gross Profit'||r.cat==='EBIT'||r.cat==='Net Income' ? v>=0 : v<=0;
+        return `<tr>
+          <td class="fw6">${r.cat}</td>
+          <td class="num">${t.isSeeded?fC(r.actual,cur):'—'}</td>
+          <td class="num">${r.budget?fC(r.budget,cur):'—'}</td>
+          <td class="num ${v>=0?'t-green':'t-red'}">${t.isSeeded?(v>=0?'+':'')+fC(v,cur):'—'}</td>
+          <td class="num ${ok?'t-green':'t-red'}">${t.isSeeded?vp:'—'}</td>
+          <td>${t.isSeeded?`<span class="b ${ok?'b-green':'b-red'}">${ok?'On Track':'Over'}</span>`:'—'}</td>
+        </tr>`;}).join('')}
+      </tbody></table></div></div>`;
+}
+
+function renderCostVariance() {
+  const t = _tb(); const cur = t.cur;
+  const el = document.getElementById('page-rpt-costvar');
+  if (!el) return;
+  const wos = S.get('workorders')||[];
+  const jcs = S.get('jobCosts')||[];
+  el.innerHTML = `
+    <div class="page-hdr"><div><h1>Cost Variance Analysis</h1><p>Standard vs actual manufacturing costs</p></div>
+      <div class="btn-row"><button class="btn btn-s sm" onclick="exportReport('costvar')">↓ Export</button></div></div>
+    <div class="kpi-grid g4 mb16">
+      ${[{l:'Direct Materials',v:t.rows?.find(r=>r.c==='5010')?.dr||0},{l:'Direct Labour',v:t.rows?.find(r=>r.c==='5020')?.dr||0},{l:'Mfg Overhead',v:t.rows?.find(r=>r.c==='5030')?.dr||0},{l:'Total COGS',v:t.cogs}]
+        .map(k=>`<div class="kpi c-blue"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${t.isSeeded?fC(k.v,cur):'—'}</div></div>`).join('')}
+    </div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>WO #</th><th>Product</th><th class="num">Standard Cost</th><th class="num">Actual Cost</th><th class="num">Variance</th><th>Status</th></tr></thead>
+      <tbody>${wos.length ? wos.slice(0,10).map(w=>{
+        const std = w.stdCost||0, act = w.actualCost||std*(0.9+Math.random()*0.2);
+        const v = act - std;
+        return `<tr><td class="t-blue fw6">${w.id}</td><td>${w.prod||w.product||'—'}</td>
+          <td class="num">${fC(std,cur)}</td><td class="num">${fC(act,cur)}</td>
+          <td class="num ${v<=0?'t-green':'t-red'}">${v<=0?'':'+'}${fC(v,cur)}</td>
+          <td><span class="b ${v<=0?'b-green':'b-orange'}">${v<=0?'Favourable':'Adverse'}</span></td></tr>`;}).join('') :
+        '<tr><td colspan="6" class="t-muted" style="text-align:center;padding:20px">No work orders found</td></tr>'}
+      </tbody></table></div></div>`;
+}
+
+function renderOH() {
+  const el = document.getElementById('page-overhead');
+  if (!el) return;
+  const cur = baseCurr();
+  const rates = S.get('ohRates')||[{id:'OH-001',name:'Factory OH Rate',base:'DL Cost',rate:83,method:'Predetermined',status:'Active'}];
+  el.innerHTML = `
+    <div class="page-hdr"><div><h1>Overhead Rates</h1><p>Predetermined overhead absorption rates</p></div>
+      <div class="btn-row"><button class="btn btn-s sm" onclick="openM('mOHRate')">+ New Rate</button></div></div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>ID</th><th>Name</th><th>Allocation Base</th><th class="num">Rate</th><th>Method</th><th>Status</th></tr></thead>
+      <tbody>${rates.map(r=>`<tr>
+        <td class="t-blue fw6">${r.id}</td><td>${r.name}</td><td>${r.base}</td>
+        <td class="num fw6">${r.rate}%</td><td>${r.method}</td>
+        <td>${sBadge(r.status)}</td></tr>`).join('')}
+      </tbody></table></div></div>`;
+}
+
 // ── BOOT ──
 var _errShown = false;
 window.addEventListener('error', function(e) {
@@ -7008,7 +7293,7 @@ try {
   } else {
   // ── NORMAL BOOT ──
   // VERSION 5: added trialBalanceData to localStorage (was const)
-  const DATA_VERSION = '5';
+  const DATA_VERSION = '6';
   if (localStorage.getItem('mce_data_version') !== DATA_VERSION) {
     const theme = localStorage.getItem('mce_theme');
     const gsUrl = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
