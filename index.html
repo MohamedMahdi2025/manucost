@@ -1467,8 +1467,65 @@ textarea.fc{resize:vertical;min-height:68px}
 </div>
 <!-- ════ ITEM MASTER ════ -->
 <div class="page" id="page-items">
-  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mItem')">+ New Item</button><button class="btn btn-g sm">Import</button><select class="fc" style="width:160px" onchange="filterTbl('itemTbl',2,this.value)"><option value="">All Types</option><option>Raw Material</option><option>Component</option><option>WIP</option><option>Finished Good</option><option>Service</option></select></div>
-  <div class="card mt12"><div class="card-hdr"><span class="card-title">Item Master</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>UOM</th><th>Valuation</th><th>Std Cost</th><th>Reorder Pt</th><th>GL Account</th></tr></thead><tbody id="itemTbl"></tbody></table></div></div>
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Operations / Inventory &amp; Assets</div>
+      <h1 style="font-size:28px;font-weight:700;color:var(--text1);letter-spacing:-0.02em;margin-bottom:4px">Item Master</h1>
+      <p style="color:var(--text2);font-size:13px">Manage raw materials, components, finished goods and service items.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="fc" style="height:36px;width:160px" onchange="filterTbl('itemTbl',2,this.value)">
+        <option value="">All Types</option><option>Raw Material</option><option>Component</option>
+        <option>WIP</option><option>Finished Good</option><option>Service</option>
+      </select>
+      <button class="btn btn-g" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px">↓ Import</button>
+      <button class="btn btn-p" onclick="openM('mItem')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px">
+        <span style="font-size:16px">+</span> New Item
+      </button>
+    </div>
+  </div>
+  <!-- KPIs -->
+  <div class="kpi-grid g4 mb16" id="itemKPIs"></div>
+  <!-- Table -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+    <!-- Tabs -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 18px;border-bottom:1px solid var(--border);background:var(--surface)">
+      <div style="display:flex;gap:4px">
+        <button onclick="filterTbl('itemTbl',2,'')" style="padding:12px 16px;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--blue);color:var(--blue)">All Items</button>
+        <button onclick="filterTbl('itemTbl',2,'Raw Material')" style="padding:12px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent">Raw Material</button>
+        <button onclick="filterTbl('itemTbl',2,'Finished Good')" style="padding:12px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent">Finished Goods</button>
+        <button onclick="filterTbl('itemTbl',2,'Component')" style="padding:12px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent">Components</button>
+      </div>
+      <span style="font-size:12px;color:var(--text3)" id="itemCount">—</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+            <th style="padding:10px 18px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Product / Item</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Code / SKU</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Type</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">UOM</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Valuation</th>
+            <th style="padding:10px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Std Cost</th>
+            <th style="padding:10px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Reorder Pt</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">GL Account</th>
+            <th style="padding:10px 14px;text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="itemTbl"></tbody>
+      </table>
+    </div>
+    <div style="padding:10px 18px;background:var(--surface2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--text3)">Bulk Actions:</span>
+        <select class="fc" style="height:28px;font-size:12px;width:160px"><option>Export CSV</option><option>Update GL Account</option><option>Mark Inactive</option></select>
+        <button class="btn btn-g" style="height:28px;padding:0 12px;font-size:12px">Apply</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3)" id="itemFootNote">—</div>
+    </div>
+  </div>
 </div>
 <!-- ════ WAREHOUSES ════ -->
 <div class="page" id="page-warehouses">
@@ -1479,12 +1536,56 @@ textarea.fc{resize:vertical;min-height:68px}
 </div>
 <!-- ════ STOCK LEDGER ════ -->
 <div class="page" id="page-stockledger">
-  <div class="cmd-bar">
-    <select class="fc" style="width:160px" onchange="filterSL('type',this.value)"><option value="">All Types</option><option>Raw Material</option><option>Component</option><option>WIP</option><option>Finished Good</option></select>
-    <select class="fc" style="width:170px" onchange="filterSL('wh',this.value)"><option value="">All Warehouses</option><option>WH-A</option><option>WH-B</option><option>WH-C</option><option>FL-1</option></select>
-    <button class="btn btn-g sm">Export</button>
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="font-size:28px;font-weight:700;color:var(--text1);letter-spacing:-0.02em;margin-bottom:4px">Stock Ledger</h1>
+      <p style="color:var(--text2);font-size:13px">Current inventory balances across all warehouses and bin locations.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="fc" style="height:36px;width:160px" onchange="filterSL('type',this.value)">
+        <option value="">All Types</option><option>Raw Material</option><option>Component</option><option>WIP</option><option>Finished Good</option>
+      </select>
+      <select class="fc" style="height:36px;width:170px" onchange="filterSL('wh',this.value)">
+        <option value="">All Warehouses</option><option>WH-A</option><option>WH-B</option><option>WH-C</option><option>FL-1</option>
+      </select>
+      <button class="btn btn-g" style="height:36px;padding:0 14px">↓ Export</button>
+      <button class="btn btn-p" onclick="openM('mTransfer')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>⇄</span> Transfer</button>
+    </div>
   </div>
-  <div class="card mt12"><div class="card-hdr"><span class="card-title">Stock Ledger — Current Balance</span></div><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Warehouse</th><th>Bin</th><th>UOM</th><th>On Hand</th><th>Reorder Pt</th><th>Unit Cost</th><th>Total Value</th><th>Status</th></tr></thead><tbody id="slTbl"></tbody></table></div></div>
+  <!-- KPIs -->
+  <div class="kpi-grid g4 mb16" id="slKPIs"></div>
+  <!-- Table -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+    <div style="padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:var(--text1)">Current Stock Balances</span>
+      <span style="font-size:12px;color:var(--text3)" id="slCount">—</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+            <th style="padding:10px 18px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Product / Asset</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">SKU / Code</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Type</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Location</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Stock Level</th>
+            <th style="padding:10px 14px;text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Status</th>
+            <th style="padding:10px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Valuation</th>
+            <th style="padding:10px 14px;text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="slTbl"></tbody>
+      </table>
+    </div>
+    <div style="padding:10px 18px;background:var(--surface2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:12px;color:var(--text3)" id="slFootNote">—</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-g" style="height:28px;padding:0 12px;font-size:12px">Previous</button>
+        <button class="btn btn-g" style="height:28px;padding:0 12px;font-size:12px">Next</button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- ════ STOCK TRANSFERS ════ -->
 <div class="page" id="page-transfers">
@@ -3113,8 +3214,138 @@ function renderAging(type){
 }
 
 // ── RENDER: ITEMS / STOCK / TRANSFERS ──
-function renderItems(){document.getElementById('itemTbl').innerHTML=(S.get('items')||[]).map(i=>`<tr><td class="t-blue fw6">${i.code}</td><td>${i.name}</td><td>${sBadge(i.type)}</td><td>${i.uom}</td><td>${i.val}</td><td class="num">SAR ${fN(i.cost)}</td><td class="num">${i.reorder}</td><td>${i.gl}</td></tr>`).join('');}
-function renderSL(){document.getElementById('slTbl').innerHTML=(S.get('stock')||[]).map(s=>`<tr data-type="${s.type}" data-wh="${s.wh}"><td class="t-blue fw6">${s.code}</td><td>${s.name}</td><td>${sBadge(s.type)}</td><td><span class="b b-blue">${s.wh}</span></td><td style="font-size:11px">${s.bin}</td><td>${s.uom}</td><td class="num ${s.qty<=s.reorder&&s.reorder>0?'t-red fw6':''}">${s.qty}</td><td class="num">${s.reorder||'—'}</td><td class="num">SAR ${fN(s.cost)}</td><td class="num">SAR ${fN(s.qty*s.cost)}</td><td>${sBadge(s.status)}</td></tr>`).join('');}
+function renderItems() {
+  const items = S.get('items') || [];
+  const cur   = baseCurr();
+
+  // KPIs
+  const totalVal = items.reduce((s,i) => s + (i.cost||0), 0);
+  const lowStock = items.filter(i => (i.onHand||0) <= (i.reorder||0)).length;
+  document.getElementById('itemKPIs').innerHTML = [
+    { l:'Total SKUs',    v: String(items.length),             sub:'Active items in master', c:'c-blue' },
+    { l:'Low Stock',     v: String(lowStock),                  sub:'Below reorder point',   c: lowStock>0?'c-red':'c-green' },
+    { l:'Types',         v: String(new Set(items.map(i=>i.type)).size), sub:'Item categories', c:'c-teal' },
+    { l:'Std Cost Pool', v: fCM(totalVal,cur),                sub:'Total standard cost',   c:'c-orange' },
+  ].map(k=>`<div class="kpi ${k.c}">
+    <div class="kpi-lbl">${k.l}</div>
+    <div class="kpi-val">${k.v}</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px">${k.sub}</div>
+  </div>`).join('');
+
+  const typeColors = {'Raw Material':'var(--blue)','Component':'var(--teal)','WIP':'var(--orange)','Finished Good':'var(--green)','Service':'var(--purple)'};
+  const typeIcons  = {'Raw Material':'🧱','Component':'⚙','WIP':'🔧','Finished Good':'📦','Service':'🛠'};
+
+  document.getElementById('itemTbl').innerHTML = items.length ? items.map(it => {
+    const color = typeColors[it.type] || 'var(--text2)';
+    const icon  = typeIcons[it.type]  || '📦';
+    const onHand = it.onHand || 0;
+    const reorder = it.reorder || 0;
+    const stockPct = reorder > 0 ? Math.min(100, Math.round(onHand/reorder*50)) : 60;
+    const isLow = onHand <= reorder && reorder > 0;
+    return `<tr onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background=''" style="${isLow?'background:rgba(164,38,44,.04)':''}">
+      <td style="padding:12px 18px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:8px;background:${color}18;border:1px solid ${color}30;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${icon}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--text1)">${it.name}</div>
+            <div style="font-size:11px;color:var(--text3)">${it.type} · ${it.uom||'—'}</div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:12px;color:var(--blue);font-weight:700">${it.code}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border)">
+        <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:${color}18;color:${color}">${it.type}</span>
+      </td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">${it.uom||'—'}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">${it.val||'—'}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;font-size:13px;font-weight:600;color:var(--text1)">${fC(it.cost||0,cur)}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+          <span style="font-weight:700;font-size:13px;color:${isLow?'var(--red)':'var(--text1)'}">${it.reorder||0}</span>
+          <div style="width:60px;height:4px;background:var(--surface2);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${stockPct}%;background:${isLow?'var(--red)':'var(--green)'};border-radius:99px"></div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text3)">${it.gl||'—'}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">
+        <div style="display:flex;justify-content:center;gap:4px">
+          <button onclick="openM('mItem')" style="padding:4px 8px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);font-size:11px;cursor:pointer;color:var(--text2)" onmouseover="this.style.background='var(--blue)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface)';this.style.color='var(--text2)'">Edit</button>
+          ${isLow ? `<button style="padding:4px 8px;border:none;border-radius:4px;background:var(--red);font-size:11px;cursor:pointer;color:#fff;font-weight:700">Reorder</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text3)">No items found. Click + New Item to add your first item.</td></tr>`;
+
+  const el = document.getElementById('itemCount');
+  if (el) el.textContent = `${items.length} item${items.length!==1?'s':''}`;
+  const fn = document.getElementById('itemFootNote');
+  if (fn) fn.textContent = lowStock > 0 ? `⚠ ${lowStock} item${lowStock>1?'s':''} below reorder point` : '✓ All items within stock thresholds';
+}
+function renderSL() {
+  const stock = S.get('stock') || [];
+  const cur   = baseCurr();
+
+  // KPIs
+  const totalVal = stock.reduce((s,i) => s+(i.val||0), 0);
+  const lowItems = stock.filter(i => (i.qty||0) <= (i.reorder||0) && (i.reorder||0) > 0);
+  const warehouses = new Set(stock.map(i=>i.wh)).size;
+  document.getElementById('slKPIs').innerHTML = [
+    { l:'Total Items',    v: String(stock.length),  sub:'Items tracked',       c:'c-blue' },
+    { l:'Low Stock',      v: String(lowItems.length), sub:'Needs reordering',  c: lowItems.length>0?'c-red':'c-green' },
+    { l:'Warehouses',     v: String(warehouses),     sub:'Active locations',    c:'c-teal' },
+    { l:'Total Valuation',v: fCM(totalVal,cur),      sub:'At standard cost',   c:'c-orange' },
+  ].map(k=>`<div class="kpi ${k.c}">
+    <div class="kpi-lbl">${k.l}</div>
+    <div class="kpi-val">${k.v}</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px">${k.sub}</div>
+  </div>`).join('');
+
+  const cnt = document.getElementById('slCount');
+  if(cnt) cnt.textContent = `${stock.length} item${stock.length!==1?'s':''} · ${new Set(stock.map(i=>i.wh)).size} locations`;
+
+  document.getElementById('slTbl').innerHTML = stock.length ? stock.map(s => {
+    const isLow  = (s.qty||0) <= (s.reorder||0) && (s.reorder||0)>0;
+    const isOut  = (s.qty||0) === 0;
+    const maxQty = Math.max(s.qty||0, s.reorder||0, 1);
+    const pct    = Math.min(100, Math.round((s.qty||0)/maxQty*100));
+    const barColor = isOut?'var(--red)':isLow?'var(--orange)':'var(--green)';
+    const statusLabel = isOut?'Out of Stock':isLow?'Low Stock':s.status||'In Stock';
+    const statusBg    = isOut?'rgba(164,38,44,.12)':isLow?'rgba(255,140,0,.12)':'rgba(16,124,16,.12)';
+    const statusColor = isOut?'var(--red)':isLow?'var(--orange)':'var(--green)';
+    return `<tr onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='${isLow?'rgba(164,38,44,.04)':''}'" style="${isLow?'background:rgba(164,38,44,.04)':''}">
+      <td style="padding:12px 18px;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--text1)">${s.name}</div>
+          <div style="font-size:11px;color:var(--text3)">${s.type||'—'}</div>
+        </div>
+      </td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:12px;color:var(--blue);font-weight:700">${s.code}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border)">${sBadge(s.type||'Item')}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">${s.wh||'—'} ${s.bin?`<span style="color:var(--text3)">/ ${s.bin}</span>`:''}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;font-size:13px;color:${barColor}">${s.qty||0} ${s.uom||'Units'}</span>
+          <div style="width:70px;height:4px;background:var(--surface2);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px"></div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">
+        <span style="display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:${statusBg};color:${statusColor}">${statusLabel}</span>
+      </td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;font-size:13px;font-weight:700;color:var(--text1)">${fC(s.val||0,cur)}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">
+        <div style="display:flex;justify-content:center;gap:4px">
+          ${isLow ? `<button style="padding:4px 10px;border:none;border-radius:4px;background:var(--red);font-size:11px;cursor:pointer;color:#fff;font-weight:700">Order Now</button>` : `<button onclick="openM('mTransfer')" style="padding:4px 8px;border:1px solid var(--border2);border-radius:4px;background:var(--surface);font-size:11px;cursor:pointer;color:var(--text2)">Transfer</button>`}
+        </div>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text3)">No stock records found.</td></tr>`;
+
+  const fn = document.getElementById('slFootNote');
+  if(fn) fn.textContent = lowItems.length>0 ? `⚠ ${lowItems.length} item${lowItems.length>1?'s':''} below reorder point — action required` : `✓ All ${stock.length} items within normal stock levels`;
+}
 function filterSL(k,v){document.querySelectorAll('#slTbl tr').forEach(r=>r.style.display=(!v||r.dataset[k]===v)?'':'none');}
 function renderTrf(){document.getElementById('trfTbl').innerHTML=(S.get('transfers')||[]).map(t=>`<tr><td class="t-blue fw6">${t.id}</td><td>${t.date}</td><td>${sBadge(t.type)}</td><td>${t.item}</td><td><span class="b b-blue">${t.from}</span></td><td><span class="b b-teal">${t.to}</span></td><td class="num">${t.qty}</td><td class="num">SAR ${fN(t.val)}</td><td>${t.wo||'—'}</td><td>${sBadge(t.status)}</td></tr>`).join('');}
 
