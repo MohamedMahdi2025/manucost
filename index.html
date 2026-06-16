@@ -2092,71 +2092,72 @@ const GS = {
   async ping() {
     if (!GS_URL) return false;
     try {
-      const r = await fetch(GS_URL + '?action=ping');
+      const r = await fetch(GS_URL + '?action=ping', {method:'GET'});
+      if (!r.ok) return false;
       const j = await r.json();
       return j.ok === true;
     } catch { return false; }
   },
-  // Write one key (fire-and-forget background sync)
   async set(key, value) {
     if (!GS_URL) return;
     try {
-      await fetch(GS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'set', key, data: value }),
-      });
-    } catch { /* silent */ }
+      fetch(GS_URL, {
+        method:'POST',
+        body: JSON.stringify({action:'set', key, data:value}),
+      }).catch(()=>{});
+    } catch {}
   },
-  // Read one key
   async get(key) {
     if (!GS_URL) return null;
     try {
-      const r = await fetch(GS_URL + '?action=get&key=' + encodeURIComponent(key));
+      const r = await fetch(GS_URL+'?action=get&key='+encodeURIComponent(key));
       const j = await r.json();
       return j.ok ? j.value : null;
     } catch { return null; }
   },
-  // Push ALL localStorage → Sheets (uses bulkSet action in AppsScript)
   async push() {
     if (!GS_URL) return false;
+    // Collect all mce_ keys except URL and theme
     const entries = {};
     Object.keys(localStorage)
-      .filter(k => k.startsWith('mce_') && k !== 'mce_gs_url' && k !== 'mce_theme')
+      .filter(k => k.startsWith('mce_') && k !== 'mce_gs_url' && k !== 'mce_theme' && k !== 'mce_data_version')
       .forEach(k => {
-        try { entries[k.replace('mce_', '')] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
+        try { entries[k.replace('mce_','')] = JSON.parse(localStorage.getItem(k)); } catch {}
       });
+    if (!Object.keys(entries).length) return true; // nothing to push
     try {
-      // No Content-Type header — GAS CORS requires plain POST body
       const r = await fetch(GS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'bulkSet', data: entries }),
+        method:'POST',
+        body: JSON.stringify({action:'bulkSet', data:entries}),
       });
+      if (!r.ok) throw new Error('HTTP '+r.status);
       const j = await r.json();
       return j.ok === true;
-    } catch { return false; }
+    } catch(e) {
+      console.warn('GS.push failed:', e.message);
+      return false;
+    }
   },
-  // Pull ALL Sheets → localStorage (uses backup action in AppsScript)
   async pull() {
     if (!GS_URL) return false;
     try {
-      const r = await fetch(GS_URL + '?action=backup');
+      const r = await fetch(GS_URL+'?action=backup');
+      if (!r.ok) throw new Error('HTTP '+r.status);
       const j = await r.json();
-      if (!j.ok) return false;
-      Object.entries(j.backup || {}).forEach(([k, v]) => {
-        localStorage.setItem('mce_' + k, JSON.stringify(v));
+      if (!j.ok || !j.backup) return false;
+      Object.entries(j.backup).forEach(([k,v]) => {
+        if (k && k !== 'gs_url' && k !== 'theme')
+          localStorage.setItem('mce_'+k, JSON.stringify(v));
       });
       return true;
-    } catch { return false; }
+    } catch(e) {
+      console.warn('GS.pull failed:', e.message);
+      return false;
+    }
   },
-  // Wipe all Sheets data
   async reset() {
     if (!GS_URL) return;
-    try {
-      await fetch(GS_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action:'reset' }),
-      });
-    } catch {}
+    try { fetch(GS_URL,{method:'POST',body:JSON.stringify({action:'reset'})}); } catch {}
   },
 };
 
@@ -2911,7 +2912,7 @@ const mTemplates={
   mAcc:{title:'New Account',saveLabel:'Add Account',body:()=>`<div class="fr fr2">${inp('Account Code','ma_c','text','',undefined,true)}${inp('Account Name','ma_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','ma_t',['Asset','Liability','Equity','Revenue','COGS','Expense'])}${sel('Normal Balance','ma_nb',['Debit','Credit'])}</div><div class="fr fr2">${sel('Parent Account','ma_pa',['— None —','1000 Current Assets','2000 Liabilities','3000 Equity','4000 Revenue','5000 COGS','6000 Expenses'])}${sel('Cost Center','ma_cc',['All','Production','Admin','Sales'])}</div>`,
     save:()=>{closeM();toast('Account added.','success');renderCOA();}},
   mJE:{title:'New Journal Entry',saveLabel:'Post Entry',body:()=>`<div class="fr fr3">${inp('JE Number','mje_id','text','','JE-0089')}${inp('Date','mje_d','date','',today())}${sel('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation'])}</div><div class="fg mb12"><label class="fl">Narration</label><input class="fc" id="mje_desc" placeholder="Describe this journal entry"></div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span><span></span></div><div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div><button class="btn btn-g sm mt12" onclick="addJELine()">+ Add Line</button><div class="je-bal" id="jeBal"><span>Dr: <strong id="jeDr">0.00</strong></span><span>Cr: <strong id="jeCr">0.00</strong></span><span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span></div>`,
-    save:()=>{if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const desc=gv('mje_desc')||'Manual Journal Entry';const src=gv('mje_src')||'Manual';const jeId='JE-'+String(Date.now()).slice(-6);const lineEls=document.querySelectorAll('#jeLines .je-grid');const lines=[];let totalDr=0,totalCr=0;lineEls.forEach(el=>{const inputs=el.querySelectorAll('input[type=number]');const selEl=el.querySelector('select');const accCode=selEl?selEl.value:'';const dr=parseFloat(inputs[0]?.value)||0;const cr=parseFloat(inputs[1]?.value)||0;if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}});if(!lines.length){toast('Add at least one line with an amount.','error');return;}const journals=S.get('journals')||[];journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines});S.set('journals',journals);const cur=baseCurr();const ledger=S.get('glLedger')||[];const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};let lastHash='GENESIS';lines.forEach((ln,idx)=>{const hash=buildH(lastHash,ln);lastHash=hash;ledger.push({jeId,date:jeDate,desc,src,account:ln.account,dr:ln.dr,cr:ln.cr,txCurr:cur,txAmt:ln.dr||(-ln.cr),baseAmt:ln.dr||ln.cr,dims:{cc:'CC01'},book:'ifrs',status:'Posted',userId:getSession()?.userId||'USR-001',hash,ts:new Date().toISOString()});});S.set('glLedger',ledger);closeM();renderJE();if(typeof audioPostSuccess==='function')audioPostSuccess();toast('✓ JE '+jeId+' posted — '+lines.length+' lines, Dr/Cr: '+fC(totalDr,cur),'success',4000);}},
+    save:()=>{updateJEBal();if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const desc=gv('mje_desc')||'Manual Journal Entry';const src=gv('mje_src')||'Manual';const jeId='JE-'+String(Date.now()).slice(-6);const lineEls=document.querySelectorAll('#jeLines .je-grid');const lines=[];let totalDr=0,totalCr=0;lineEls.forEach(el=>{const inputs=el.querySelectorAll('input[type=number]');const selEl=el.querySelector('select');const accCode=selEl?selEl.value:'';const dr=parseFloat(inputs[0]?.value)||0;const cr=parseFloat(inputs[1]?.value)||0;if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}});if(!lines.length){toast('Add at least one line with an amount.','error');return;}const journals=S.get('journals')||[];journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines});S.set('journals',journals);const cur=baseCurr();const ledger=S.get('glLedger')||[];const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};let lastHash='GENESIS';lines.forEach((ln,idx)=>{const hash=buildH(lastHash,ln);lastHash=hash;ledger.push({jeId,date:jeDate,desc,src,account:ln.account,dr:ln.dr,cr:ln.cr,txCurr:cur,txAmt:ln.dr||(-ln.cr),baseAmt:ln.dr||ln.cr,dims:{cc:'CC01'},book:'ifrs',status:'Posted',userId:getSession()?.userId||'USR-001',hash,ts:new Date().toISOString()});});S.set('glLedger',ledger);closeM();renderJE();if(typeof audioPostSuccess==='function')audioPostSuccess();toast('✓ JE '+jeId+' posted — '+lines.length+' lines, Dr/Cr: '+fC(totalDr,cur),'success',4000);}},
   mJETpl:{title:'Journal Entry Templates',saveLabel:'Close',body:()=>`<div style="display:flex;flex-direction:column;gap:8px">${[['GRN Receipt','Dr. Raw Materials / Cr. Accounts Payable'],['Payroll Post','Dr. Wages Expense / Cr. Wages Payable + GOSI'],['OH Allocation','Dr. WIP / Cr. OH Applied'],['WIP → FG','Dr. Finished Goods / Cr. WIP Inventory'],['COGS Entry','Dr. COGS / Cr. Finished Goods'],['Customer Invoice','Dr. AR / Cr. Revenue + VAT Payable'],['Depreciation','Dr. Depreciation / Cr. Accum. Depreciation']].map(([t,d])=>`<div class="fsec flex ic jb"><div><div class="fw6 mb8" style="font-size:12.5px">${t}</div><div class="t-sm t-muted">${d}</div></div><button class="btn btn-s sm" onclick="closeM();openM('mJE')">Use</button></div>`).join('')}</div>`,
     save:()=>closeM()},
   mAct:{title:'New Activity Pool (ABC)',saveLabel:'Add Pool',body:()=>`<div class="fr fr2">${inp('Activity Name','mact_n','text','',undefined,true)}${inp('Cost Driver','mact_d','text','e.g. Machine Hours',undefined,true)}</div><div class="fr fr2">${inp('Total Pool Cost (SAR)','mact_c','number','','0')}${inp('Budgeted Driver Qty','mact_q','number','','0')}</div>`,
@@ -6948,22 +6949,27 @@ function connectSheets() {
     showGSMsg('err', '✗ URL must start with https://script.google.com/macros/s/…');
     return;
   }
-  if (document.getElementById('gsUrl')) document.getElementById('gsUrl').value = url;
+  const el = document.getElementById('gsUrl');
+  if (el) el.value = url;
   GS.setURL(url);
-  showGSMsg('ok', '↻ Testing connection…');
+  showGSMsg('info', '↻ Testing connection…');
   GS.ping().then(ok => {
     _syncOK = ok;
     if (ok) {
-      showGSMsg('ok', '✓ Connected to Google Sheets! Data will sync automatically.');
+      showGSMsg('ok', '✓ Connected! Your ERP data will sync to Google Sheets automatically.');
       const badge = document.getElementById('setupSyncBadge');
       if (badge) { badge.textContent = '● Connected'; badge.className = 'b b-green'; }
       setSyncBadge('on');
-      if (document.getElementById('gsSyncActions')) document.getElementById('gsSyncActions').style.display = 'grid';
-      renderSyncLog();
+      const sa = document.getElementById('gsSyncActions');
+      if (sa) sa.style.display = 'grid';
+      if (typeof renderSyncLog === 'function') renderSyncLog();
     } else {
-      showGSMsg('err', '✗ Cannot reach Apps Script. Check URL and deployment permissions (Anyone).');
+      showGSMsg('err', '✗ Connection failed. Make sure: 1) Deployment type = Web App, 2) Execute as = Me, 3) Who has access = Anyone (not "with Google account").');
       setSyncBadge('err');
     }
+  }).catch(e => {
+    showGSMsg('err', '✗ Network error: ' + e.message);
+    setSyncBadge('err');
   });
 }
 
@@ -7101,23 +7107,26 @@ function doLogout() { logout(); }
 function saveSetup() { saveCompany(); }
 function runAH() { toast('Approval hierarchy saved.', 'success'); }
 function pushToSheets() {
-  if (!GS_URL) { toast('Connect Google Sheets first in Company Setup.', 'error'); return; }
+  if (!GS_URL) { toast('Go to Company Setup → Google Sheets and connect first.', 'error'); return; }
   const btn = document.querySelector('[onclick="pushToSheets()"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
-  toast('Pushing all data to Google Sheets…', 'info', 3000);
+  // Count keys being pushed
+  const keyCount = Object.keys(localStorage).filter(k=>k.startsWith('mce_')&&k!=='mce_gs_url'&&k!=='mce_theme'&&k!=='mce_data_version').length;
+  toast('Pushing ' + keyCount + ' data keys to Google Sheets…', 'info', 3000);
   GS.push().then(ok => {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8593; Push All Data to Sheets'; }
     if (ok) {
-      toast('✓ All data pushed to Google Sheets successfully.', 'success', 4000);
+      toast('✓ All data synced to Google Sheets (' + keyCount + ' keys).', 'success', 4000);
       setSyncBadge('on');
     } else {
-      toast('Push failed. Check your Apps Script URL and that deployment is set to "Anyone".', 'error', 5000);
+      toast('⚠ Push failed. Check Settings → Company Setup → Google Sheets connection.', 'error', 6000);
       setSyncBadge('err');
     }
     if (typeof renderSyncLog === 'function') renderSyncLog();
   }).catch(e => {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8593; Push All Data to Sheets'; }
-    toast('Push error: ' + e.message, 'error', 5000);
+    toast('Push error: ' + (e.message||'Unknown'), 'error', 5000);
+    setSyncBadge('err');
   });
 }
 function pullFromSheets() {
