@@ -2648,36 +2648,32 @@ function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchA
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
 function launchApp(){
-  // ── NUCLEAR WIPE of all demo/transaction data ──
-  // When wizard completes, the company is brand new — zero transactions.
-  // Clear every data key so no leftover demo data from previous sessions survives.
-  const DEMO_KEYS = [
-    'journals','glLedger','grns','pos','invoices','salesorders','quotes',
-    'transfers','workorders','timesheets','boms','employees',
-    'fixedAssets','cwipProjects','assetDisposals',
-    'bankAccounts','voyages','projects','icTransactions',
-    'auditLog','allocRules','aprRequests','syncLog',
-    'trialBalanceData','seeded',
-    // Also clear demo company/supplier/customer/item data
-    'suppliers','customers','payterms','items','stock',
-  ];
-  DEMO_KEYS.forEach(k => S.set(k, null));
-  // Clear by removing entirely (S.set(k,null) still stores 'null' string)
-  DEMO_KEYS.forEach(k => localStorage.removeItem('mce_' + k));
-
-  // Mark company as wizard-configured so nothing re-seeds demo data
+  // Step 1: Mark company as wizard-configured FIRST (before any wipes)
   const co = S.get('company') || {};
   co._wizardComplete = true;
+  co._launchedAt = new Date().toISOString();
   S.set('company', co);
   S.set('seeded', true);
 
-  // Seed ONLY structural (non-demo) defaults
+  // Step 2: Wipe all demo/transaction data (never wipe 'company', 'users', 'seeded')
+  const DEMO_KEYS = [
+    'journals','glLedger','grns','pos','invoices','salesorders','quotes',
+    'transfers','workorders','timesheets','boms',
+    'fixedAssets','cwipProjects','assetDisposals',
+    'bankAccounts','voyages','projects','icTransactions',
+    'auditLog','allocRules','aprRequests','syncLog',
+    'trialBalanceData',
+    'suppliers','customers','payterms','items','stock',
+  ];
+  // Use direct localStorage.removeItem (skip GS.set for bulk demo wipe)
+  DEMO_KEYS.forEach(k => localStorage.removeItem('mce_' + k));
+
+  // Step 3: Seed structural (non-demo) data
   seedCurrencies();
   seedFiscalData();
   seedApprovalPolicies();
-  // Do NOT call seedApprovalRequests — it seeds demo approval requests
-  // Do NOT call seedAllNew — it seeds demo transactions
 
+  // Step 4: Show login
   document.getElementById('wizOv').style.display = 'none';
   showLogin();
 }
@@ -7348,6 +7344,73 @@ function renderOH() {
       </tbody></table></div></div>`;
 }
 
+// ── USER MANAGEMENT MODALS ──
+const mUserTemplates = {
+  mAddUser: {
+    title: 'Add New User', saveLabel: 'Create User',
+    body: () => `
+      <div class="fr fr2">${inp('Full Name','mu_name','text','',undefined,true)}${inp('Username','mu_user','text','',undefined,true)}</div>
+      <div class="fr fr2">${inp('Email','mu_email','email','')}${inp('Department','mu_dept','text','')}</div>
+      <div class="fr fr2">${sel('Role','mu_role',['admin','manager','accountant','warehouse','viewer'])}${inp('Password','mu_pass','password','',undefined,true)}</div>
+      <div class="fr fr2">${inp('Confirm Password','mu_pass2','password','',undefined,true)}${sel('Status','mu_status',['Active','Inactive'])}</div>`,
+    save: () => {
+      const name = gv('mu_name'), user = gv('mu_user').toLowerCase().replace(/\s/g,'');
+      const pass = gv('mu_pass'), pass2 = gv('mu_pass2');
+      if (!name || !user || !pass) { toast('Name, username and password are required.', 'error'); return; }
+      if (pass !== pass2) { toast('Passwords do not match.', 'error'); return; }
+      if (pass.length < 6) { toast('Password must be at least 6 characters.', 'error'); return; }
+      const users = S.get('users') || [];
+      if (users.find(u => u.username === user)) { toast('Username already exists.', 'error'); return; }
+      users.push({
+        id: 'USR-' + String(Date.now()).slice(-4),
+        name, username: user,
+        password: hashPw(pass),
+        role: gv('mu_role') || 'viewer',
+        dept: gv('mu_dept') || 'General',
+        email: gv('mu_email') || '',
+        status: gv('mu_status') || 'Active',
+        lastLogin: '—',
+        created: today(),
+      });
+      S.set('users', users);
+      closeM(); renderUsers();
+      toast('User ' + name + ' created successfully.', 'success');
+    }
+  },
+  mEditUser: {
+    title: 'Edit User', saveLabel: 'Save Changes',
+    body: (userId) => {
+      const users = S.get('users') || [];
+      const u = users.find(x => x.id === userId) || {};
+      return `
+        <input type="hidden" id="mu_edit_id" value="${u.id||''}">
+        <div class="fr fr2">${inp('Full Name','mu_ename','text','',u.name||'')}${inp('Email','mu_eemail','email','',u.email||'')}</div>
+        <div class="fr fr2">${inp('Department','mu_edept','text','',u.dept||'')}${sel('Role','mu_erole',['admin','manager','accountant','warehouse','viewer'],u.role||'viewer')}</div>
+        <div class="fr fr2">${sel('Status','mu_estatus',['Active','Inactive'],u.status||'Active')}${inp('New Password (leave blank to keep)','mu_epass','password','')}</div>
+        <div class="alert a-info" style="margin-top:10px">Username: <strong>${u.username||'—'}</strong> · Created: ${u.created||'—'}</div>`;
+    },
+    save: () => {
+      const userId = document.getElementById('mu_edit_id')?.value;
+      const users = S.get('users') || [];
+      const u = users.find(x => x.id === userId);
+      if (!u) { toast('User not found.', 'error'); return; }
+      u.name   = gv('mu_ename') || u.name;
+      u.email  = gv('mu_eemail') || u.email;
+      u.dept   = gv('mu_edept') || u.dept;
+      u.role   = gv('mu_erole') || u.role;
+      u.status = gv('mu_estatus') || u.status;
+      const newPass = gv('mu_epass');
+      if (newPass) {
+        if (newPass.length < 6) { toast('Password must be at least 6 characters.', 'error'); return; }
+        u.password = hashPw(newPass);
+      }
+      S.set('users', users);
+      closeM(); renderUsers();
+      toast('User ' + u.name + ' updated.', 'success');
+    }
+  },
+};
+
 // ── BOOT ──
 var _errShown = false;
 window.addEventListener('error', function(e) {
@@ -7448,6 +7511,9 @@ try {
     }
   }
   const _co = S.get('company');
+  // Show wizard ONLY if company has never been configured
+  // _wizardComplete = true means wizard was fully completed
+  // Fallback: if company.name exists (from demo seedData), also skip wizard
   if (!_co || !_co.name) {
     document.getElementById('wizOv').style.display = 'flex';
     wRender();
