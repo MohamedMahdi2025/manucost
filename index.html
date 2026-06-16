@@ -4707,6 +4707,33 @@ function printReport(elId) {
     z-index:300;padding:4px 0;box-shadow:0 -2px 8px rgba(0,0,0,.08)
   }
 }
+
+/* ══ MOBILE BOTTOM NAV — HIDDEN ON DESKTOP, VISIBLE ONLY ON MOBILE ══ */
+.mobile-bottom-nav {
+  display: none !important;
+}
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 300;
+    padding: 4px 0 env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -2px 8px rgba(0,0,0,.08);
+  }
+  .content { padding-bottom: 72px; }
+}
+.mob-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 12px; cursor: pointer; font-size: 10px;
+  color: var(--text3); flex: 1;
+  border-top: 2px solid transparent; transition: .15s;
+}
+.mob-nav-item.active { color: var(--blue); border-top-color: var(--blue); }
+.mob-icon { font-size: 18px; line-height: 1; }
+
 </style></head><body>
     ${el.innerHTML}
     </body></html>`);
@@ -9391,6 +9418,76 @@ function jePreviewAttachment(jeId) {
     toast('File downloaded — ' + att.name, 'info', 2000);
   }
 }
+
+// ── SHOW SCREEN (called after login) ──
+function showScreen(co) {
+  try {
+    document.getElementById('loginOv').style.display = 'none';
+  } catch(e) {}
+  try {
+    document.getElementById('wizOv').style.display  = 'none';
+  } catch(e) {}
+  document.getElementById('app').style.display = 'flex';
+  try { updateUserPill(); } catch(e) {}
+  try { initApp(); }        catch(e) { console.error('initApp:', e); }
+  try { applyTheme(); }     catch(e) {}
+}
+
+// ── BOOT ──
+(function boot() {
+
+  // 1. Verify localStorage works
+  try {
+    localStorage.setItem('mce_ls_ok', '1');
+    if (localStorage.getItem('mce_ls_ok') !== '1') throw new Error('read-back failed');
+    localStorage.removeItem('mce_ls_ok');
+  } catch(e) {
+    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif"><h2 style="color:red">Storage Error</h2><p>localStorage is blocked. Please disable private/incognito mode or enable cookies.</p><p>' + e.message + '</p></div>';
+    return;
+  }
+
+  // 2. Handle reset flag
+  if (localStorage.getItem('mce_reset_pending')) {
+    var t = localStorage.getItem('mce_theme');
+    var g = localStorage.getItem('mce_gs_url');
+    Object.keys(localStorage).forEach(function(k) { if (k.startsWith('mce_')) localStorage.removeItem(k); });
+    sessionStorage.clear();
+    if (t) localStorage.setItem('mce_theme', t);
+    localStorage.setItem('mce_gs_url', g || DEFAULT_GS_URL);
+    try { applyTheme(); } catch(e) {}
+    try { document.getElementById('wizOv').style.display = 'flex'; wRender(); } catch(e) {}
+    return;
+  }
+
+  // 3. Seed structural data (each guarded)
+  try { seedUsers(); }            catch(e) {}
+  try { seedCurrencies(); }       catch(e) {}
+  try { seedFiscalData(); }       catch(e) {}
+  try { seedApprovalPolicies(); } catch(e) {}
+  try { applyTheme(); }           catch(e) {}
+
+  // 4. Read company
+  var co = null;
+  try { co = S.get('company'); } catch(e) {}
+
+  // 5. Decide what to show
+  if (!co || !co.name) {
+    try { document.getElementById('wizOv').style.display = 'flex'; wRender(); } catch(e) {}
+    return;
+  }
+
+  // Company exists — check session
+  var sess = null;
+  try { sess = getSession(); } catch(e) {}
+
+  if (sess) {
+    document.getElementById('app').style.display = 'flex';
+    try { updateUserPill(); initApp(); applyTheme(); } catch(e) { console.error('initApp error:', e); }
+  } else {
+    try { showLogin(); } catch(e) {}
+  }
+
+})();
 </script>
 </body>
 </html>
