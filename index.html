@@ -2338,6 +2338,33 @@ function fC(amt,code,opts) {
 }
 
 // ── SEED FUNCTIONS ──
+// ── ROLES & ACCESS CONTROL ──
+const ROLES = {
+  admin:      { level:5, label:'Administrator', desc:'Full system access', color:'#0078D4', bg:'#EBF3FB', perms:'*' },
+  manager:    { level:4, label:'Manager',       desc:'All operations + approvals', color:'#5C2D91', bg:'#F3E9F8', perms:['dashboard','coa','journal','ledger','tb','po','grn','aging-ap','items','warehouses','stockledger','transfers','bom','workorders','jobcost','abc','customers','quotation','salesorder','invoices','aging-ar','employees','timesheets','payroll','pnl','bs','cf','rpt-hub','approvals','myrequests','assets','depreciation','projects','cashpos','bankaccounts','currencies','setup'] },
+  accountant: { level:3, label:'Accountant',    desc:'Finance, GL, reports', color:'#107C10', bg:'#DFF6DD', perms:['dashboard','coa','journal','ledger','tb','aging-ap','aging-ar','pnl','bs','cf','rpt-hub','rpt-equity','rpt-ar-aging','rpt-ap-aging','rpt-budget','rpt-costvar','assets','depreciation','bankaccounts','bankrcon','cashpos','cashforecast','fiscalyear','periodclose','setup'] },
+  warehouse:  { level:2, label:'Warehouse',     desc:'Stock, GRN, work orders', color:'#CA5010', bg:'#FFF0E6', perms:['dashboard','items','warehouses','stockledger','transfers','bom','workorders','grn'] },
+  viewer:     { level:1, label:'Viewer',         desc:'Read-only dashboard', color:'#605E5C', bg:'#F3F2F1', perms:['dashboard','pnl','bs','cf','tb','rpt-hub'] },
+};
+const WRITE_PAGES = new Set(['journal','po','grn','transfers','workorders','invoices','salesorder','payroll','periodclose','users','setup']);
+
+function canAccess(page) {
+  const s = getSession();
+  if (!s) return false;
+  const role = ROLES[s.role];
+  if (!role) return false;
+  if (role.perms === '*') return true;
+  return role.perms.includes(page);
+}
+function canWrite() {
+  const s = getSession();
+  return s && ['admin','manager','accountant'].includes(s.role);
+}
+function navGuarded(page) {
+  if (!canAccess(page)) { toast('Access restricted — contact your Administrator.', 'error'); return; }
+  nav(page);
+}
+
 function updateUserPill() {
   const s = getSession();
   const pill = document.getElementById('userPill');
@@ -7058,153 +7085,77 @@ const mUserTemplates = {
 // Each step wrapped individually — one failure never blocks the rest
 (function boot() {
 
-  // ── Step 1: Detect storage availability ──
+  // Test localStorage
   var hasLS = false;
-  try {
-    localStorage.setItem('mce_test', '1');
-    hasLS = localStorage.getItem('mce_test') === '1';
-    localStorage.removeItem('mce_test');
-  } catch(e) { hasLS = false; }
-
+  try { localStorage.setItem('mce_t','1'); hasLS = localStorage.getItem('mce_t')==='1'; localStorage.removeItem('mce_t'); } catch(e) {}
   if (!hasLS) {
-    // localStorage blocked (rare) — GS-only mode notice
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;text-align:center"><h2>⚠ Storage Blocked</h2><p>Please disable private/incognito mode or allow cookies, then reload.</p></div>';
+    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;text-align:center"><h2 style="color:red">⚠ Storage Blocked</h2><p>Open in Chrome or Edge (normal tab, not private).</p></div>';
     return;
   }
 
-  // ── Step 2: Handle reset flag ──
+  // Handle reset
   if (localStorage.getItem('mce_reset_pending')) {
-    var _t = localStorage.getItem('mce_theme');
-    var _g = localStorage.getItem('mce_gs_url');
-    try { Object.keys(localStorage).forEach(function(k){ if(k.startsWith('mce_')) localStorage.removeItem(k); }); } catch(e){}
+    var _t=localStorage.getItem('mce_theme'), _g=localStorage.getItem('mce_gs_url');
+    Object.keys(localStorage).forEach(function(k){if(k.startsWith('mce_'))localStorage.removeItem(k);});
     sessionStorage.clear();
-    if (_t) localStorage.setItem('mce_theme', _t);
-    localStorage.setItem('mce_gs_url', _g || DEFAULT_GS_URL);
-    GS_URL = _g || DEFAULT_GS_URL;
-    try { applyTheme(); } catch(e) {}
-    document.getElementById('wizOv').style.display = 'flex';
-    try { wRender(); } catch(e) {}
+    if(_t)localStorage.setItem('mce_theme',_t);
+    localStorage.setItem('mce_gs_url',_g||DEFAULT_GS_URL);
+    GS_URL=_g||DEFAULT_GS_URL;
+    try{applyTheme();}catch(e){}
+    document.getElementById('wizOv').style.display='flex';
+    try{wRender();}catch(e){}
     return;
   }
 
-  // ── Step 3: Self-test — write and read back a known value ──
-  var selfTestOK = false;
-  try {
-    localStorage.setItem('mce_selftest', 'ok');
-    selfTestOK = localStorage.getItem('mce_selftest') === 'ok';
-    localStorage.removeItem('mce_selftest');
-  } catch(e) {}
+  // Seed
+  try{seedUsers();}catch(e){}
+  try{seedCurrencies();}catch(e){}
+  try{seedFiscalData();}catch(e){}
+  try{seedApprovalPolicies();}catch(e){}
+  try{applyTheme();}catch(e){}
 
-  if (!selfTestOK) {
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;text-align:center;max-width:400px;margin:auto">'
-      + '<h2 style="color:red">⚠ Storage Error</h2>'
-      + '<p>This browser is blocking data storage. Your data cannot be saved.</p>'
-      + '<p><strong>Fix:</strong> Open this link in Chrome or Edge in a normal (non-private) tab.</p>'
-      + '</div>';
-    return;
-  }
-
-  // ── Step 4: Check if we have a company in localStorage cache ──
-  var co = null;
-  try { co = S.get('company'); } catch(e) {}
-
-  var hasCompany = co && co.name && co._wizardComplete;
-  console.log('[ManuCost] Boot: localStorage company =', hasCompany ? co.name : 'none');
-
-  if (hasCompany) {
-    // ── Fast path: localStorage cache is populated ──
-    try { seedUsers(); }           catch(e) {}
-    try { seedCurrencies(); }      catch(e) {}
-    try { seedFiscalData(); }      catch(e) {}
-    try { seedApprovalPolicies(); }catch(e) {}
-    try { applyTheme(); }          catch(e) {}
-    showAppOrLogin();
-    // Silently sync with Sheets in background
-    setTimeout(function(){ try { checkSync(); } catch(e){} }, 1000);
-    return;
-  }
-
-  // ── Slow path: no company in localStorage ──
-  // Try to load from Google Sheets before showing wizard
-  console.log('[ManuCost] Boot: no local data, checking Google Sheets...');
-  showLoadingScreen('Checking Google Sheets for your data…');
-
-  S.load().then(function(loaded) {
-    if (loaded) {
-      try { co = S.get('company'); } catch(e) {}
-      hasCompany = co && co.name && co._wizardComplete;
+  // Always pull from Sheets first (fixes Safari ITP clearing localStorage)
+  function proceed(co) {
+    var hasCompany = co && co.name && co._wizardComplete;
+    if (!hasCompany) {
+      document.getElementById('wizOv').style.display='flex';
+      try{wRender();}catch(e){}
+      return;
     }
-
-    console.log('[ManuCost] Boot: after Sheets load, company =', hasCompany ? co.name : 'none');
-    hideLoadingScreen();
-
-    if (hasCompany) {
-      // Loaded from Sheets — now have data
-      try { seedUsers(); }           catch(e) {}
-      try { seedCurrencies(); }      catch(e) {}
-      try { seedFiscalData(); }      catch(e) {}
-      try { seedApprovalPolicies(); }catch(e) {}
-      try { applyTheme(); }          catch(e) {}
-      showAppOrLogin();
-    } else {
-      // Truly new — show wizard
-      try { seedUsers(); }           catch(e) {}
-      try { seedCurrencies(); }      catch(e) {}
-      try { seedFiscalData(); }      catch(e) {}
-      try { seedApprovalPolicies(); }catch(e) {}
-      try { applyTheme(); }          catch(e) {}
-      document.getElementById('wizOv').style.display = 'flex';
-      try { wRender(); } catch(e) {}
-    }
-  }).catch(function(e) {
-    console.warn('[ManuCost] Sheets load failed:', e);
-    hideLoadingScreen();
-    try { applyTheme(); } catch(e2) {}
-    document.getElementById('wizOv').style.display = 'flex';
-    try { wRender(); } catch(e2) {}
-  });
-
-  function showAppOrLogin() {
-    var sess = null;
-    try { sess = getSession(); } catch(e) {}
+    var sess=null; try{sess=getSession();}catch(e){}
     if (sess) {
-      document.getElementById('app').style.display = 'flex';
-      try { updateUserPill(); initApp(); applyTheme(); } catch(e){ console.error('initApp:', e.message); }
+      document.getElementById('app').style.display='flex';
+      try{updateUserPill();initApp();applyTheme();}catch(e){console.error('initApp:',e.message);}
     } else {
-      try { showLogin(); } catch(e) {}
+      try{showLogin();}catch(e){}
     }
   }
 
-  function showLoadingScreen(msg) {
-    var el = document.getElementById('bootLoader');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'bootLoader';
-      el.style.cssText = 'position:fixed;inset:0;background:var(--surface,#f8f9fa);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px';
-      el.innerHTML = '<div style="font-size:40px">🏭</div>'
-        + '<div style="font-size:18px;font-weight:600;color:var(--blue,#0078D4)">ManuCost ERP</div>'
-        + '<div id="bootLoaderMsg" style="font-size:13px;color:#666"></div>'
-        + '<div style="width:200px;height:3px;background:#e0e0e0;border-radius:3px;overflow:hidden">'
-        + '<div style="height:100%;background:var(--blue,#0078D4);border-radius:3px;animation:bootPulse 1.2s ease-in-out infinite"></div></div>'
-        + '<div style="font-size:11px;color:#aaa;margin-top:8px">Connecting to Google Sheets…</div>';
-      document.body.appendChild(el);
-      // Add animation
-      if (!document.getElementById('bootPulseStyle')) {
-        var style = document.createElement('style');
-        style.id = 'bootPulseStyle';
-        style.textContent = '@keyframes bootPulse{0%{width:20%}50%{width:80%}100%{width:20%}}';
-        document.head.appendChild(style);
-      }
-    }
-    var msgEl = document.getElementById('bootLoaderMsg');
-    if (msgEl) msgEl.textContent = msg || 'Loading…';
-    el.style.display = 'flex';
-  }
+  // Show loading screen
+  var loader = document.createElement('div');
+  loader.id='_loader';
+  loader.style.cssText='position:fixed;inset:0;background:#f8f9fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:12px;font-family:Calibri,sans-serif';
+  loader.innerHTML='<div style="font-size:36px">🏭</div><div style="font-size:16px;font-weight:600;color:#0078D4">ManuCost ERP</div><div style="font-size:12px;color:#666" id="_loaderMsg">Loading your data…</div><div style="width:160px;height:3px;background:#e0e0e0;border-radius:3px"><div style="height:100%;width:40%;background:#0078D4;border-radius:3px;animation:_lp 1s ease-in-out infinite alternate"></div></div>';
+  var st=document.createElement('style');st.textContent='@keyframes _lp{from{width:20%}to{width:80%}}';
+  document.head.appendChild(st);
+  document.body.appendChild(loader);
 
-  function hideLoadingScreen() {
-    var el = document.getElementById('bootLoader');
-    if (el) el.style.display = 'none';
-  }
+  function setMsg(m){var el=document.getElementById('_loaderMsg');if(el)el.textContent=m;}
+  function hideLoader(){var el=document.getElementById('_loader');if(el)el.remove();}
+
+  // Try Sheets first, then fall back to localStorage
+  setMsg('Connecting to Google Sheets…');
+  S.load().then(function(loaded) {
+    if (loaded) setMsg('Data loaded ✓');
+    var co=null; try{co=S.get('company');}catch(e){}
+    hideLoader();
+    proceed(co);
+  }).catch(function(e) {
+    console.warn('[ManuCost] Sheets load failed:',e.message,'. Using localStorage.');
+    var co=null; try{co=S.get('company');}catch(e2){}
+    hideLoader();
+    proceed(co);
+  });
 
 })();
 </script>
