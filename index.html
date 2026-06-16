@@ -2249,14 +2249,28 @@ function setSession(user) {
 function clearSession() { SESSION = null; sessionStorage.removeItem('mce_session'); }
 
 // ── ROLE-BASED ACCESS ──
-const ROLES = { admin:5, manager:4, accountant:3, warehouse:2, viewer:1 };
+const ROLES = {
+  admin:      { level:5, label:'Administrator', desc:'Full system access — all modules, users, reset', color:'#0078D4', bg:'#EBF3FB', perms:'*' },
+  manager:    { level:4, label:'Manager',       desc:'All operations + approvals, no user admin',    color:'#5C2D91', bg:'#F3E9F8', perms:['dashboard','coa','journal','ledger','tb','po','grn','aging-ap','items','warehouses','stockledger','transfers','bom','workorders','jobcost','abc','customers','quotation','salesorder','invoices','aging-ar','employees','timesheets','payroll','pnl','bs','cf','rpt-hub','approvals','myrequests','assets','depreciation','projects','cashpos','bankaccounts'] },
+  accountant: { level:3, label:'Accountant',    desc:'Finance, GL, reports — no purchasing/HR',     color:'#107C10', bg:'#DFF6DD', perms:['dashboard','coa','journal','ledger','tb','aging-ap','aging-ar','pnl','bs','cf','rpt-hub','rpt-equity','rpt-ar-aging','rpt-ap-aging','rpt-budget','rpt-costvar','assets','depreciation','bankaccounts','bankrcon','cashpos','cashforecast','fiscalyear','periodclose','setup'] },
+  warehouse:  { level:2, label:'Warehouse',     desc:'Stock, GRN, transfers, work orders only',     color:'#CA5010', bg:'#FFF0E6', perms:['dashboard','items','warehouses','stockledger','transfers','bom','workorders','grn'] },
+  viewer:     { level:1, label:'Viewer',         desc:'Read-only access to reports and dashboard',   color:'#605E5C', bg:'#F3F2F1', perms:['dashboard','pnl','bs','cf','tb','rpt-hub'] },
+};
+
+// Pages that require write permission (not just view)
+const WRITE_PAGES = new Set(['journal','po','grn','transfers','workorders','invoices','salesorder','payroll','periodclose','users','setup']);
 function canAccess(page) {
-  const s = getSession(); if (!s) return false;
-  const restricted = { users:['admin'], setup:['admin'], approvals:['admin','manager'], fiscalyear:['admin','accountant'] };
-  const req = restricted[page];
-  return !req || req.includes(s.role);
+  const s = getSession();
+  if (!s) return false;
+  const role = ROLES[s.role];
+  if (!role) return false;
+  if (role.perms === '*') return true;          // admin sees everything
+  return role.perms.includes(page);
 }
-function canWrite() { const s = getSession(); return s && ['admin','manager','accountant'].includes(s.role); }
+function canWrite() {
+  const s = getSession();
+  return s && ['admin','manager','accountant'].includes(s.role);
+}
 
 // nav() and navGuarded() — nav is defined above; navGuarded adds access check
 function navGuarded(page) {
@@ -5655,10 +5669,10 @@ function renderUsers() {
 
   // Role cards
   document.getElementById('roleCards').innerHTML = Object.entries(ROLES).map(([key, r]) => `
-    <div class="fsec mb8" style="border-left:3px solid ${r.color};border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px">
-      <div class="fw6 t-sm mb8" style="color:${r.color}">${r.label}</div>
-      <div class="t-xs t-muted">${r.desc}</div>
-      <div class="t-xs mt8" style="color:${r.color}">${r.perms==='*'?'All modules':'${r.perms.length} modules'}</div>
+    <div class="fsec mb8" style="border-left:3px solid ${r.color};border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px;background:${r.bg}">
+      <div class="fw6 t-sm mb4" style="color:${r.color}">${r.label}</div>
+      <div class="t-xs t-muted mb4">${r.desc}</div>
+      <div class="t-xs" style="color:${r.color}">${r.perms==='*' ? 'All modules (unrestricted)' : r.perms.length + ' modules'}</div>
     </div>`).join('');
 
   // Permission matrix
