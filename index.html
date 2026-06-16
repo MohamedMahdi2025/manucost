@@ -2229,7 +2229,146 @@ async function checkSync() {
 
 // ── SEED DEFAULT DATA (runs once per browser) ──
 
-// ── DOCUMENT SEQUENCE GENERATOR ──
+// ── AUTH ──
+function hashPw(pw) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < pw.length; i++) { h ^= pw.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return 'H' + h.toString(16).padStart(8,'0').toUpperCase();
+}
+function checkPw(plain, hash) { return hashPw(plain) === hash; }
+
+let SESSION = null;
+function getSession() {
+  if (SESSION) return SESSION;
+  try { const v = sessionStorage.getItem('mce_session'); SESSION = v ? JSON.parse(v) : null; } catch { SESSION = null; }
+  return SESSION;
+}
+function setSession(user) {
+  SESSION = { userId: user.id, username: user.username, role: user.role, name: user.name };
+  try { sessionStorage.setItem('mce_session', JSON.stringify(SESSION)); } catch {}
+}
+function clearSession() { SESSION = null; try { sessionStorage.removeItem('mce_session'); } catch {} }
+
+function doLogin() {
+  const username = (document.getElementById('loginUser')?.value || '').trim().toLowerCase();
+  const password = document.getElementById('loginPass')?.value || '';
+  if (!username || !password) { toast('Enter username and password.', 'error'); return; }
+  let users = S.get('users') || [];
+  // Safety net: recreate admin if no users exist
+  if (!users.length) {
+    users = [{ id:'USR-001', name:'Administrator', username:'admin', password:hashPw('Admin@1234'), role:'admin', dept:'Management', status:'Active', lastLogin:'—', created:today() }];
+    S.set('users', users);
+  }
+  const user = users.find(u => u.username === username && u.status !== 'Inactive');
+  if (!user || !checkPw(password, user.password)) {
+    const hint = document.getElementById('loginHint');
+    if (hint) hint.style.display = 'block';
+    toast('Invalid username or password.', 'error');
+    return;
+  }
+  user.lastLogin = new Date().toLocaleString();
+  S.set('users', users);
+  setSession(user);
+  document.getElementById('loginOv').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateUserPill();
+  initApp();
+  applyTheme();
+}
+
+function showLogin() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginOv').style.display = 'flex';
+  const co = S.get('company') || {};
+  const titleEl = document.getElementById('loginCompanyTitle');
+  if (titleEl && co.name) titleEl.textContent = co.name;
+  const subEl = document.getElementById('loginCompanyName');
+  if (subEl && co.name) subEl.textContent = co.name + ' — ERP System';
+  const dbg = document.getElementById('loginDebug');
+  if (dbg) {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('mce_')).length;
+    dbg.textContent = 'Storage: ' + keys + ' keys · ' + (co.name || 'no company') + (co._wizardComplete ? ' ✓' : '');
+  }
+  localStorage.setItem('mce_last_boot', String(Date.now()));
+  setTimeout(() => { const el = document.getElementById('loginUser'); if (el) el.focus(); }, 100);
+}
+
+function logout() {
+  clearSession();
+  document.getElementById('app').style.display = 'none';
+  showLogin();
+}
+function emergencyReset() {
+  const t = localStorage.getItem('mce_theme');
+  const g = localStorage.getItem('mce_gs_url');
+  Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
+  sessionStorage.clear();
+  if (t) localStorage.setItem('mce_theme', t);
+  localStorage.setItem('mce_gs_url', g || DEFAULT_GS_URL);
+  localStorage.setItem('mce_reset_pending', '1');
+  location.reload();
+}
+
+// ── CURRENCY MASTER ──
+const CURRENCY_MASTER = {
+  SAR:{ name:'Saudi Riyal',        flag:'🇸🇦', symbol:'﷼',  decimals:2 },
+  USD:{ name:'US Dollar',          flag:'🇺🇸', symbol:'$',   decimals:2 },
+  EUR:{ name:'Euro',               flag:'🇪🇺', symbol:'€',   decimals:2 },
+  GBP:{ name:'British Pound',      flag:'🇬🇧', symbol:'£',   decimals:2 },
+  AED:{ name:'UAE Dirham',         flag:'🇦🇪', symbol:'د.إ', decimals:2 },
+  KWD:{ name:'Kuwaiti Dinar',      flag:'🇰🇼', symbol:'د.ك', decimals:3 },
+  QAR:{ name:'Qatari Riyal',       flag:'🇶🇦', symbol:'ر.ق', decimals:2 },
+  BHD:{ name:'Bahraini Dinar',     flag:'🇧🇭', symbol:'د.ب', decimals:3 },
+  OMR:{ name:'Omani Rial',         flag:'🇴🇲', symbol:'ر.ع', decimals:3 },
+  JOD:{ name:'Jordanian Dinar',    flag:'🇯🇴', symbol:'د.ا', decimals:3 },
+  EGP:{ name:'Egyptian Pound',     flag:'🇪🇬', symbol:'ج.م', decimals:2 },
+  CNY:{ name:'Chinese Yuan',       flag:'🇨🇳', symbol:'¥',   decimals:2 },
+  JPY:{ name:'Japanese Yen',       flag:'🇯🇵', symbol:'¥',   decimals:0 },
+  INR:{ name:'Indian Rupee',       flag:'🇮🇳', symbol:'₹',   decimals:2 },
+  TRY:{ name:'Turkish Lira',       flag:'🇹🇷', symbol:'₺',   decimals:2 },
+};
+function baseCurr() { const c=S.get('currencies')||[]; const b=c.find(x=>x.isBase); return b?.code||'SAR'; }
+function getRate(code) { const c=S.get('currencies')||[]; const x=c.find(r=>r.code===code); return x?.rate||1; }
+function toBase(amt,from) { if(!from||from===baseCurr()) return amt; return amt/getRate(from); }
+function fromBase(amt,to) { if(!to||to===baseCurr()) return amt; return amt*getRate(to); }
+function fC(amt,code,opts) {
+  if(amt==null||amt===undefined) return '—';
+  const sym=(S.get('currencies')||[]).find(c=>c.code===code)?.symbol || (CURRENCY_MASTER[code||'SAR']?.symbol||code||'');
+  return sym+' '+Number(amt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2,...(opts||{})});
+}
+
+// ── SEED FUNCTIONS ──
+function seedUsers() {
+  if (S.get('users')) return;
+  S.set('users', [{ id:'USR-001', name:'Administrator', username:'admin', password:hashPw('Admin@1234'), role:'admin', dept:'Management', email:'admin@company.sa', status:'Active', lastLogin:'—', created:today() }]);
+}
+function seedCurrencies() {
+  if (S.get('currencies')) return;
+  S.set('currencies', Object.entries(CURRENCY_MASTER).map(([code,v],i)=>({
+    code, name:v.name, symbol:v.symbol, flag:v.flag, rate:code==='SAR'?1:code==='USD'?3.75:code==='EUR'?4.1:code==='GBP'?4.7:code==='AED'?1.02:code==='EGP'?0.12:3.5,
+    isBase:code==='SAR', active:['SAR','USD','EUR','AED','EGP'].includes(code)
+  })));
+}
+function seedApprovalPolicies() {
+  if (S.get('aprPolicies')) return;
+  S.set('aprPolicies', [
+    { id:'AP-001', name:'PO Approval',      module:'po',      levels:[{role:'manager',limit:50000},{role:'admin',limit:999999}], active:true },
+    { id:'AP-002', name:'Journal Approval', module:'journal', levels:[{role:'accountant',limit:10000},{role:'admin',limit:999999}], active:true },
+    { id:'AP-003', name:'Expense Approval', module:'expense', levels:[{role:'manager',limit:5000}], active:true },
+  ]);
+}
+function seedFiscalData() {
+  if (S.get('fiscalYears')) return;
+  const yr = new Date().getFullYear();
+  S.set('fiscalYears', [{ year:yr, status:'Open', periods: Array.from({length:12},(_,i)=>({ month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i], status:'Open' })) }]);
+}
+function seedApprovalRequests() { if (S.get('aprRequests')) return; S.set('aprRequests', []); }
+function seedAllNew() {
+  const co = S.get('company');
+  if (co && co._wizardComplete) return;
+}
+
+
 // Generates: JE-00001, PO-00001, etc. Auto-increments from localStorage.
 function nextId(prefix) {
   const key = 'seq_' + prefix;
