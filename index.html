@@ -684,6 +684,7 @@ textarea.fc{resize:vertical;min-height:68px}
       </div>
     </div>
     <div class="login-footer">ManuCost ERP · Secured · <span id="loginYear">2025</span></div>
+    <div id="loginDebug" style="font-size:10px;color:#aaa;text-align:center;margin-top:4px;padding:0 8px"></div>
   </div>
 </div>
 
@@ -2261,10 +2262,18 @@ function navGuarded(page) {
 function showLogin() {
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginOv').style.display = 'flex';
-  // Pre-fill company name
   const co = S.get('company') || {};
-  const titleEl = document.querySelector('.login-title');
+  // Update company name display
+  const titleEl = document.getElementById('loginCompanyTitle');
   if (titleEl && co.name) titleEl.textContent = co.name;
+  const subEl = document.getElementById('loginCompanyName');
+  if (subEl && co.name) subEl.textContent = co.name + ' — ERP System';
+  // Debug line: show what's stored
+  const dbg = document.getElementById('loginDebug');
+  if (dbg) {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('mce_')).length;
+    dbg.textContent = 'Storage: ' + keys + ' keys · ' + (co.name || 'no company') + (co._wizardComplete ? ' ✓' : '');
+  }
   setTimeout(() => { const el = document.getElementById('loginUser'); if (el) el.focus(); }, 100);
 }
 
@@ -2543,7 +2552,14 @@ function wValidate(step){
 
 function wSave(step){
   const co=S.get('company')||{};
-  if(step===2){co.name=gv('w_name');co.nameAr=gv('w_nameAr');co.cr=gv('w_cr');co.vat=gv('w_vat');co.industry=gv('w_ind');co.country=gv('w_country');co.phone=gv('w_phone');co.email=gv('w_email');co.website=gv('w_web');co.zip=gv('w_zip');co.address=gv('w_addr');S.set('company',co);}
+  if(step===2){
+    co.name=gv('w_name');co.nameAr=gv('w_nameAr');co.cr=gv('w_cr');
+    co.vat=gv('w_vat');co.industry=gv('w_ind');co.country=gv('w_country');
+    co.phone=gv('w_phone');co.email=gv('w_email');co.website=gv('w_web');
+    co.zip=gv('w_zip');co.address=gv('w_addr');
+    // Save immediately — persists even if user refreshes mid-wizard
+    localStorage.setItem('mce_company', JSON.stringify(co));
+  }
   if(step===3){co.brandColor=gv('w_brandColor')||'#0078D4';co.hdrStyle=gv('w_hdrStyle');S.set('company',co);}
   if(step===4){co.fyType=gv('w_fyType');co.fyYear=parseInt(gv('w_fyYear'))||2025;co.period=gv('w_period');co.lock=gv('w_lock');co.weekStart=gv('w_weekstart');co.dateFormat=gv('w_dateformat');S.set('company',co);}
   if(step===5){co.currency=gv('w_curr');co.numFormat=gv('w_numfmt');co.vatRate=parseFloat(gv('w_vatrate'))||15;co.zakat=gv('w_zakat');co.gosiEmp=parseFloat(gv('w_gosiEmp'))||12;co.gosiEe=parseFloat(gv('w_gosiEe'))||10;S.set('company',co);const currs=S.get('currencies')||[];currs.forEach(c=>{const cb=document.getElementById('wc_'+c.code);if(cb)c.active=cb.checked;});S.set('currencies',currs);}
@@ -2555,33 +2571,34 @@ function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchA
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
 function launchApp(){
-  // Step 1: Mark company as wizard-configured FIRST (before any wipes)
-  const co = S.get('company') || {};
+  // Read current company and mark wizard complete
+  var co = {};
+  try { co = JSON.parse(localStorage.getItem('mce_company') || '{}'); } catch(e) {}
   co._wizardComplete = true;
   co._launchedAt = new Date().toISOString();
-  S.set('company', co);
-  S.set('seeded', true);
-  // Set correct data version so boot never runs version upgrade on this user
+
+  // Write directly to localStorage — bypass S.set/GS.set entirely for this critical save
+  localStorage.setItem('mce_company', JSON.stringify(co));
+  localStorage.setItem('mce_seeded', 'true');
   localStorage.setItem('mce_data_version', '6');
 
-  // Step 2: Wipe all demo/transaction data (never wipe 'company', 'users', 'seeded')
-  const DEMO_KEYS = [
-    'journals','glLedger','grns','pos','invoices','salesorders','quotes',
-    'transfers','workorders','timesheets','boms',
-    'fixedAssets','cwipProjects','assetDisposals',
-    'bankAccounts','voyages','projects','icTransactions',
-    'auditLog','allocRules','aprRequests','syncLog',
-    'trialBalanceData',
-    'suppliers','customers','payterms','items','stock',
-  ];
-  DEMO_KEYS.forEach(k => localStorage.removeItem('mce_' + k));
+  // Wipe leftover demo/transaction data
+  ['journals','glLedger','grns','pos','invoices','salesorders','quotes',
+   'transfers','workorders','timesheets','boms','fixedAssets','cwipProjects',
+   'assetDisposals','bankAccounts','voyages','projects','icTransactions',
+   'auditLog','allocRules','aprRequests','syncLog','trialBalanceData',
+   'suppliers','customers','payterms','items','stock'
+  ].forEach(function(k) { localStorage.removeItem('mce_'+k); });
 
-  // Step 3: Seed structural (non-demo) data
-  seedCurrencies();
-  seedFiscalData();
-  seedApprovalPolicies();
+  // Seed structural data
+  try { seedCurrencies(); }       catch(e) {}
+  try { seedFiscalData(); }       catch(e) {}
+  try { seedApprovalPolicies(); } catch(e) {}
 
-  // Step 4: Show login
+  // Verify the save worked
+  var saved = localStorage.getItem('mce_company');
+  console.log('[ManuCost] launchApp: company saved =', saved ? 'YES' : 'NO');
+
   document.getElementById('wizOv').style.display = 'none';
   showLogin();
 }
@@ -7122,120 +7139,59 @@ const mUserTemplates = {
 // Each step wrapped individually — one failure never blocks the rest
 (function boot() {
 
-  // ── Error banner (non-fatal) ──
-  window.onerror = function(msg, src, line) {
-    if (!msg || msg === 'Script error.') return;
-    var d = document.getElementById('_errBanner') || document.createElement('div');
-    d.id = '_errBanner';
-    d.style.cssText = 'font-size:12px;font-family:monospace;padding:8px 14px;background:#FDE7E9;color:#A4262C;border-left:4px solid #A4262C;position:fixed;top:0;left:0;right:0;z-index:99999;display:flex;align-items:center;gap:10px';
-    d.innerHTML = '<span>⚠ ' + msg + ' · Line: ' + line + '</span><button onclick="this.parentNode.remove()" style="margin-left:auto;border:none;background:none;cursor:pointer;font-size:16px;color:#A4262C">×</button>';
-    document.body && document.body.appendChild(d);
-    setTimeout(function(){ d.parentNode && d.parentNode.removeChild(d); }, 8000);
-    return false; // don't suppress — still show in console
-  };
+  // ── 1. Verify localStorage works ──
+  try {
+    localStorage.setItem('mce_ls_ok', '1');
+    if (localStorage.getItem('mce_ls_ok') !== '1') throw new Error('read-back failed');
+    localStorage.removeItem('mce_ls_ok');
+  } catch(e) {
+    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif"><h2 style="color:red">Storage Error</h2><p>localStorage is blocked. Please disable private/incognito mode.</p><p>' + e.message + '</p></div>';
+    return;
+  }
 
-  // ── Step 0: Determine mode ──
-  var resetPending = localStorage.getItem('mce_reset_pending');
-  var DATA_VERSION = '6';
-  var currentVersion = localStorage.getItem('mce_data_version');
-
-  // ── Step 1: Handle reset ──
-  if (resetPending) {
-    localStorage.removeItem('mce_reset_pending');
-    // Wipe everything except theme and GS URL
-    var _theme = localStorage.getItem('mce_theme');
-    var _gsUrl = localStorage.getItem('mce_gs_url');
-    Object.keys(localStorage).forEach(function(k){ if(k.startsWith('mce_')) localStorage.removeItem(k); });
+  // ── 2. Handle reset ──
+  if (localStorage.getItem('mce_reset_pending')) {
+    var t = localStorage.getItem('mce_theme');
+    var g = localStorage.getItem('mce_gs_url');
+    // Nuclear wipe
+    for (var key in localStorage) { if (key.startsWith('mce_')) localStorage.removeItem(key); }
     sessionStorage.clear();
-    if (_theme) localStorage.setItem('mce_theme', _theme);
-    localStorage.setItem('mce_gs_url', _gsUrl || DEFAULT_GS_URL);
-    localStorage.setItem('mce_data_version', DATA_VERSION);
-    try { applyTheme(); } catch(e){}
-    try { document.getElementById('wizOv').style.display = 'flex'; wRender(); } catch(e){}
-    return; // stop here — wizard will run
+    if (t) localStorage.setItem('mce_theme', t);
+    localStorage.setItem('mce_gs_url', g || DEFAULT_GS_URL);
+    try { applyTheme(); } catch(e) {}
+    document.getElementById('wizOv').style.display = 'flex';
+    try { wRender(); } catch(e) {}
+    return;
   }
 
-  // ── Step 2: Version upgrade (first load only) ──
-  if (currentVersion !== DATA_VERSION) {
-    var _theme2 = localStorage.getItem('mce_theme');
-    var _gsUrl2  = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
-    var _hasCompany = !!localStorage.getItem('mce_company');
-    if (!_hasCompany) {
-      // No company yet — safe to full-clear stale data
-      Object.keys(localStorage).forEach(function(k){ if(k.startsWith('mce_')) localStorage.removeItem(k); });
-      sessionStorage.clear();
-    }
-    if (_theme2) localStorage.setItem('mce_theme', _theme2);
-    localStorage.setItem('mce_gs_url', _gsUrl2);
-    localStorage.setItem('mce_data_version', DATA_VERSION);
-  }
+  // ── 3. Seed only if needed (each function is internally guarded) ──
+  try { seedUsers(); }           catch(e) {}
+  try { seedCurrencies(); }      catch(e) {}
+  try { seedFiscalData(); }      catch(e) {}
+  try { seedApprovalPolicies(); }catch(e) {}
+  try { applyTheme(); }          catch(e) {}
 
-  // ── Step 3: Demo data cleanup (wizard companies only) ──
-  try {
-    var _co0 = S.get('company');
-    if (_co0 && _co0._wizardComplete) {
-      var _gl = S.get('glLedger');
-      if (_gl && _gl.some && _gl.some(function(e){ return e.jeId === 'JE-0085'; })) {
-        ['journals','glLedger','grns','pos','invoices','salesorders','quotes',
-         'transfers','workorders','timesheets','boms','employees',
-         'fixedAssets','cwipProjects','assetDisposals','bankAccounts',
-         'voyages','projects','icTransactions','auditLog','allocRules',
-         'aprRequests','trialBalanceData','suppliers','customers','payterms','items','stock'
-        ].forEach(function(k){ localStorage.removeItem('mce_'+k); });
-      }
-    }
-  } catch(e){}
+  // ── 4. Read company ──
+  var co = null;
+  try { co = S.get('company'); } catch(e) {}
 
-  // ── Step 4: Seed structural data ──
-  try { seedData(); }            catch(e){ console.warn('seedData failed:', e); }
-  try { seedUsers(); }           catch(e){ console.warn('seedUsers failed:', e); }
-  try { seedCurrencies(); }      catch(e){ console.warn('seedCurrencies failed:', e); }
-  try { seedFiscalData(); }      catch(e){ console.warn('seedFiscalData failed:', e); }
-  try { seedApprovalPolicies(); }catch(e){}
-  try { seedApprovalRequests(); }catch(e){}
-  try { seedAllNew(); }          catch(e){ console.warn('seedAllNew failed:', e); }
-  try { applyTheme(); }          catch(e){}
-
-  // ── Step 5: Demo mode — ensure trialBalanceData ──
-  try {
-    var _co1 = S.get('company');
-    if (!(_co1 && _co1._wizardComplete)) {
-      var _tbd = S.get('trialBalanceData');
-      if (!_tbd || !_tbd.length || !_tbd.some(function(r){ return (r.dr||0)+(r.cr||0)>0; })) {
-        var _seed = tbRows_TEMPLATE.map(function(r){ return Object.assign({},r,{
-          dr: Math.max(0, DEMO_TB_BALANCES[r.c]||0),
-          cr: Math.max(0,-(DEMO_TB_BALANCES[r.c]||0))
-        });});
-        S.set('trialBalanceData', _seed);
-      }
-    }
-  } catch(e){}
-
-  // ── Step 6: Decide what to show ──
-  var _co = null;
-  try { _co = S.get('company'); } catch(e){}
-
-  if (!_co || !_co.name) {
-    // No company configured — show wizard
-    try { document.getElementById('wizOv').style.display = 'flex'; wRender(); } catch(e){}
+  // ── 5. Decide ──
+  if (!co || !co.name || !co._wizardComplete) {
+    // No wizard-complete company — show wizard
+    document.getElementById('wizOv').style.display = 'flex';
+    try { wRender(); } catch(e) {}
     return;
   }
 
   // Company exists — check session
-  var _sess = null;
-  try { _sess = getSession(); } catch(e){}
+  var sess = null;
+  try { sess = getSession(); } catch(e) {}
 
-  if (_sess) {
-    // Valid session — go straight to app
-    try {
-      document.getElementById('app').style.display = 'flex';
-      updateUserPill();
-      initApp();
-      applyTheme();
-    } catch(e){ console.warn('initApp failed:', e); }
+  if (sess) {
+    document.getElementById('app').style.display = 'flex';
+    try { updateUserPill(); initApp(); applyTheme(); } catch(e) { console.error('initApp error:', e); }
   } else {
-    // No session — show login
-    try { showLogin(); } catch(e){}
+    try { showLogin(); } catch(e) {}
   }
 
 })();
