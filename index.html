@@ -718,9 +718,19 @@ textarea.fc{resize:vertical;min-height:80px}
 }
 
 @media print{
-  .sidebar,.topbar,.modal-shell,.icon-btn,.btn{display:none!important}
+  .sidebar,.topbar,.modal-shell,.icon-btn,.btn-row,.cmd-bar{display:none!important}
   .content{padding:0}
   .card{box-shadow:none;border:1px solid #ddd}
+}
+
+/* ══ MOBILE BOTTOM NAV ══ */
+.mobile-bottom-nav { display: none !important; }
+.mob-nav-item { display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;cursor:pointer;font-size:10px;color:var(--text3);flex:1;border-top:2px solid transparent;transition:.15s }
+.mob-nav-item.active { color:var(--blue);border-top-color:var(--blue) }
+.mob-icon { font-size:18px;line-height:1 }
+@media(max-width:768px) {
+  .mobile-bottom-nav { display:flex !important;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:300;padding:4px 0;box-shadow:0 -2px 8px rgba(0,0,0,.08) }
+  .content { padding-bottom:70px }
 }
 </style>
 </head>
@@ -2516,7 +2526,7 @@ textarea.fc{resize:vertical;min-height:80px}
 </div><!-- /app -->
 
 <!-- MODAL SHELL -->
-<div class="overlay" id="mShell" onclick="if(event.target===this)closeM()" style="display:none">
+<div class="overlay" id="mShell" onclick="if(event.target===this)closeM()">
   <div class="modal" id="mBox">
     <div class="modal-hdr"><span class="modal-title" id="mTitle">Modal</span><button class="modal-close" onclick="closeM()">✕</button></div>
     <div class="modal-body" id="mBody"></div>
@@ -3264,9 +3274,11 @@ function openM(name, idOrWide, wideOrUndef) {
   }
 
   mSaveFn = t.save || (() => closeM());
-  document.getElementById('mShell').classList.add('open');
+  const _sh = document.getElementById('mShell');
+  _sh.style.display = 'flex';
+  _sh.classList.add('open');
 }
-function closeM(){document.getElementById('mShell').classList.remove('open');}
+function closeM(){const _sh=document.getElementById('mShell');_sh.classList.remove('open');_sh.style.display='none';}
 function mSave(){mSaveFn();}
 
 // Modal templates
@@ -4667,74 +4679,7 @@ function printReport(elId) {
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>Report</title>
     
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Calibri','Carlito',sans-serif;font-size:11pt;color:#000;padding:20mm}
-      .fs-letterhead{display:flex;justify-content:space-between;padding:12px;border:1.5px solid #0078D4;border-radius:6px;margin-bottom:16px}
-      .fs-letterhead-co{font-size:14pt;font-weight:700}.fs-letterhead-sub{font-size:9pt;color:#666}
-      .fs-letterhead-meta{text-align:right;font-size:10pt}
-      .fs-sec{font-size:9pt;font-weight:700;color:#0078D4;text-transform:uppercase;letter-spacing:.5px;padding:6px 0 3px;border-bottom:1.5px solid #0078D4;margin-top:12px}
-      .fs-row{display:flex;justify-content:space-between;padding:3px 6px;font-size:10.5pt}
-      .fs-row.in{padding-left:18px}.fs-row.in2{padding-left:32px}
-      .fs-row.st{font-weight:700;border-top:1px solid #ccc;padding:5px 6px}
-      .fs-row.tot{font-weight:700;color:#0078D4;padding:6px 8px;border:1px solid #c8dff5;background:#EBF3FB}
-      .fs-row.gtot{font-weight:700;color:#fff;background:#0078D4;padding:8px 10px;font-size:11pt}
-      .fs-row.neg .fs-num span,.var-neg{color:#a4262c}
-      .fs-row.pos .fs-num span,.var-pos{color:#107c10}
-      .fs-num{text-align:right}.g2c{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-      hr.fs-divider{border:none;border-top:1px solid #ddd;margin:6px 0}
-      hr.fs-double{border:none;border-top:3px double #333;margin:4px 0}
-      .fs-note{font-size:9pt;color:#666;padding:3px 6px;font-style:italic}
-      table{width:100%;border-collapse:collapse}.tw table{width:100%}
-      th,td{padding:5px 8px;font-size:10pt;text-align:left;border-bottom:1px solid #eee}
-      th{background:#f5f5f5;font-weight:700;font-size:9pt}
-      .num{text-align:right}.fw6{font-weight:700}
-      .aging-hdr{display:grid;padding:6px 10px;background:#f5f5f5;font-weight:700;font-size:9pt;border-bottom:2px solid #0078D4}
-      .aging-row{display:grid;padding:6px 10px;border-bottom:1px solid #eee;font-size:10pt}
-      @media print{body{padding:15mm}@page{margin:15mm;size:A4 portrait}}
-    
-/* ══ MOBILE BOTTOM NAV — hidden on desktop ══ */
-.mobile-bottom-nav{display:none}
-.mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:6px 12px;cursor:pointer;font-size:10px;color:var(--text3);
-  flex:1;border-top:2px solid transparent;transition:.15s}
-.mob-nav-item.active{color:var(--blue);border-top-color:var(--blue)}
-.mob-icon{font-size:18px;line-height:1}
-@media(max-width:768px){
-  .mobile-bottom-nav{
-    display:flex;position:fixed;bottom:0;left:0;right:0;
-    background:var(--surface);border-top:1px solid var(--border);
-    z-index:300;padding:4px 0;box-shadow:0 -2px 8px rgba(0,0,0,.08)
-  }
-}
-
-/* ══ MOBILE BOTTOM NAV — HIDDEN ON DESKTOP, VISIBLE ONLY ON MOBILE ══ */
-.mobile-bottom-nav {
-  display: none !important;
-}
-@media (max-width: 768px) {
-  .mobile-bottom-nav {
-    display: flex !important;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    z-index: 300;
-    padding: 4px 0 env(safe-area-inset-bottom, 0);
-    box-shadow: 0 -2px 8px rgba(0,0,0,.08);
-  }
-  .content { padding-bottom: 72px; }
-}
-.mob-nav-item {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 6px 12px; cursor: pointer; font-size: 10px;
-  color: var(--text3); flex: 1;
-  border-top: 2px solid transparent; transition: .15s;
-}
-.mob-nav-item.active { color: var(--blue); border-top-color: var(--blue); }
-.mob-icon { font-size: 18px; line-height: 1; }
-
-</style></head><body>
+    </head><body>
     ${el.innerHTML}
     </body></html>`);
   win.document.close();
