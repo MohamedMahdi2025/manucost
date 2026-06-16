@@ -2100,408 +2100,153 @@ const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea
 
 // ── CONFIG — paste your Apps Script Web App URL here after deploy ──
 // ── DEFAULT GOOGLE SHEETS URL — auto-connects if not overridden ──
-const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbxdVjPXXcXSTYM0hSsP6M24zveTpUuullBq2uI1J-mqa_t11n3j9ovltEe4VfAS-uYtBQ/exec';
-let GS_URL = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
-// Persist default if not already saved
-if (!localStorage.getItem('mce_gs_url')) {
-  localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
-}
+// ════════════════════════════════════════════════════════════
+// STORAGE LAYER — Google Sheets is the database
+// localStorage = fast cache only (never relied on for persistence)
+// Every write goes to Sheets first, localStorage is just a speed layer
+// ════════════════════════════════════════════════════════════
 
+const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbyHrE8C-OmMjZqVJbODnA3eYtBrS6QezU2v3uS7KTTpm5dElMiwST8MCz8s-zdkNyDKSw/exec';
+
+// GS_URL: always read from localStorage first, fall back to default
+let GS_URL = '';
+try { GS_URL = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL; } catch(e) { GS_URL = DEFAULT_GS_URL; }
+// Always persist the URL so it survives storage clears
+try { localStorage.setItem('mce_gs_url', GS_URL); } catch(e) {}
+
+// ── LOW-LEVEL GOOGLE SHEETS API ──
 const GS = {
-  setURL(url) {
-    GS_URL = url.trim();
-    localStorage.setItem('mce_gs_url', GS_URL);
+  // POST helper (no Content-Type — GAS CORS requirement)
+  async _post(body) {
+    if (!GS_URL) throw new Error('No GS_URL');
+    const r = await fetch(GS_URL, { method:'POST', body: JSON.stringify(body) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
   },
-  async ping() {
-    if (!GS_URL) return false;
-    try {
-      const r = await fetch(GS_URL + '?action=ping', {method:'GET'});
-      if (!r.ok) return false;
-      const j = await r.json();
-      return j.ok === true;
-    } catch { return false; }
+  // GET helper
+  async _get(params) {
+    if (!GS_URL) throw new Error('No GS_URL');
+    const qs = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+    const r = await fetch(GS_URL + '?' + qs);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
   },
-  async set(key, value) {
-    if (!GS_URL) return;
+  async ping()            { try { const j=await this._get({action:'ping'}); return j.ok===true; } catch{return false;} },
+  async get(key)          { try { const j=await this._get({action:'get',key}); return j.ok?j.value:null; } catch{return null;} },
+  async set(key,value)    { try { await this._post({action:'set',key,data:value}); } catch(e){ console.warn('GS.set failed:',e.message); } },
+  async bulkSet(entries)  { try { const j=await this._post({action:'bulkSet',data:entries}); return j.ok===true; } catch{return false;} },
+  async bulkGet(keys)     { try { const j=await this._post({action:'bulkGet',keys}); return j.ok?j.values:{}; } catch{return {};} },
+  async backup()          { try { const j=await this._get({action:'backup'}); return j.ok?j.backup:null; } catch{return null;} },
+  async reset()           { try { await this._post({action:'reset'}); } catch{} },
+};
+
+// ── HIGH-LEVEL STORAGE API (S) ──
+// S.get / S.set are SYNCHRONOUS for UI speed using localStorage cache.
+// All writes are mirrored to Google Sheets asynchronously.
+// On first load (no cache), S.load() pulls everything from Sheets.
+
+const SKIP_KEYS = new Set(['gs_url','theme','data_version','last_boot','persist_test','ls_ok','ls_test']);
+
+const S = {
+  // Synchronous read — always from localStorage cache
+  get(k) {
     try {
-      fetch(GS_URL, {
-        method:'POST',
-        body: JSON.stringify({action:'set', key, data:value}),
-      }).catch(()=>{});
-    } catch {}
-  },
-  async get(key) {
-    if (!GS_URL) return null;
-    try {
-      const r = await fetch(GS_URL+'?action=get&key='+encodeURIComponent(key));
-      const j = await r.json();
-      return j.ok ? j.value : null;
+      const v = localStorage.getItem('mce_' + k);
+      return v && v !== 'undefined' && v !== 'null' ? JSON.parse(v) : null;
     } catch { return null; }
   },
+
+  // Write to localStorage immediately, then write to Sheets immediately (awaited)
+  // Returns a Promise — await S.set(...) to know when Sheets write completes
+  async set(k, v) {
+    // 1. localStorage first (instant, synchronous)
+    try {
+      if (v === null || v === undefined) {
+        localStorage.removeItem('mce_' + k);
+      } else {
+        localStorage.setItem('mce_' + k, JSON.stringify(v));
+      }
+    } catch(e) { console.warn('LS write failed:', k, e.message); }
+
+    // 2. Sheets write (awaited — not fire-and-forget)
+    if (GS_URL && !SKIP_KEYS.has(k) && v !== null && v !== undefined) {
+      try { await GS.set(k, v); } catch(e) { console.warn('GS.set failed:', k, e.message); }
+    }
+  },
+
+  // Synchronous set — writes to localStorage now, Sheets in background
+  // Use this in render functions and non-critical paths
+  setFast(k, v) {
+    try {
+      if (v === null || v === undefined) localStorage.removeItem('mce_' + k);
+      else localStorage.setItem('mce_' + k, JSON.stringify(v));
+    } catch {}
+    if (GS_URL && !SKIP_KEYS.has(k) && v !== null && v !== undefined) {
+      GS.set(k, v).catch(() => {});
+    }
+  },
+
+  del(k) {
+    try { localStorage.removeItem('mce_' + k); } catch {}
+    if (GS_URL) GS.set(k, null).catch(() => {});
+  },
+
+  // Pull ALL data from Sheets into localStorage
+  async load() {
+    if (!GS_URL) return false;
+    try {
+      const backup = await GS.backup();
+      if (!backup || typeof backup !== 'object') return false;
+      let count = 0;
+      Object.entries(backup).forEach(([k, v]) => {
+        if (!k || SKIP_KEYS.has(k)) return;
+        try { localStorage.setItem('mce_' + k, JSON.stringify(v)); count++; } catch {}
+      });
+      console.log('[ManuCost] Pulled', count, 'keys from Sheets');
+      return count > 0;
+    } catch(e) {
+      console.warn('[ManuCost] S.load failed:', e.message);
+      return false;
+    }
+  },
+
+  // Push all localStorage data to Sheets in one bulk call
   async push() {
     if (!GS_URL) return false;
-    // Collect all mce_ keys except URL and theme
     const entries = {};
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('mce_') && k !== 'mce_gs_url' && k !== 'mce_theme' && k !== 'mce_data_version')
-      .forEach(k => {
-        try { entries[k.replace('mce_','')] = JSON.parse(localStorage.getItem(k)); } catch {}
-      });
-    if (!Object.keys(entries).length) return true; // nothing to push
     try {
-      const r = await fetch(GS_URL, {
-        method:'POST',
-        body: JSON.stringify({action:'bulkSet', data:entries}),
-      });
-      if (!r.ok) throw new Error('HTTP '+r.status);
-      const j = await r.json();
-      return j.ok === true;
-    } catch(e) {
-      console.warn('GS.push failed:', e.message);
-      return false;
-    }
-  },
-  async pull() {
-    if (!GS_URL) return false;
-    try {
-      const r = await fetch(GS_URL+'?action=backup');
-      if (!r.ok) throw new Error('HTTP '+r.status);
-      const j = await r.json();
-      if (!j.ok || !j.backup) return false;
-      Object.entries(j.backup).forEach(([k,v]) => {
-        if (k && k !== 'gs_url' && k !== 'theme')
-          localStorage.setItem('mce_'+k, JSON.stringify(v));
-      });
-      return true;
-    } catch(e) {
-      console.warn('GS.pull failed:', e.message);
-      return false;
-    }
-  },
-  async reset() {
-    if (!GS_URL) return;
-    try { fetch(GS_URL,{method:'POST',body:JSON.stringify({action:'reset'})}); } catch {}
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('mce_') && !SKIP_KEYS.has(k.replace('mce_','')))
+        .forEach(k => {
+          try {
+            const val = localStorage.getItem(k);
+            if (val && val !== 'null' && val !== 'undefined') {
+              entries[k.replace('mce_', '')] = JSON.parse(val);
+            }
+          } catch {}
+        });
+    } catch {}
+    if (!Object.keys(entries).length) return true;
+    const ok = await GS.bulkSet(entries);
+    console.log('[ManuCost] Push:', Object.keys(entries).length, 'keys —', ok ? 'OK' : 'FAILED');
+    return ok;
   },
 };
 
-// ── LOCAL STORAGE WRAPPER (primary — always instant) ──
-const S = {
-  get(k)    { try { const v = localStorage.getItem('mce_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
-  set(k, v) {
-    // localStorage write is ALWAYS attempted — GS sync is best-effort only
-    try { localStorage.setItem('mce_'+k, JSON.stringify(v)); } catch(e) { console.warn('S.set localStorage failed:', k, e); }
-    try { if (GS_URL) GS.set(k, v); } catch(e) { /* GS sync failure is silent */ }
-  },
-  del(k)    { localStorage.removeItem('mce_'+k); }
-};
-
-// ── SYNC STATUS (shown in topbar) ──
-let _syncOK = null; // null=unknown, true=connected, false=offline
-async function checkSync() {
-  // Always ensure GS_URL is set to at least the default
-  if (!GS_URL) {
-    GS_URL = DEFAULT_GS_URL;
-    localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
-  }
-  setSyncBadge('checking');
-  const ok = await GS.ping();
-  _syncOK = ok;
-  setSyncBadge(ok ? 'on' : 'err');
-}
+// ── SYNC STATUS ──
+let _syncOK = null;
 function setSyncBadge(state) {
-  const el = document.getElementById('syncBadge');
-  if (!el) return;
-  const map = {
-    off:      ['☁ Not connected', 'background:#F8F8F8;color:#979593;border:1px solid #D1D1D1'],
-    checking: ['↻ Checking…',     'background:#FFF4CE;color:#CA5010;border:1px solid #F0C080'],
-    on:       ['☁ Sheets synced', 'background:#DFF6DD;color:#107C10;border:1px solid #A8D8A8'],
-    err:      ['⚠ Sheets offline','background:#FDE7E9;color:#A4262C;border:1px solid #F0B0B0'],
-  };
-  const [txt, style] = map[state] || map.off;
-  el.textContent = txt;
-  el.style.cssText = `font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;${style}`;
+  const b = document.getElementById('syncBadge');
+  if (!b) return;
+  const map = { on:{text:'● Sheets synced',cls:'b-green'}, off:{text:'○ Offline',cls:'b-orange'}, err:{text:'✕ Sync error',cls:'b-red'} };
+  const s = map[state] || map.off;
+  b.textContent = s.text; b.className = 'b ' + s.cls;
+  _syncOK = state === 'on';
 }
-
-// ╔══════════════════════════════════════════════════════════════╗
-// ║  AUTH SYSTEM — hashPw · checkPw · Session · Login · Nav     ║
-// ║  seedUsers · seedCurrencies · seedApprovalPolicies           ║
-// ╚══════════════════════════════════════════════════════════════╝
-
-// ── PASSWORD HASHING (FNV-style) ──
-function hashPw(pw) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < pw.length; i++) { h ^= pw.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
-  return 'h' + h.toString(16).padStart(8,'0') + pw.length;
-}
-function checkPw(plain, hash) { return hashPw(plain) === hash; }
-
-// ── SESSION MANAGEMENT ──
-let SESSION = null;
-function getSession() {
-  if (SESSION) return SESSION;
-  try { const s = sessionStorage.getItem('mce_session'); if (s) SESSION = JSON.parse(s); } catch(e){}
-  return SESSION;
-}
-function setSession(user) {
-  SESSION = { userId:user.id, username:user.username, name:user.name, role:user.role, loginTime:new Date().toISOString() };
-  sessionStorage.setItem('mce_session', JSON.stringify(SESSION));
-}
-function clearSession() { SESSION = null; sessionStorage.removeItem('mce_session'); }
-
-// ── ROLE-BASED ACCESS ──
-const ROLES = {
-  admin:      { level:5, label:'Administrator', desc:'Full system access — all modules, users, reset', color:'#0078D4', bg:'#EBF3FB', perms:'*' },
-  manager:    { level:4, label:'Manager',       desc:'All operations + approvals, no user admin',    color:'#5C2D91', bg:'#F3E9F8', perms:['dashboard','coa','journal','ledger','tb','po','grn','aging-ap','items','warehouses','stockledger','transfers','bom','workorders','jobcost','abc','customers','quotation','salesorder','invoices','aging-ar','employees','timesheets','payroll','pnl','bs','cf','rpt-hub','approvals','myrequests','assets','depreciation','projects','cashpos','bankaccounts'] },
-  accountant: { level:3, label:'Accountant',    desc:'Finance, GL, reports — no purchasing/HR',     color:'#107C10', bg:'#DFF6DD', perms:['dashboard','coa','journal','ledger','tb','aging-ap','aging-ar','pnl','bs','cf','rpt-hub','rpt-equity','rpt-ar-aging','rpt-ap-aging','rpt-budget','rpt-costvar','assets','depreciation','bankaccounts','bankrcon','cashpos','cashforecast','fiscalyear','periodclose','setup'] },
-  warehouse:  { level:2, label:'Warehouse',     desc:'Stock, GRN, transfers, work orders only',     color:'#CA5010', bg:'#FFF0E6', perms:['dashboard','items','warehouses','stockledger','transfers','bom','workorders','grn'] },
-  viewer:     { level:1, label:'Viewer',         desc:'Read-only access to reports and dashboard',   color:'#605E5C', bg:'#F3F2F1', perms:['dashboard','pnl','bs','cf','tb','rpt-hub'] },
-};
-
-// Pages that require write permission (not just view)
-const WRITE_PAGES = new Set(['journal','po','grn','transfers','workorders','invoices','salesorder','payroll','periodclose','users','setup']);
-function canAccess(page) {
-  const s = getSession();
-  if (!s) return false;
-  const role = ROLES[s.role];
-  if (!role) return false;
-  if (role.perms === '*') return true;          // admin sees everything
-  return role.perms.includes(page);
-}
-function canWrite() {
-  const s = getSession();
-  return s && ['admin','manager','accountant'].includes(s.role);
-}
-
-// nav() and navGuarded() — nav is defined above; navGuarded adds access check
-function navGuarded(page) {
-  if (!canAccess(page)) { toast('Access denied — insufficient permissions.', 'error'); return; }
-  nav(page);
-}
-
-// ── LOGIN SCREEN ──
-function showLogin() {
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('loginOv').style.display = 'flex';
-  const co = S.get('company') || {};
-  const titleEl = document.getElementById('loginCompanyTitle');
-  if (titleEl && co.name) titleEl.textContent = co.name;
-  const subEl = document.getElementById('loginCompanyName');
-  if (subEl && co.name) subEl.textContent = co.name + ' — ERP System';
-
-  // Detect private/incognito: write a key and immediately read it back
-  // If it fails or the persistence test key is gone, warn the user
-  const dbg = document.getElementById('loginDebug');
-  const warn = document.getElementById('privateModeWarn');
-  const persistTest = localStorage.getItem('mce_persist_test');
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('mce_')).length;
-
-  if (dbg) dbg.textContent = 'Storage: ' + keys + ' keys · ' + (co.name || 'no company') + (co._wizardComplete ? ' ✓' : ' (wizard incomplete)');
-
-  // Check if this appears to be a fresh load every time (private mode indicator)
-  const lastBoot = localStorage.getItem('mce_last_boot');
-  const now = Date.now();
-  localStorage.setItem('mce_last_boot', String(now));
-
-  if (warn) {
-    // If there was no previous boot record AND no company, likely private mode
-    const looksPrivate = !lastBoot && !co.name && keys <= 2;
-    warn.style.display = looksPrivate ? 'block' : 'none';
-  }
-
-  setTimeout(() => { const el = document.getElementById('loginUser'); if (el) el.focus(); }, 100);
-}
-
-function doLogin() {
-  const username = (document.getElementById('loginUser')?.value || '').trim().toLowerCase();
-  const password = document.getElementById('loginPass')?.value || '';
-  if (!username || !password) { toast('Enter username and password.', 'error'); return; }
-
-  let users = S.get('users') || [];
-
-  // ── SAFETY NET: no users in storage → recreate default admin ──
-  if (!users.length) {
-    const defaultAdmin = { id:'USR-001', name:'Administrator', username:'admin',
-      password:hashPw('Admin@1234'), role:'admin', dept:'Management',
-      email:'admin@company.sa', status:'Active', lastLogin:'—', created:today() };
-    S.set('users', [defaultAdmin]);
-    toast('Access restored. Use: admin / Admin@1234', 'info', 5000);
-    document.getElementById('loginUser').value = 'admin';
-    document.getElementById('loginPass').value = '';
-    document.getElementById('loginPass').focus();
-    return;
-  }
-
-  const user = users.find(u => u.username?.toLowerCase() === username && u.status === 'Active');
-  if (!user || !checkPw(password, user.password)) {
-    // Show hint with known credentials
-    const hint = document.getElementById('loginHint');
-    if (hint) { hint.style.display = 'block'; }
-    toast('Invalid credentials.', 'error');
-    document.getElementById('loginPass').value = '';
-    if (typeof audioAlert === 'function') audioAlert();
-    return;
-  }
-
-  // ── SUCCESS ──
-  const hint = document.getElementById('loginHint');
-  if (hint) hint.style.display = 'none';
-  setSession(user);
-  user.lastLogin = new Date().toLocaleString();
-  S.set('users', users);
-  document.getElementById('loginOv').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  updateUserPill();
-  initApp();
-  applyTheme();
-  if (typeof audioPostSuccess === 'function') audioPostSuccess();
-  toast('Welcome back, ' + user.name + '.', 'success');
-}
-
-function emergencyReset() {
-  // No confirm() — user clicked intentionally. Wipe and reload.
-  const theme = localStorage.getItem('mce_theme');
-  const gsUrl = localStorage.getItem('mce_gs_url');
-  Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
-  sessionStorage.clear();
-  if (theme) localStorage.setItem('mce_theme', theme);
-  if (gsUrl) localStorage.setItem('mce_gs_url', gsUrl);
-  localStorage.setItem('mce_reset_pending', '1');
-  location.reload();
-}
-
-function updateUserPill() {
-  const s = getSession(); if (!s) return;
-  const nameEl = document.getElementById('userPillName');
-  const roleEl = document.getElementById('userPillRole');
-  const ddName = document.getElementById('ddUserName');
-  const ddRole = document.getElementById('ddUserRole');
-  const ddEmail = document.getElementById('ddUserEmail');
-  const users = S.get('users') || [];
-  const user = users.find(u => u.id === s.userId) || {};
-  if (nameEl) nameEl.textContent = s.name || s.username;
-  if (roleEl) roleEl.textContent = (s.role || '').charAt(0).toUpperCase() + (s.role || '').slice(1);
-  if (ddName) ddName.textContent = s.name;
-  if (ddRole) ddRole.textContent = (s.role || '').charAt(0).toUpperCase() + (s.role||'').slice(1);
-  if (ddEmail) ddEmail.textContent = user.email || '';
-}
-
-function logout() {
-  clearSession();
-  document.getElementById('app').style.display = 'none';
-  showLogin();
-  toast('Logged out.', 'info', 2000);
-}
-
-// ── SEED USERS ──
-function seedUsers() {
-  if (S.get('users')) return;
-  // Default admin only — wizard will create the real admin with custom credentials
-  S.set('users', [
-    { id:'USR-001', name:'Administrator', username:'admin', password:hashPw('Admin@1234'),
-      role:'admin', dept:'Management', email:'admin@company.sa', status:'Active', lastLogin:'—', created:today() },
-  ]);
-}
-
-// ── SEED CURRENCIES ──
-const CURRENCY_MASTER = {
-  SAR:{ name:'Saudi Riyal',       symbol:'SAR', flag:'🇸🇦', decimals:2, position:'bef', isBase:true  },
-  USD:{ name:'US Dollar',         symbol:'$',   flag:'🇺🇸', decimals:2, position:'bef' },
-  EUR:{ name:'Euro',              symbol:'€',   flag:'🇪🇺', decimals:2, position:'bef' },
-  GBP:{ name:'British Pound',     symbol:'£',   flag:'🇬🇧', decimals:2, position:'bef' },
-  AED:{ name:'UAE Dirham',        symbol:'AED', flag:'🇦🇪', decimals:2, position:'bef' },
-  KWD:{ name:'Kuwaiti Dinar',     symbol:'KWD', flag:'🇰🇼', decimals:3, position:'bef' },
-  EGP:{ name:'Egyptian Pound',    symbol:'EGP', flag:'🇪🇬', decimals:2, position:'bef' },
-  JPY:{ name:'Japanese Yen',      symbol:'¥',   flag:'🇯🇵', decimals:0, position:'bef' },
-  CNY:{ name:'Chinese Yuan',      symbol:'¥',   flag:'🇨🇳', decimals:2, position:'bef' },
-  INR:{ name:'Indian Rupee',      symbol:'₹',   flag:'🇮🇳', decimals:2, position:'bef' },
-};
-function baseCurr() { const c = S.get('currencies')||[]; const b = c.find(x=>x.isBase); return b?.code||'SAR'; }
-function getRate(code) { const c = S.get('currencies')||[]; const x = c.find(r=>r.code===code); return x?.rate||1; }
-function toBase(amt, fromCode) { if(!fromCode||fromCode===baseCurr()) return amt; const r = getRate(fromCode); return amt * r; }
-function fromBase(amt, toCode)  { if(!toCode||toCode===baseCurr()) return amt; const r = getRate(toCode); return r>0?amt/r:amt; }
-function convert(amt, fromCode, toCode) { return fromBase(toBase(amt,fromCode),toCode); }
-function fC(amt, code, opts) {
-  if (amt == null || isNaN(amt)) return '—';
-  const meta = CURRENCY_MASTER[code||baseCurr()] || CURRENCY_MASTER[baseCurr()] || {symbol:code||'SAR',decimals:2,position:'bef'};
-  const abs = Math.abs(amt);
-  const formatted = abs.toLocaleString('en-US', {minimumFractionDigits:meta.decimals,maximumFractionDigits:meta.decimals});
-  const sym = meta.position==='bef' ? meta.symbol+' '+formatted : formatted+' '+meta.symbol;
-  return amt < 0 ? '('+sym+')' : sym;
-}
-function fCM(amt, code) {
-  if (!amt) return '—';
-  const abs = Math.abs(amt);
-  const suffix = abs>=1e9?'B':abs>=1e6?'M':abs>=1e3?'K':'';
-  const val = abs>=1e9?abs/1e9:abs>=1e6?abs/1e6:abs>=1e3?abs/1e3:abs;
-  const meta = CURRENCY_MASTER[code||baseCurr()]||{symbol:code||'SAR'};
-  return (amt<0?'(':'')+meta.symbol+' '+(val%1===0?val.toFixed(0):val.toFixed(1))+suffix+(amt<0?')':'');
-}
-// fN, fM, fC, fCM, baseCurr, getRate, toBase, fromBase, convert — defined above at top of file
-
-function seedCurrencies() {
-  if (S.get('currencies')) return;
-  S.set('currencies', [
-    { code:'SAR', name:'Saudi Riyal',   symbol:'SAR', rate:1,    isBase:true,  active:true  },
-    { code:'USD', name:'US Dollar',     symbol:'$',   rate:3.75, isBase:false, active:true  },
-    { code:'EUR', name:'Euro',          symbol:'€',   rate:4.08, isBase:false, active:true  },
-    { code:'GBP', name:'British Pound', symbol:'£',   rate:4.72, isBase:false, active:true  },
-    { code:'AED', name:'UAE Dirham',    symbol:'AED', rate:1.02, isBase:false, active:true  },
-    { code:'KWD', name:'Kuwaiti Dinar', symbol:'KWD', rate:12.2, isBase:false, active:false },
-  ]);
-}
-
-// ── SEED APPROVAL POLICIES ──
-function seedApprovalPolicies() {
-  if (S.get('aprPolicies')) return;
-  S.set('aprPolicies', [
-    { id:'APR-001', module:'gl', txType:'MANJE', name:'Manual Journal — Manager Approval', thresholdBase:5000,
-      tiers:[{level:1,roleName:'manager',limitBase:50000},{level:2,roleName:'admin',limitBase:999999999}], active:true },
-    { id:'APR-002', module:'procurement', txType:'PO', name:'Purchase Order Approval', thresholdBase:10000,
-      tiers:[{level:1,roleName:'manager',limitBase:100000},{level:2,roleName:'admin',limitBase:999999999}], active:true },
-    { id:'APR-003', module:'assets', txType:'DISPOSAL', name:'Asset Disposal — Executive Auth', thresholdBase:50000,
-      tiers:[{level:1,roleName:'admin',limitBase:999999999}], active:true },
-    { id:'APR-004', module:'payroll', txType:'PAYRUN', name:'Payroll Run Approval', thresholdBase:0,
-      tiers:[{level:1,roleName:'manager',limitBase:999999},{level:2,roleName:'admin',limitBase:999999999}], active:true },
-  ]);
-}
-
-function seedApprovalRequests() { if (S.get('aprRequests')) return; S.set('aprRequests', []); }
-
-function submitForApproval(module, txType, docRef, amount, desc) {
-  const policies = S.get('aprPolicies') || [];
-  const policy = policies.find(p => p.module===module && p.txType===txType && p.active && amount >= p.thresholdBase);
-  if (!policy) return { blocked:false };
-  const requests = S.get('aprRequests') || [];
-  const reqId = 'REQ-' + String(requests.length+1).padStart(3,'0');
-  const s = getSession();
-  requests.push({ id:reqId, module, txType, docRef, amount, desc, status:'pending', policyId:policy.id, policyName:policy.name, submittedBy:s?.userId||'SYSTEM', submittedAt:today(), tiers: policy.tiers.map(t=>({...t,status:'pending'})) });
-  S.set('aprRequests', requests);
-  appendAuditLog(module,'SUBMITTED_FOR_APPROVAL',docRef,{amount,policy:policy.name});
-  updateAprBell();
-  return { blocked:true, requestId:reqId, policyName:policy.name };
-}
-
-function actOnRequest(requestId, action, comment) {
-  const requests = S.get('aprRequests') || [];
-  const req = requests.find(r=>r.id===requestId);
-  if (!req) return;
-  const s = getSession();
-  const tier = req.tiers?.find(t=>t.status==='pending');
-  if (tier) { tier.status = action; tier.actedBy = s?.userId; tier.actedAt = today(); tier.comment = comment; }
-  const allApproved = req.tiers?.every(t=>t.status==='approve');
-  const anyRejected = req.tiers?.some(t=>t.status==='reject');
-  req.status = anyRejected ? 'rejected' : allApproved ? 'approved' : 'pending';
-  S.set('aprRequests', requests);
-  appendAuditLog(req.module, action.toUpperCase(), req.docRef, {comment});
-  updateAprBell();
-}
-
-function updateAprBell() {
-  const pending = (S.get('aprRequests')||[]).filter(r=>r.status==='pending').length;
-  const bell = document.getElementById('aprBellBtn');
-  const badge = document.getElementById('aprBellBadge');
-  if (bell) bell.title = pending + ' pending approvals';
-  if (badge) { badge.textContent = pending||''; badge.style.display = pending?'flex':'none'; }
+async function checkSync() {
+  if (!GS_URL) { setSyncBadge('off'); return; }
+  const ok = await GS.ping();
+  setSyncBadge(ok ? 'on' : 'err');
 }
 
 
@@ -2591,8 +2336,9 @@ function wSave(step){
     co.vat=gv('w_vat');co.industry=gv('w_ind');co.country=gv('w_country');
     co.phone=gv('w_phone');co.email=gv('w_email');co.website=gv('w_web');
     co.zip=gv('w_zip');co.address=gv('w_addr');
-    // Save immediately — persists even if user refreshes mid-wizard
+    // Write to localStorage immediately + Sheets async
     localStorage.setItem('mce_company', JSON.stringify(co));
+    GS.set('company', co).catch(()=>{});
   }
   if(step===3){co.brandColor=gv('w_brandColor')||'#0078D4';co.hdrStyle=gv('w_hdrStyle');S.set('company',co);}
   if(step===4){co.fyType=gv('w_fyType');co.fyYear=parseInt(gv('w_fyYear'))||2025;co.period=gv('w_period');co.lock=gv('w_lock');co.weekStart=gv('w_weekstart');co.dateFormat=gv('w_dateformat');S.set('company',co);}
@@ -2604,34 +2350,50 @@ function wSave(step){
 function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchApp();return;}wStep++;wRender();if(wStep===WS)wFillDoneScreen();}
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
-function launchApp(){
-  // Read current company and mark wizard complete
+async function launchApp(){
+  // 1. Save company with _wizardComplete flag — await Sheets write
   var co = {};
   try { co = JSON.parse(localStorage.getItem('mce_company') || '{}'); } catch(e) {}
   co._wizardComplete = true;
   co._launchedAt = new Date().toISOString();
 
-  // Write directly to localStorage — bypass S.set/GS.set entirely for this critical save
+  // Show saving indicator
+  const wizBtn = document.getElementById('wNextBtn');
+  if (wizBtn) { wizBtn.disabled = true; wizBtn.textContent = '💾 Saving to Sheets…'; }
+
+  // Write company to localStorage + Sheets (awaited)
   localStorage.setItem('mce_company', JSON.stringify(co));
   localStorage.setItem('mce_seeded', 'true');
   localStorage.setItem('mce_data_version', '6');
 
-  // Wipe leftover demo/transaction data
+  // Push to Sheets immediately and wait
+  if (GS_URL) {
+    try {
+      await GS.set('company', co);
+      await GS.set('seeded', true);
+      console.log('[ManuCost] launchApp: company saved to Sheets ✓');
+    } catch(e) {
+      console.warn('[ManuCost] launchApp: Sheets write failed:', e.message);
+    }
+  }
+
+  // 2. Wipe leftover demo data
   ['journals','glLedger','grns','pos','invoices','salesorders','quotes',
    'transfers','workorders','timesheets','boms','fixedAssets','cwipProjects',
    'assetDisposals','bankAccounts','voyages','projects','icTransactions',
    'auditLog','allocRules','aprRequests','syncLog','trialBalanceData',
    'suppliers','customers','payterms','items','stock'
-  ].forEach(function(k) { localStorage.removeItem('mce_'+k); });
+  ].forEach(k => localStorage.removeItem('mce_' + k));
 
-  // Seed structural data
+  // 3. Seed structural data
   try { seedCurrencies(); }       catch(e) {}
   try { seedFiscalData(); }       catch(e) {}
   try { seedApprovalPolicies(); } catch(e) {}
 
-  // Verify the save worked
-  var saved = localStorage.getItem('mce_company');
-  console.log('[ManuCost] launchApp: company saved =', saved ? 'YES' : 'NO');
+  // 4. Push everything to Sheets
+  if (GS_URL) {
+    try { await S.push(); } catch(e) {}
+  }
 
   document.getElementById('wizOv').style.display = 'none';
   showLogin();
@@ -6710,15 +6472,23 @@ function connectSheets() {
   GS.ping().then(ok => {
     _syncOK = ok;
     if (ok) {
-      showGSMsg('ok', '✓ Connected! Your ERP data will sync to Google Sheets automatically.');
+      showGSMsg('ok', '✓ Connected! Pushing all data to Sheets now…');
       const badge = document.getElementById('setupSyncBadge');
       if (badge) { badge.textContent = '● Connected'; badge.className = 'b b-green'; }
       setSyncBadge('on');
       const sa = document.getElementById('gsSyncActions');
       if (sa) sa.style.display = 'grid';
-      if (typeof renderSyncLog === 'function') renderSyncLog();
+      // Auto-push all data immediately after connecting
+      S.push().then(pushed => {
+        if (pushed) {
+          showGSMsg('ok', '✓ Connected and all data pushed to Google Sheets!');
+          toast('✓ Connected to Sheets and data saved!', 'success', 4000);
+        } else {
+          showGSMsg('ok', '✓ Connected. Use Push button to sync data.');
+        }
+      });
     } else {
-      showGSMsg('err', '✗ Connection failed. Make sure: 1) Deployment type = Web App, 2) Execute as = Me, 3) Who has access = Anyone (not "with Google account").');
+      showGSMsg('err', '✗ Connection failed. Make sure: 1) Type = Web App, 2) Execute as = Me, 3) Who has access = Anyone');
       setSyncBadge('err');
     }
   }).catch(e => {
@@ -6726,7 +6496,6 @@ function connectSheets() {
     setSyncBadge('err');
   });
 }
-
 function testSheets() {
   showGSMsg('ok', '↻ Testing connection…');
   GS.ping().then(ok => {
@@ -6861,26 +6630,17 @@ function doLogout() { logout(); }
 function saveSetup() { saveCompany(); }
 function runAH() { toast('Approval hierarchy saved.', 'success'); }
 function pushToSheets() {
-  if (!GS_URL) { toast('Go to Company Setup → Google Sheets and connect first.', 'error'); return; }
+  if (!GS_URL) { toast('Connect Google Sheets first in Company Setup.', 'error'); return; }
   const btn = document.querySelector('[onclick="pushToSheets()"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
-  // Count keys being pushed
-  const keyCount = Object.keys(localStorage).filter(k=>k.startsWith('mce_')&&k!=='mce_gs_url'&&k!=='mce_theme'&&k!=='mce_data_version').length;
-  toast('Pushing ' + keyCount + ' data keys to Google Sheets…', 'info', 3000);
-  GS.push().then(ok => {
+  toast('Pushing all data to Google Sheets…', 'info', 3000);
+  S.push().then(ok => {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8593; Push All Data to Sheets'; }
-    if (ok) {
-      toast('✓ All data synced to Google Sheets (' + keyCount + ' keys).', 'success', 4000);
-      setSyncBadge('on');
-    } else {
-      toast('⚠ Push failed. Check Settings → Company Setup → Google Sheets connection.', 'error', 6000);
-      setSyncBadge('err');
-    }
-    if (typeof renderSyncLog === 'function') renderSyncLog();
+    if (ok) { toast('✓ All data pushed to Sheets.', 'success', 4000); setSyncBadge('on'); }
+    else { toast('Push failed. Check your Apps Script URL is deployed for "Anyone".', 'error', 6000); setSyncBadge('err'); }
   }).catch(e => {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8593; Push All Data to Sheets'; }
     toast('Push error: ' + (e.message||'Unknown'), 'error', 5000);
-    setSyncBadge('err');
   });
 }
 function pullFromSheets() {
@@ -6888,20 +6648,16 @@ function pullFromSheets() {
   const btn = document.querySelector('[onclick="pullFromSheets()"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Pulling…'; }
   toast('Pulling all data from Google Sheets…', 'info', 3000);
-  GS.pull().then(ok => {
+  S.load().then(ok => {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8595; Pull All Data from Sheets'; }
-    if (ok) {
-      toast('✓ Data pulled successfully. Reloading…', 'success', 1500);
-      setTimeout(() => location.reload(), 1500);
-    } else {
-      toast('Pull failed. Check your Apps Script URL and that deployment is set to "Anyone".', 'error', 5000);
-      setSyncBadge('err');
-    }
+    if (ok) { toast('✓ Data pulled. Reloading…', 'success', 1500); setTimeout(() => location.reload(), 1500); }
+    else { toast('Pull failed. Make sure Sheets is connected and has data.', 'error', 5000); }
   }).catch(e => {
     if (btn) { btn.disabled = false; btn.innerHTML = '&#8595; Pull All Data from Sheets'; }
-    toast('Pull error: ' + e.message, 'error', 5000);
+    toast('Pull error: ' + (e.message||'Unknown'), 'error', 5000);
   });
 }
+
 function exportApprovalPolicy() { exportReport('approvals'); }
 
 // ── USER MANAGEMENT ──
@@ -7173,59 +6929,135 @@ const mUserTemplates = {
 // Each step wrapped individually — one failure never blocks the rest
 (function boot() {
 
-  // ── 1. Verify localStorage works ──
+  // ── Step 1: Detect storage availability ──
+  var hasLS = false;
   try {
-    localStorage.setItem('mce_ls_ok', '1');
-    if (localStorage.getItem('mce_ls_ok') !== '1') throw new Error('read-back failed');
-    localStorage.removeItem('mce_ls_ok');
-  } catch(e) {
-    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif"><h2 style="color:red">Storage Error</h2><p>localStorage is blocked. Please disable private/incognito mode.</p><p>' + e.message + '</p></div>';
+    localStorage.setItem('mce_test', '1');
+    hasLS = localStorage.getItem('mce_test') === '1';
+    localStorage.removeItem('mce_test');
+  } catch(e) { hasLS = false; }
+
+  if (!hasLS) {
+    // localStorage blocked (rare) — GS-only mode notice
+    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;text-align:center"><h2>⚠ Storage Blocked</h2><p>Please disable private/incognito mode or allow cookies, then reload.</p></div>';
     return;
   }
 
-  // ── 2. Handle reset ──
+  // ── Step 2: Handle reset flag ──
   if (localStorage.getItem('mce_reset_pending')) {
-    var t = localStorage.getItem('mce_theme');
-    var g = localStorage.getItem('mce_gs_url');
-    // Nuclear wipe
-    for (var key in localStorage) { if (key.startsWith('mce_')) localStorage.removeItem(key); }
+    var _t = localStorage.getItem('mce_theme');
+    var _g = localStorage.getItem('mce_gs_url');
+    try { Object.keys(localStorage).forEach(function(k){ if(k.startsWith('mce_')) localStorage.removeItem(k); }); } catch(e){}
     sessionStorage.clear();
-    if (t) localStorage.setItem('mce_theme', t);
-    localStorage.setItem('mce_gs_url', g || DEFAULT_GS_URL);
+    if (_t) localStorage.setItem('mce_theme', _t);
+    localStorage.setItem('mce_gs_url', _g || DEFAULT_GS_URL);
+    GS_URL = _g || DEFAULT_GS_URL;
     try { applyTheme(); } catch(e) {}
     document.getElementById('wizOv').style.display = 'flex';
     try { wRender(); } catch(e) {}
     return;
   }
 
-  // ── 3. Seed only if needed (each function is internally guarded) ──
-  try { seedUsers(); }           catch(e) {}
-  try { seedCurrencies(); }      catch(e) {}
-  try { seedFiscalData(); }      catch(e) {}
-  try { seedApprovalPolicies(); }catch(e) {}
-  try { applyTheme(); }          catch(e) {}
-
-  // ── 4. Read company ──
+  // ── Step 3: Check if we have a company in localStorage cache ──
   var co = null;
   try { co = S.get('company'); } catch(e) {}
 
-  // ── 5. Decide ──
-  if (!co || !co.name || !co._wizardComplete) {
-    // No wizard-complete company — show wizard
-    document.getElementById('wizOv').style.display = 'flex';
-    try { wRender(); } catch(e) {}
+  var hasCompany = co && co.name && co._wizardComplete;
+  console.log('[ManuCost] Boot: localStorage company =', hasCompany ? co.name : 'none');
+
+  if (hasCompany) {
+    // ── Fast path: localStorage cache is populated ──
+    try { seedUsers(); }           catch(e) {}
+    try { seedCurrencies(); }      catch(e) {}
+    try { seedFiscalData(); }      catch(e) {}
+    try { seedApprovalPolicies(); }catch(e) {}
+    try { applyTheme(); }          catch(e) {}
+    showAppOrLogin();
+    // Silently sync with Sheets in background
+    setTimeout(function(){ try { checkSync(); } catch(e){} }, 1000);
     return;
   }
 
-  // Company exists — check session
-  var sess = null;
-  try { sess = getSession(); } catch(e) {}
+  // ── Slow path: no company in localStorage ──
+  // Try to load from Google Sheets before showing wizard
+  console.log('[ManuCost] Boot: no local data, checking Google Sheets...');
+  showLoadingScreen('Checking Google Sheets for your data…');
 
-  if (sess) {
-    document.getElementById('app').style.display = 'flex';
-    try { updateUserPill(); initApp(); applyTheme(); } catch(e) { console.error('initApp error:', e); }
-  } else {
-    try { showLogin(); } catch(e) {}
+  S.load().then(function(loaded) {
+    if (loaded) {
+      try { co = S.get('company'); } catch(e) {}
+      hasCompany = co && co.name && co._wizardComplete;
+    }
+
+    console.log('[ManuCost] Boot: after Sheets load, company =', hasCompany ? co.name : 'none');
+    hideLoadingScreen();
+
+    if (hasCompany) {
+      // Loaded from Sheets — now have data
+      try { seedUsers(); }           catch(e) {}
+      try { seedCurrencies(); }      catch(e) {}
+      try { seedFiscalData(); }      catch(e) {}
+      try { seedApprovalPolicies(); }catch(e) {}
+      try { applyTheme(); }          catch(e) {}
+      showAppOrLogin();
+    } else {
+      // Truly new — show wizard
+      try { seedUsers(); }           catch(e) {}
+      try { seedCurrencies(); }      catch(e) {}
+      try { seedFiscalData(); }      catch(e) {}
+      try { seedApprovalPolicies(); }catch(e) {}
+      try { applyTheme(); }          catch(e) {}
+      document.getElementById('wizOv').style.display = 'flex';
+      try { wRender(); } catch(e) {}
+    }
+  }).catch(function(e) {
+    console.warn('[ManuCost] Sheets load failed:', e);
+    hideLoadingScreen();
+    try { applyTheme(); } catch(e2) {}
+    document.getElementById('wizOv').style.display = 'flex';
+    try { wRender(); } catch(e2) {}
+  });
+
+  function showAppOrLogin() {
+    var sess = null;
+    try { sess = getSession(); } catch(e) {}
+    if (sess) {
+      document.getElementById('app').style.display = 'flex';
+      try { updateUserPill(); initApp(); applyTheme(); } catch(e){ console.error('initApp:', e.message); }
+    } else {
+      try { showLogin(); } catch(e) {}
+    }
+  }
+
+  function showLoadingScreen(msg) {
+    var el = document.getElementById('bootLoader');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'bootLoader';
+      el.style.cssText = 'position:fixed;inset:0;background:var(--surface,#f8f9fa);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px';
+      el.innerHTML = '<div style="font-size:40px">🏭</div>'
+        + '<div style="font-size:18px;font-weight:600;color:var(--blue,#0078D4)">ManuCost ERP</div>'
+        + '<div id="bootLoaderMsg" style="font-size:13px;color:#666"></div>'
+        + '<div style="width:200px;height:3px;background:#e0e0e0;border-radius:3px;overflow:hidden">'
+        + '<div style="height:100%;background:var(--blue,#0078D4);border-radius:3px;animation:bootPulse 1.2s ease-in-out infinite"></div></div>'
+        + '<div style="font-size:11px;color:#aaa;margin-top:8px">Connecting to Google Sheets…</div>';
+      document.body.appendChild(el);
+      // Add animation
+      if (!document.getElementById('bootPulseStyle')) {
+        var style = document.createElement('style');
+        style.id = 'bootPulseStyle';
+        style.textContent = '@keyframes bootPulse{0%{width:20%}50%{width:80%}100%{width:20%}}';
+        document.head.appendChild(style);
+      }
+    }
+    var msgEl = document.getElementById('bootLoaderMsg');
+    if (msgEl) msgEl.textContent = msg || 'Loading…';
+    el.style.display = 'flex';
+  }
+
+  function hideLoadingScreen() {
+    var el = document.getElementById('bootLoader');
+    if (el) el.style.display = 'none';
   }
 
 })();
