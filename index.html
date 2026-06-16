@@ -3372,7 +3372,7 @@ const mTemplates={
     save:()=>{closeM();toast('Account added.','success');renderCOA();}},
   mJE:{title:'New Journal Entry',saveLabel:'Post Entry',
 body:()=>`
-<div class="fr fr3">${inp('JE Number','mje_id','text','Auto-generated',autoJENum())}${inp('Date','mje_d','date','',today())}${selV('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation','Treasury','Intercompany'],'Manual')}</div>
+<div class="fr fr3">${('<div class="fg"><label class="fl">JE Number</label><input class="fc" id="mje_id" type="text" readonly value="'+autoJENum()+'" style="background:var(--surface2);color:var(--blue);cursor:default;font-weight:700;font-family:Consolas,monospace"></div>')}${inp('Date','mje_d','date','',today())}${selV('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation','Treasury','Intercompany'],'Manual')}</div>
 <div class="fg mb10"><label class="fl">Narration / Description <span style="color:var(--red)">*</span></label><input class="fc" id="mje_desc" placeholder="Describe this journal entry — purpose, reference, period"></div>
 <div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px">
   <span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span>
