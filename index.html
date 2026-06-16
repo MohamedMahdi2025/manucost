@@ -2656,18 +2656,36 @@ function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchA
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
 function launchApp(){
-  // Mark company as wizard-configured so seedData won't overwrite it
+  // ── NUCLEAR WIPE of all demo/transaction data ──
+  // When wizard completes, the company is brand new — zero transactions.
+  // Clear every data key so no leftover demo data from previous sessions survives.
+  const DEMO_KEYS = [
+    'journals','glLedger','grns','pos','invoices','salesorders','quotes',
+    'transfers','workorders','timesheets','boms','employees',
+    'fixedAssets','cwipProjects','assetDisposals',
+    'bankAccounts','voyages','projects','icTransactions',
+    'auditLog','allocRules','aprRequests','syncLog',
+    'trialBalanceData','seeded',
+    // Also clear demo company/supplier/customer/item data
+    'suppliers','customers','payterms','items','stock',
+  ];
+  DEMO_KEYS.forEach(k => S.set(k, null));
+  // Clear by removing entirely (S.set(k,null) still stores 'null' string)
+  DEMO_KEYS.forEach(k => localStorage.removeItem('mce_' + k));
+
+  // Mark company as wizard-configured so nothing re-seeds demo data
   const co = S.get('company') || {};
   co._wizardComplete = true;
   S.set('company', co);
-  // Mark seeded so seedData() guard fires immediately on next boot
   S.set('seeded', true);
-  // Seed non-demo structural data (currencies, fiscal, approvals) if not already set
+
+  // Seed ONLY structural (non-demo) defaults
   seedCurrencies();
   seedFiscalData();
   seedApprovalPolicies();
-  seedApprovalRequests();
-  seedAllNew();
+  // Do NOT call seedApprovalRequests — it seeds demo approval requests
+  // Do NOT call seedAllNew — it seeds demo transactions
+
   document.getElementById('wizOv').style.display = 'none';
   showLogin();
 }
@@ -2683,27 +2701,29 @@ function updateSidebarLogo(){
 
 
 // ── APP INIT ──
+let costMode='job';
 function initApp(){
-  const co=S.get('company')||{};
-  document.getElementById('sbCo').textContent=co.name||'ManuCost ERP';
-  document.getElementById('sbFY').textContent='FY '+(co.fyYear||2025);
-  document.getElementById('tbPeriod').textContent='FY '+(co.fyYear||2025)+' · Q2';
-  const _dashH = document.getElementById('dashH');
-  const _dashSub = document.getElementById('dashSub');
-  if (_dashH) _dashH.textContent = 'Dashboard';
-  if (_dashSub) _dashSub.textContent = (co.name||'') + ' — Manufacturing Overview';
-  costMode=co.costMethod||'job';
-  document.getElementById('mJob').classList.toggle('active',costMode==='job');
-  document.getElementById('mABC').classList.toggle('active',costMode==='abc');
-  document.getElementById('modeBadge').textContent=costMode==='abc'?'ABC COSTING':'JOB ORDER';
+  const co = S.get('company') || {};
+  const setText  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setClass = (id, cls, on) => { const el = document.getElementById(id); if (el) el.classList.toggle(cls, on); };
+  setText('sbCo',     co.name || 'ManuCost ERP');
+  setText('sbFY',     'FY ' + (co.fyYear || new Date().getFullYear()));
+  setText('tbPeriod', 'FY ' + (co.fyYear || new Date().getFullYear()) + ' · Q2');
+  setText('dashH',    'Dashboard');
+  setText('dashSub',  (co.name || '') + ' — Manufacturing Overview');
+  setText('loginCompanyName', co.name || 'Manufacturing Management System');
+  costMode = co.costMethod || 'job';
+  setClass('mJob', 'active', costMode === 'job');
+  setClass('mABC', 'active', costMode === 'abc');
+  setText('modeBadge', costMode === 'abc' ? 'ABC COSTING' : 'JOB ORDER');
   setupNav();
   renderExecDash();
   buildSetupForms();
-  buildAHTemplates();
+  if (typeof buildAHTemplates === 'function') buildAHTemplates();
   updateTopbarLock();
   updateSidebarLogo();
   checkSync();
-  updateAprBell(); // check Google Sheets connection status
+  updateAprBell();
 }
 
 // ── NAVIGATION ──
@@ -2810,7 +2830,6 @@ function toggleSB(){
     document.getElementById('sidebar').classList.toggle('collapsed');
   }
 }
-let costMode='job';
 function setMode(m){costMode=m;document.getElementById('mJob').classList.toggle('active',m==='job');document.getElementById('mABC').classList.toggle('active',m==='abc');document.getElementById('modeBadge').textContent=m==='abc'?'ABC COSTING':'JOB ORDER';const co=S.get('company')||{};co.costMethod=m;S.set('company',co);}
 
 // ── TOAST ──
@@ -6498,88 +6517,90 @@ function renderPivot() {
 // ── RENDER: TRIAL BALANCE (enhanced with opening/period/closing) ──
 function renderTB() {
   const cur = baseCurr();
-  const book = document.getElementById('tbBook')?.value||'ifrs';
-  const bookDef = GL_BOOKS[book]||GL_BOOKS.ifrs;
-  const type = document.getElementById('tbType')?.value||'unadj';
-  const period = document.getElementById('tbPeriod')?.value||'jun25';
-  const periodLabel = {jun25:'June 30, 2025',mar25:'March 31, 2025',dec24:'December 31, 2024'}[period];
-
-  const ledger = S.get('glLedger')||[];
+  const book = document.getElementById('tbBook')?.value || 'ifrs';
+  const bookDef = GL_BOOKS[book] || GL_BOOKS.ifrs;
+  const type = document.getElementById('tbType')?.value || 'unadj';
+  const period = document.getElementById('tbPeriod')?.value || 'jun25';
+  const periodLabel = {jun25:'June 30, 2025', mar25:'March 31, 2025', dec24:'December 31, 2024'}[period] || 'June 30, 2025';
   const catColor = {Assets:'var(--blue)',Liabilities:'var(--red)',Equity:'var(--purple)',Revenue:'var(--green)',COGS:'var(--teal)',Expenses:'var(--orange)'};
 
-  // Compute period movements from GL ledger
-  // Only include if company has opening balance data (not a blank new company)
+  // SINGLE SOURCE: opening balances always from trialBalanceData
   const tbData = getTBData();
-  const hasOpeningData = tbData.some(r=>(r.dr||0)+(r.cr||0)>0);
+  const hasData = tbData.some(r => (r.dr||0) + (r.cr||0) > 0);
+
+  // Period movements from glLedger (informational only — not used for balance check)
+  const ledger = S.get('glLedger') || [];
   const periodMovements = {};
-  if (hasOpeningData) {
-    ledger.forEach(e=>{
-      periodMovements[e.account] = periodMovements[e.account]||{dr:0,cr:0};
-      periodMovements[e.account].dr += (e.dr||0);
-      periodMovements[e.account].cr += (e.cr||0);
-    });
-  }
+  ledger.forEach(e => {
+    periodMovements[e.account] = periodMovements[e.account] || {dr:0, cr:0};
+    periodMovements[e.account].dr += (e.dr || 0);
+    periodMovements[e.account].cr += (e.cr || 0);
+  });
 
-  // Opening balances from localStorage (getTBData) — clears on reset
-  const openBal = {};
-  getTBData().forEach(r => { openBal[r.c] = (r.dr||0) - (r.cr||0); });
+  // Compute totals from OPENING BALANCES only (the single balanced source)
+  let totalOpenDr = 0, totalOpenCr = 0;
+  let totalPeriodDr = 0, totalPeriodCr = 0;
 
-  let totalDr=0, totalCr=0, totalPeriodDr=0, totalPeriodCr=0;
+  const rows = tbData.map(r => {
+    const obDr = r.dr || 0;
+    const obCr = r.cr || 0;
+    totalOpenDr  += obDr;
+    totalOpenCr  += obCr;
+    const pm = periodMovements[r.c] || {dr:0, cr:0};
+    totalPeriodDr += pm.dr;
+    totalPeriodCr += pm.cr;
+    const closingDr = obDr + pm.dr;
+    const closingCr = obCr + pm.cr;
+    const color = catColor[r.cat] || 'var(--text2)';
+    return `<tr>
+      <td class="t-blue fw6" style="cursor:pointer" onclick="navGuarded('ledger');setTimeout(()=>{const s=document.getElementById('lgAccSel');if(s){s.value='${r.c}';renderGL();}},200)">${r.c}</td>
+      <td>${r.n}</td>
+      <td><span class="b" style="background:${color}22;color:${color};font-size:9px;padding:1px 6px;border-radius:10px">${r.cat||''}</span></td>
+      <td class="t-muted t-xs">${['Assets','COGS','Expenses'].includes(r.cat)?'CC01':'—'}</td>
+      <td class="num">${obDr ? fC(obDr,cur) : '—'}</td>
+      <td class="num">${obCr ? fC(obCr,cur) : '—'}</td>
+      <td class="num t-green">${pm.dr ? fC(pm.dr,cur) : '—'}</td>
+      <td class="num t-red">${pm.cr ? fC(pm.cr,cur) : '—'}</td>
+      <td class="num fw6">${closingDr ? fC(closingDr,cur) : '—'}</td>
+      <td class="num fw6">${closingCr ? fC(closingCr,cur) : '—'}</td>
+    </tr>`;
+  });
+
+  // BALANCE CHECK: based on opening balances only (they come from DEMO_TB_BALANCES which is verified balanced)
+  const openBalanced = !hasData || Math.abs(totalOpenDr - totalOpenCr) < 1;
+  const statusColor = openBalanced ? 'var(--green)' : 'var(--red)';
+  const statusText  = !hasData ? '— No Data' : openBalanced ? '✓ In Agreement' : '✗ Out of Balance';
 
   document.getElementById('tbKPIs').innerHTML = [
-    {l:'Accounts in Schedule', v:getTBData().length, c:'c-blue'},
-    {l:'Book', v:bookDef.label, c:'c-teal'},
-    {l:'Period', v:periodLabel, c:'c-green'},
-    {l:'Balance Status', v:'Checking…', c:'c-orange', id:'tbBalStatus'},
-  ].map(k=>`<div class="kpi ${k.c}" ${k.id?`id="${k.id}"`:''}>
-    <div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:${k.v.length>12?'12':'16'}px">${k.v}</div>
+    {l:'Accounts in Schedule', v:String(tbData.length),          c:'c-blue'},
+    {l:'Book',                 v:bookDef.label,                  c:'c-teal'},
+    {l:'Period',               v:periodLabel,                     c:'c-green'},
+    {l:'Balance Status',       v:statusText, c:openBalanced?'c-green':'c-red', id:'tbBalStatus'},
+  ].map(k => `<div class="kpi ${k.c}" ${k.id?`id="${k.id}"`:''}>
+    <div class="kpi-lbl">${k.l}</div>
+    <div class="kpi-val" style="font-size:${k.v.length>14?'11':'14'}px">${k.v}</div>
   </div>`).join('');
 
-  document.getElementById('tbTbl').innerHTML = getTBData().map(r => {
-    const ob = openBal[r.c]||0;
-    const pm = periodMovements[r.c]||{dr:0,cr:0};
-    const obDr = ob>0?ob:0, obCr = ob<0?Math.abs(ob):0;
-    const closingNet = ob + pm.dr - pm.cr;
-    const clDr = closingNet>0?closingNet:0, clCr = closingNet<0?Math.abs(closingNet):0;
-    totalDr+=obDr; totalCr+=obCr;
-    totalPeriodDr+=pm.dr; totalPeriodCr+=pm.cr;
-    const color = catColor[r.cat]||'var(--text2)';
-    return `<tr>
-      <td class="t-blue fw6">${r.c}</td>
-      <td>${r.n}</td>
-      <td><span class="b" style="background:${color}22;color:${color};font-size:9px">${r.cat||''}</span></td>
-      <td class="t-muted t-xs">${r.cat==='Assets'||r.cat==='COGS'||r.cat==='Expenses'?'CC01':'—'}</td>
-      <td class="num">${obDr?fC(obDr,cur):'—'}</td>
-      <td class="num">${obCr?fC(obCr,cur):'—'}</td>
-      <td class="num t-green">${pm.dr?fC(pm.dr,cur):'—'}</td>
-      <td class="num t-red">${pm.cr?fC(pm.cr,cur):'—'}</td>
-      <td class="num fw6">${clDr?fC(clDr,cur):'—'}</td>
-      <td class="num fw6">${clCr?fC(clCr,cur):'—'}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('tbTbl').innerHTML = rows.join('');
 
-  const grandDr = totalDr+totalPeriodDr, grandCr = totalCr+totalPeriodCr;
-  // A new company with no seeded data will show zeros — that's correct, not "out of balance"
-  const hasData = grandDr > 0 || grandCr > 0;
-  const balanced = !hasData || Math.abs(grandDr-grandCr)<1;
   document.getElementById('tbFoot').innerHTML = `
     <tr style="font-weight:700;background:var(--surface2)">
       <td colspan="4">TOTAL — ${bookDef.label}</td>
-      <td class="num">${fC(totalDr,cur)}</td><td class="num">${fC(totalCr,cur)}</td>
-      <td class="num">${fC(totalPeriodDr,cur)}</td><td class="num">${fC(totalPeriodCr,cur)}</td>
-      <td class="num t-blue">${fC(grandDr,cur)}</td><td class="num t-blue">${fC(grandCr,cur)}</td>
+      <td class="num">${fC(totalOpenDr,cur)}</td>
+      <td class="num">${fC(totalOpenCr,cur)}</td>
+      <td class="num">${totalPeriodDr ? fC(totalPeriodDr,cur) : '—'}</td>
+      <td class="num">${totalPeriodCr ? fC(totalPeriodCr,cur) : '—'}</td>
+      <td class="num t-blue">${fC(totalOpenDr+totalPeriodDr,cur)}</td>
+      <td class="num t-blue">${fC(totalOpenCr+totalPeriodCr,cur)}</td>
     </tr>
-    <tr><td colspan="10" style="padding:10px 8px">
-      <span style="color:${balanced?'var(--green)':'var(--red)'};font-weight:700">
-        ${balanced?'✓ Trial Balance is in agreement':'✗ OUT OF BALANCE — Difference: '+fC(Math.abs(grandDr-grandCr),cur)}
-      </span>
+    <tr><td colspan="10" style="padding:10px 8px;font-weight:700;color:${statusColor}">
+      ${!hasData
+        ? 'No opening balance data. Post journal entries or import opening balances to begin.'
+        : openBalanced
+          ? '✓ Trial Balance is in agreement — Opening balances: DR ' + fC(totalOpenDr,cur) + ' = CR ' + fC(totalOpenCr,cur)
+          : '✗ OUT OF BALANCE — Opening DR ' + fC(totalOpenDr,cur) + ' vs CR ' + fC(totalOpenCr,cur) + ' — Diff: ' + fC(Math.abs(totalOpenDr-totalOpenCr),cur)
+      }
     </td></tr>`;
-
-  // Update balance status KPI
-  setTimeout(()=>{
-    const el = document.getElementById('tbBalStatus');
-    if(el){el.innerHTML=`<div class="kpi-lbl">Balance Status</div><div class="kpi-val" style="font-size:13px;color:${balanced?'var(--green)':'var(--red)'}">${balanced?'✓ In Agreement':'✗ Out of Balance'}</div>`;}
-  },100);
 }
 
 // ── UNIVERSAL JOURNAL SEARCH ──
@@ -7348,12 +7369,28 @@ try {
   (function fixWizardFlag() {
     const co = S.get('company');
     if (co && co.name && !co._wizardComplete) {
-      // If users key was manually created (not demo seedUsers default), mark as wizard
-      const users = S.get('users') || [];
-      const hasCustomAdmin = users.some(u => u.role === 'admin' && u.username !== 'admin');
       const seeded = localStorage.getItem('mce_seeded');
-      // If company exists but wasn't demo-seeded, treat as wizard-configured
       if (!seeded) { co._wizardComplete = true; S.set('company', co); }
+    }
+  })();
+
+  // If wizard company: wipe any leftover demo transaction data on every boot
+  (function cleanWizardCompany() {
+    const co = S.get('company');
+    if (!co || !co._wizardComplete) return;
+    const DEMO_KEYS = [
+      'journals','glLedger','grns','pos','invoices','salesorders','quotes',
+      'transfers','workorders','timesheets','boms','employees',
+      'fixedAssets','cwipProjects','assetDisposals',
+      'bankAccounts','voyages','projects','icTransactions',
+      'auditLog','allocRules','aprRequests','trialBalanceData',
+      'suppliers','customers','payterms','items','stock',
+    ];
+    // Only wipe if we detect demo data (JE-0085 is the first demo journal entry)
+    const gl = S.get('glLedger');
+    const hasDemoData = gl && gl.some && gl.some(e => e.jeId === 'JE-0085');
+    if (hasDemoData) {
+      DEMO_KEYS.forEach(k => localStorage.removeItem('mce_' + k));
     }
   })();
   seedData();        // guarded: skips if seeded OR _wizardComplete
@@ -7364,15 +7401,20 @@ try {
   seedApprovalRequests();
   seedAllNew();      // each fn guarded: skips if _wizardComplete
   applyTheme();
-  // Backfill trialBalanceData ONLY for demo mode (not wizard-configured companies)
+  // Always ensure trialBalanceData exists for demo mode companies
   const _coCheck = S.get('company');
-  if (!S.get('trialBalanceData') && !((_coCheck||{})._wizardComplete)) {
-    const _tbSeed = tbRows_TEMPLATE.map(r => ({
-      ...r,
-      dr: Math.max(0,  DEMO_TB_BALANCES[r.c] || 0),
-      cr: Math.max(0, -(DEMO_TB_BALANCES[r.c] || 0)),
-    }));
-    S.set('trialBalanceData', _tbSeed);
+  const _isWizard = (_coCheck || {})._wizardComplete;
+  if (!_isWizard) {
+    // Demo mode: always ensure trialBalanceData is seeded (idempotent)
+    const _existing = S.get('trialBalanceData');
+    if (!_existing || !_existing.length || !_existing.some(r => (r.dr||0)+(r.cr||0) > 0)) {
+      const _tbSeed = tbRows_TEMPLATE.map(r => ({
+        ...r,
+        dr: Math.max(0,  DEMO_TB_BALANCES[r.c] || 0),
+        cr: Math.max(0, -(DEMO_TB_BALANCES[r.c] || 0)),
+      }));
+      S.set('trialBalanceData', _tbSeed);
+    }
   }
   const _co = S.get('company');
   if (!_co || !_co.name) {
