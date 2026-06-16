@@ -2062,6 +2062,8 @@ const gv=id=>{const el=document.getElementById(id);return el?el.value:''};
 const today=()=>new Date().toISOString().slice(0,10);
 const gSet=(id,v)=>{const el=document.getElementById(id);if(el&&v!==undefined)el.value=v||''};
 const sel=(lbl,id,opts,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><select class="fc" id="${id}">${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+// selV = sel with a pre-selected value
+const selV=(lbl,id,opts,selected,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><select class="fc" id="${id}">${opts.map(o=>`<option${o===selected?' selected':''}">${o}</option>`).join('')}</select></div>`;
 const inp=(lbl,id,type,ph,val,req)=>`<div class="fg"><label class="fl${req?' req':''}">${lbl}</label><input class="fc" id="${id}" type="${type||'text'}" placeholder="${ph||''}" ${val!==undefined?`value="${val}"`:''} ></div>`;
 const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea class="fc" id="${id}" rows="2" placeholder="${ph||''}"></textarea></div>`;
 // ╔═══════════════════════════════════════════════════════╗
@@ -2346,12 +2348,10 @@ function logout() {
 // ── SEED USERS ──
 function seedUsers() {
   if (S.get('users')) return;
+  // Default admin only — wizard will create the real admin with custom credentials
   S.set('users', [
-    { id:'USR-001', name:'Mahdi Al-Finance',  username:'admin',   password:hashPw('Admin@1234'), role:'admin',      dept:'Finance',   email:'admin@company.sa',   status:'Active', lastLogin:'—', created:today() },
-    { id:'USR-002', name:'Ahmed Al-Rashid',   username:'ahmed',   password:hashPw('Ahmed@2025'), role:'accountant', dept:'Finance',   email:'ahmed@company.sa',   status:'Active', lastLogin:'—', created:today() },
-    { id:'USR-003', name:'Sara Mohammed',     username:'sara',    password:hashPw('Sara@2025'),  role:'accountant', dept:'Finance',   email:'sara@company.sa',    status:'Active', lastLogin:'—', created:today() },
-    { id:'USR-004', name:'Omar Al-Warehouse', username:'omar',    password:hashPw('Omar@2025'),  role:'warehouse',  dept:'Warehouse', email:'omar@company.sa',    status:'Active', lastLogin:'—', created:today() },
-    { id:'USR-005', name:'Viewer Account',    username:'viewer',  password:hashPw('View@2025'),  role:'viewer',     dept:'Management',email:'viewer@company.sa',  status:'Active', lastLogin:'—', created:today() },
+    { id:'USR-001', name:'Administrator', username:'admin', password:hashPw('Admin@1234'),
+      role:'admin', dept:'Management', email:'admin@company.sa', status:'Active', lastLogin:'—', created:today() },
   ]);
 }
 
@@ -2418,15 +2418,7 @@ function seedApprovalPolicies() {
   ]);
 }
 
-function seedApprovalRequests() {
-  if (S.get('aprRequests')) return;
-  const _co = S.get('company');
-  if (_co && _co._wizardComplete) return;
-  S.set('aprRequests', [
-    { id:'REQ-001', module:'procurement', txType:'PO', docRef:'PO-0044', amount:284000, desc:'Purchase — Steel Plates (China Steel Works)', status:'pending', submittedBy:'USR-002', submittedAt:'2025-06-10', tiers:[{level:1,roleName:'manager',status:'pending'}] },
-    { id:'REQ-002', module:'gl', txType:'MANJE', docRef:'JE-DRAFT-001', amount:48000, desc:'Intercompany management fee accrual', status:'pending', submittedBy:'USR-003', submittedAt:'2025-06-11', tiers:[{level:1,roleName:'manager',status:'pending'}] },
-  ]);
-}
+function seedApprovalRequests() { if (S.get('aprRequests')) return; S.set('aprRequests', []); }
 
 function submitForApproval(module, txType, docRef, amount, desc) {
   const policies = S.get('aprPolicies') || [];
@@ -2467,115 +2459,26 @@ function updateAprBell() {
 
 
 // ── SEED DEFAULT DATA (runs once per browser) ──
+
+// ── DOCUMENT SEQUENCE GENERATOR ──
+// Generates: JE-00001, PO-00001, etc. Auto-increments from localStorage.
+function nextId(prefix) {
+  const key = 'seq_' + prefix;
+  const current = parseInt(S.get(key) || '0');
+  const next = current + 1;
+  S.set(key, String(next));
+  return prefix + '-' + String(next).padStart(5, '0');
+}
+
 function seedData(){
   if(S.get('seeded'))return;
-  if(localStorage.getItem('mce_reset_pending'))return; // don't seed after user reset
-  // Don't overwrite data the wizard already set up
+  if(localStorage.getItem('mce_reset_pending'))return;
   const existingCo = S.get('company');
   if(existingCo && existingCo.name && existingCo._wizardComplete) return;
-  S.set('company',{name:"Al-Masna'a Manufacturing Co.",nameAr:'شركة المصنع',cr:'1010123456',vat:'310012345600003',address:'Industrial City Phase 2, Riyadh 11564, Saudi Arabia',phone:'+966-11-4421100',email:'info@almasnaa.sa',currency:'SAR',vatRate:15,fyType:'Calendar Year',fyYear:2025,costMethod:'job',invVal:'FIFO',ohBase:'DL Cost',gosiEmp:12,gosiEe:10,fgWH:'WH-C'});
-  S.set('suppliers',[
-    {id:'SUP-001',name:'Al-Nasser Steel Trading',cat:'Raw Materials',phone:'+966-11-4421100',terms:'NET30',ytd:284200,status:'Active'},
-    {id:'SUP-002',name:'Global Bearings KSA',cat:'Components',phone:'+966-12-6871234',terms:'NET45',ytd:128400,status:'Active'},
-    {id:'SUP-003',name:'Chem Solutions Arabia',cat:'Consumables',phone:'+966-13-8120055',terms:'NET30',ytd:48900,status:'Active'},
-    {id:'SUP-004',name:'Makkah Electricals',cat:'Electrical',phone:'+966-12-5420077',terms:'COD',ytd:31200,status:'Active'}
-  ]);
-  S.set('customers',[
-    {id:'CUST-001',name:'Saudi Aramco',industry:'Oil & Gas',phone:'+966-13-8720000',terms:'NET30',credit:500000,outstanding:184800},
-    {id:'CUST-002',name:'SABIC',industry:'Petrochemicals',phone:'+966-11-3253000',terms:'NET45',credit:300000,outstanding:86400},
-    {id:'CUST-003',name:'STC',industry:'Telecom',phone:'+966-11-4885555',terms:'NET60',credit:200000,outstanding:96800},
-    {id:'CUST-004',name:"Ma'aden",industry:'Mining',phone:'+966-11-8748000',terms:'NET30',credit:150000,outstanding:44000}
-  ]);
-  S.set('payterms',[
-    {code:'NET30',desc:'Net 30 Days',days:30,discPct:0,discDays:0},
-    {code:'NET45',desc:'Net 45 Days',days:45,discPct:0,discDays:0},
-    {code:'NET60',desc:'Net 60 Days',days:60,discPct:0,discDays:0},
-    {code:'2/10N30',desc:'2% if paid in 10, net 30',days:30,discPct:2,discDays:10},
-    {code:'COD',desc:'Cash on Delivery',days:0,discPct:0,discDays:0}
-  ]);
-  S.set('items',[
-    {code:'RM-0101',name:'Steel Rod 12mm',type:'Raw Material',uom:'kg',val:'FIFO',cost:180,reorder:100,gl:'1300'},
-    {code:'RM-0102',name:'Bearing 6205',type:'Component',uom:'pcs',val:'FIFO',cost:320,reorder:50,gl:'1300'},
-    {code:'RM-0103',name:'Paint — Industrial Blue',type:'Raw Material',uom:'L',val:'Avg',cost:42,reorder:100,gl:'1300'},
-    {code:'RM-0104',name:'Welding Wire ER70S',type:'Component',uom:'kg',val:'FIFO',cost:120,reorder:40,gl:'1300'},
-    {code:'RM-0105',name:'Copper Pipe 20mm',type:'Raw Material',uom:'kg',val:'FIFO',cost:150,reorder:60,gl:'1300'},
-    {code:'FG-0201',name:'Valve Assembly A',type:'Finished Good',uom:'pcs',val:'FIFO',cost:1676,reorder:10,gl:'1320'},
-    {code:'FG-0202',name:'Pump Casing B',type:'Finished Good',uom:'pcs',val:'FIFO',cost:2156,reorder:5,gl:'1320'}
-  ]);
-  S.set('stock',[
-    {code:'RM-0101',name:'Steel Rod 12mm',type:'Raw Material',wh:'WH-A',bin:'A-03-R2',uom:'kg',qty:42,reorder:100,cost:180,status:'Low'},
-    {code:'RM-0102',name:'Bearing 6205',type:'Component',wh:'WH-A',bin:'A-07-R1',uom:'pcs',qty:8,reorder:50,cost:320,status:'Critical'},
-    {code:'RM-0103',name:'Paint — Blue',type:'Raw Material',wh:'WH-B',bin:'B-02-R4',uom:'L',qty:210,reorder:100,cost:42,status:'OK'},
-    {code:'RM-0104',name:'Welding Wire',type:'Component',wh:'WH-A',bin:'A-05-R3',uom:'kg',qty:18,reorder:40,cost:120,status:'Low'},
-    {code:'RM-0105',name:'Copper Pipe',type:'Raw Material',wh:'WH-A',bin:'A-09-R1',uom:'kg',qty:85,reorder:60,cost:150,status:'OK'},
-    {code:'WIP-001',name:'WO-2020 WIP',type:'WIP',wh:'FL-1',bin:'LINE-A',uom:'batch',qty:1,reorder:0,cost:83848,status:'Active'},
-    {code:'WIP-002',name:'WO-2021 WIP',type:'WIP',wh:'FL-1',bin:'LINE-B',uom:'batch',qty:1,reorder:0,cost:53908,status:'Active'},
-    {code:'FG-0201',name:'Valve Assembly A',type:'Finished Good',wh:'WH-C',bin:'C-01-R1',uom:'pcs',qty:22,reorder:10,cost:1676,status:'OK'},
-    {code:'FG-0202',name:'Pump Casing B',type:'Finished Good',wh:'WH-C',bin:'C-02-R1',uom:'pcs',qty:12,reorder:5,cost:2156,status:'OK'}
-  ]);
-  S.set('workorders',[
-    {id:'WO-2020',cust:'Saudi Aramco',prod:'Valve Assembly A',qty:50,dm:48200,dl:19400,oh:16248,done:95,status:'Near Done'},
-    {id:'WO-2021',cust:'SABIC',prod:'Pump Casing B',qty:25,dm:31500,dl:12200,oh:10208,done:60,status:'In Progress'},
-    {id:'WO-2022',cust:'STC',prod:'Tower Bracket C',qty:100,dm:18800,dl:8400,oh:7032,done:30,status:'Early Stage'},
-    {id:'WO-2023',cust:"Ma'aden",prod:'Shaft Coupling D',qty:30,dm:9400,dl:3200,oh:2678,done:10,status:'New'}
-  ]);
-  S.set('boms',[
-    {id:'BOM-001',prod:'Valve Assembly A',ver:'1.0',qty:1,mat:964,lab:388,oh:324,total:1676,status:'Active'},
-    {id:'BOM-002',prod:'Pump Casing B',ver:'1.0',qty:1,mat:1260,lab:488,oh:408,total:2156,status:'Active'},
-    {id:'BOM-003',prod:'Tower Bracket C',ver:'2.1',qty:1,mat:188,lab:84,oh:70,total:342,status:'Active'}
-  ]);
-  S.set('employees',[
-    {id:'EMP-001',name:'Ahmed Al-Rashid',dept:'Production',role:'Lead Machinist',salary:8500,rate:95,status:'Active'},
-    {id:'EMP-002',name:'Khalid Al-Saud',dept:'Production',role:'Welder',salary:6200,rate:75,status:'Active'},
-    {id:'EMP-003',name:'Mohammed Farhan',dept:'Quality',role:'QC Inspector',salary:7000,rate:100,status:'Active'},
-    {id:'EMP-004',name:'Omar Al-Zahrani',dept:'Warehouse',role:'Store Keeper',salary:4800,rate:55,status:'Active'},
-    {id:'EMP-005',name:'Faisal Al-Ghamdi',dept:'Production',role:'Assembler',salary:5600,rate:68,status:'Leave'}
-  ]);
-  S.set('timesheets',[
-    {emp:'Ahmed Al-Rashid',wo:'WO-2020',act:'Machining',date:'2025-06-10',hrs:32,rate:95,cost:3040},
-    {emp:'Khalid Al-Saud',wo:'WO-2021',act:'Welding',date:'2025-06-10',hrs:31,rate:75,cost:2325},
-    {emp:'Mohammed Farhan',wo:'WO-2020',act:'QC Inspection',date:'2025-06-11',hrs:16,rate:100,cost:1600},
-    {emp:'Faisal Al-Ghamdi',wo:'WO-2022',act:'Assembly',date:'2025-06-12',hrs:24,rate:68,cost:1632}
-  ]);
-  S.set('journals',[
-    {id:'JE-0088',date:'2025-06-10',desc:'Manufacturing OH allocation — June',dr:94200,cr:94200,src:'OH Alloc',status:'Posted'},
-    {id:'JE-0087',date:'2025-06-10',desc:'GRN-0041 — Chem Solutions Arabia',dr:9800,cr:9800,src:'Procurement',status:'Posted'},
-    {id:'JE-0086',date:'2025-06-08',desc:'Payroll — June 2025 Direct Labor',dr:112800,cr:112800,src:'Payroll',status:'Posted'},
-    {id:'JE-0085',date:'2025-06-05',desc:'WIP transfer — WO-2019 completed to FG',dr:143200,cr:143200,src:'Costing',status:'Posted'}
-  ]);
-  S.set('pos',[
-    {id:'PO-0050',date:'2025-05-28',supplier:'Chem Solutions Arabia',items:3,amount:9800,status:'Received',grn:'GRN-0041'},
-    {id:'PO-0051',date:'2025-06-01',supplier:'Al-Nasser Steel Trading',items:2,amount:28400,status:'In Transit',grn:''},
-    {id:'PO-0052',date:'2025-06-08',supplier:'Global Bearings KSA',items:4,amount:31500,status:'Draft',grn:''}
-  ]);
-  S.set('grns',[
-    {id:'GRN-0041',date:'2025-06-10',po:'PO-0050',supplier:'Chem Solutions Arabia',loc:'WH-A',value:9800,je:'JE-0087'},
-    {id:'GRN-0040',date:'2025-05-30',po:'PO-0048',supplier:'Al-Nasser Steel Trading',loc:'WH-A',value:42800,je:'JE-0082'}
-  ]);
-  S.set('quotes',[
-    {id:'QT-0021',date:'2025-06-01',cust:'Saudi Aramco',items:2,amount:110000,valid:'2025-06-30',status:'Sent'},
-    {id:'QT-0022',date:'2025-06-08',cust:'SABIC',items:1,amount:80000,valid:'2025-07-08',status:'Draft'}
-  ]);
-  S.set('salesorders',[
-    {id:'SO-0041',date:'2025-05-15',cust:'Saudi Aramco',amount:184800,delivery:'2025-06-20',status:'In Progress',wo:'WO-2020'},
-    {id:'SO-0042',date:'2025-05-20',cust:'SABIC',amount:86400,delivery:'2025-06-30',status:'In Progress',wo:'WO-2021'}
-  ]);
-  S.set('invoices',[
-    {id:'SI-0041',date:'2025-05-20',cust:'Saudi Aramco',amount:160696,vat:24104,total:184800,due:'2025-06-22',status:'Open'},
-    {id:'SI-0042',date:'2025-05-25',cust:'SABIC',amount:75130,vat:11270,total:86400,due:'2025-06-30',status:'Open'}
-  ]);
-  S.set('transfers',[
-    {id:'ISS-0022',date:'2025-06-09',type:'Issue',item:'Steel Rod 12mm',from:'WH-A',to:'FL-1',qty:'60 kg',val:10800,wo:'WO-2020',status:'Posted'},
-    {id:'TRF-0011',date:'2025-06-08',type:'Transfer',item:'Paint Blue',from:'WH-A',to:'WH-B',qty:'50 L',val:2100,wo:'—',status:'Posted'},
-    {id:'ISS-0021',date:'2025-06-07',type:'Issue',item:'Bearing 6205',from:'WH-A',to:'FL-1',qty:'25 pcs',val:8000,wo:'WO-2021',status:'Posted'},
-    {id:'FG-RCV-08',date:'2025-06-04',type:'FG Receipt',item:'Valve Assembly A',from:'FL-1',to:'WH-C',qty:'10 pcs',val:16760,wo:'WO-2019',status:'Posted'}
-  ]);
-  // ── SEED TRIAL BALANCE INTO LOCALSTORAGE (cleared by reset) ──
-  const _tbSeed = tbRows_TEMPLATE.map(r => ({
-    ...r,
-    dr: Math.max(0,  DEMO_TB_BALANCES[r.c] || 0),
-    cr: Math.max(0, -(DEMO_TB_BALANCES[r.c] || 0)),
-  }));
+  // Demo mode only — seed Al-Masna'a sample data for exploration
+  S.set('company',{name:"Al-Masna'a Manufacturing Co.",nameAr:'شركة المصنع',cr:'1010123456',vat:'310012345600003',address:'Industrial City Phase 2, Riyadh 11564',phone:'+966-11-4421100',email:'info@almasnaa.sa',currency:'SAR',vatRate:15,fyType:'Calendar Year',fyYear:2025,costMethod:'job',invVal:'FIFO'});
+  // Seed trial balance for demo
+  const _tbSeed = tbRows_TEMPLATE.map(r => ({...r,dr:Math.max(0,DEMO_TB_BALANCES[r.c]||0),cr:Math.max(0,-(DEMO_TB_BALANCES[r.c]||0))}));
   S.set('trialBalanceData', _tbSeed);
   S.set('seeded',true);
 }
@@ -2654,6 +2557,8 @@ function launchApp(){
   co._launchedAt = new Date().toISOString();
   S.set('company', co);
   S.set('seeded', true);
+  // Set correct data version so boot never runs version upgrade on this user
+  localStorage.setItem('mce_data_version', '6');
 
   // Step 2: Wipe all demo/transaction data (never wipe 'company', 'users', 'seeded')
   const DEMO_KEYS = [
@@ -2665,7 +2570,6 @@ function launchApp(){
     'trialBalanceData',
     'suppliers','customers','payterms','items','stock',
   ];
-  // Use direct localStorage.removeItem (skip GS.set for bulk demo wipe)
   DEMO_KEYS.forEach(k => localStorage.removeItem('mce_' + k));
 
   // Step 3: Seed structural (non-demo) data
@@ -2884,15 +2788,15 @@ const bomOpts=()=>(S.get('boms')||[]).map(b=>b.id+' — '+b.prod);
 
 const mTemplates={
   mSup:{title:'New Supplier',saveLabel:'Save Supplier',body:()=>`<div class="fr fr2">${inp('Supplier Name','ms_n','text','',undefined,true)}${sel('Category','ms_c',['Raw Materials','Components','Consumables','Electrical','Services'])}</div><div class="fr fr2">${inp('Phone','ms_p','text','+966-')}${inp('Email','ms_e','email','')}</div><div class="fr fr2">${inp('VAT Number','ms_v','text','')}${sel('Payment Terms','ms_t',['NET30','NET45','NET60','COD','2/10N30'])}</div>`,
-    save:()=>{const n=gv('ms_n');if(!n.trim()){toast('Name required','error');return;}const l=S.get('suppliers')||[];l.push({id:'SUP-'+(l.length+1).toString().padStart(3,'0'),name:n,cat:gv('ms_c'),phone:gv('ms_p'),terms:gv('ms_t'),ytd:0,status:'Active'});S.set('suppliers',l);closeM();renderSup();toast('Supplier saved.','success');}},
+    save:()=>{const n=gv('ms_n');if(!n.trim()){toast('Name required','error');return;}const l=S.get('suppliers')||[];l.push({id:nextId('SUP'),name:n,cat:gv('ms_c'),phone:gv('ms_p'),terms:gv('ms_t'),ytd:0,status:'Active'});S.set('suppliers',l);closeM();renderSup();toast('Supplier saved.','success');}},
   mCust:{title:'New Customer',saveLabel:'Save Customer',body:()=>`<div class="fr fr2">${inp('Customer Name','mc_n','text','',undefined,true)}${sel('Industry','mc_i',['Oil & Gas','Petrochemicals','Telecom','Mining','Construction','Government'])}</div><div class="fr fr2">${inp('Phone','mc_p','text','+966-')}${inp('Email','mc_e','email','')}</div><div class="fr fr2">${sel('Payment Terms','mc_t',['NET30','NET45','NET60','COD'])}${inp('Credit Limit (SAR)','mc_cl','number','0','100000')}</div>`,
-    save:()=>{const n=gv('mc_n');if(!n.trim()){toast('Name required','error');return;}const l=S.get('customers')||[];l.push({id:'CUST-'+(l.length+1).toString().padStart(3,'0'),name:n,industry:gv('mc_i'),phone:gv('mc_p'),terms:gv('mc_t'),credit:parseFloat(gv('mc_cl'))||0,outstanding:0});S.set('customers',l);closeM();renderCust();toast('Customer saved.','success');}},
+    save:()=>{const n=gv('mc_n');if(!n.trim()){toast('Name required','error');return;}const l=S.get('customers')||[];l.push({id:nextId('CUST'),name:n,industry:gv('mc_i'),phone:gv('mc_p'),terms:gv('mc_t'),credit:parseFloat(gv('mc_cl'))||0,outstanding:0});S.set('customers',l);closeM();renderCust();toast('Customer saved.','success');}},
   mPT:{title:'New Payment Term',saveLabel:'Save Term',body:()=>`<div class="fr fr2">${inp('Term Code','mpt_c','text','NET30',undefined,true)}${inp('Description','mpt_d','text','Net 30 Days',undefined,true)}</div><div class="fr fr2">${inp('Net Days','mpt_nd','number','','30')}${sel('Apply To','mpt_a',['Both AP & AR','Suppliers (AP) Only','Customers (AR) Only'])}</div><div class="fr fr2">${inp('Early Discount %','mpt_dp','number','','0')}${inp('Discount if Paid Within (days)','mpt_dd','number','','0')}</div><div class="fr fr2">${inp('Late Fee %','mpt_lf','number','','0')}${inp('Grace Period (days)','mpt_gp','number','','0')}</div>`,
     save:()=>{const c=gv('mpt_c');if(!c){toast('Code required','error');return;}const l=S.get('payterms')||[];l.push({code:c,desc:gv('mpt_d'),days:parseInt(gv('mpt_nd'))||0,discPct:parseFloat(gv('mpt_dp'))||0,discDays:parseInt(gv('mpt_dd'))||0});S.set('payterms',l);closeM();renderPT();toast('Payment term saved.','success');}},
-  mPO:{title:'New Purchase Order',saveLabel:'Create PO',body:()=>`<div class="fr fr2">${inp('PO Number','mpo_id','text','','PO-0053')}${inp('Date','mpo_d','date','')}</div><div class="fr fr2">${sel('Supplier','mpo_s',supOpts())}${sel('Payment Terms','mpo_t',['NET30','NET45','COD','2/10N30'])}</div><div class="fr fr2">${inp('Delivery Date','mpo_del','date','')}${sel('Linked Work Order','mpo_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div><div class="alert a-info" style="margin-top:8px">Add line items after saving the PO header.</div>`,
-    save:()=>{const l=S.get('pos')||[];l.unshift({id:'PO-00'+(53+l.length),date:gv('mpo_d')||today(),supplier:gv('mpo_s'),items:0,amount:0,status:'Draft',grn:''});S.set('pos',l);closeM();renderPO();toast('Purchase Order created.','success');}},
-  mGRN:{title:'New Goods Receipt (GRN)',saveLabel:'Confirm Receipt',body:()=>`<div class="fr fr2">${inp('GRN Number','mg_id','text','','GRN-0042')}${inp('Date','mg_d','date','')}</div><div class="fr fr2">${sel('PO Reference','mg_po',(S.get('pos')||[]).map(p=>p.id+' — '+p.supplier))}${sel('Received By','mg_rb',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr3">${sel('Warehouse','mg_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Location','mg_bin','text','','A-03-R2')}${sel('QC Hold?','mg_qc',['No — Direct Receipt','Yes — QC Hold'])}</div><div class="alert a-info" style="margin-top:8px">Auto-posts JE: <strong>Dr. Inventory / Cr. Accounts Payable</strong></div>`,
-    save:()=>{const grnDate=gv('mg_d')||today();if(checkPeriod(grnDate))return;const l=S.get('grns')||[];const id='GRN-00'+(42+l.length);l.unshift({id,date:grnDate,po:gv('mg_po').split(' ')[0],supplier:'',loc:gv('mg_wh').split(' ')[0],value:0,je:'JE-00'+(89+l.length)});S.set('grns',l);closeM();renderGRN();toast(`${id} confirmed. JE posted: Dr. Inventory / Cr. AP`,'success');}},
+  mPO:{title:'New Purchase Order',saveLabel:'Create PO',body:()=>`<div class="fr fr2">${inp('PO Number','mpo_id','text','','')}${inp('Date','mpo_d','date','')}</div><div class="fr fr2">${sel('Supplier','mpo_s',supOpts())}${sel('Payment Terms','mpo_t',['NET30','NET45','COD','2/10N30'])}</div><div class="fr fr2">${inp('Delivery Date','mpo_del','date','')}${sel('Linked Work Order','mpo_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div><div class="alert a-info" style="margin-top:8px">Add line items after saving the PO header.</div>`,
+    save:()=>{const l=S.get('pos')||[];l.unshift({id:nextId('PO'),date:gv('mpo_d')||today(),supplier:gv('mpo_s'),items:0,amount:0,status:'Draft',grn:''});S.set('pos',l);closeM();renderPO();toast('Purchase Order created.','success');}},
+  mGRN:{title:'New Goods Receipt (GRN)',saveLabel:'Confirm Receipt',body:()=>`<div class="fr fr2">${inp('GRN Number','mg_id','text','','')}${inp('Date','mg_d','date','')}</div><div class="fr fr2">${sel('PO Reference','mg_po',(S.get('pos')||[]).map(p=>p.id+' — '+p.supplier))}${sel('Received By','mg_rb',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr3">${sel('Warehouse','mg_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Location','mg_bin','text','','A-03-R2')}${sel('QC Hold?','mg_qc',['No — Direct Receipt','Yes — QC Hold'])}</div><div class="alert a-info" style="margin-top:8px">Auto-posts JE: <strong>Dr. Inventory / Cr. Accounts Payable</strong></div>`,
+    save:()=>{const grnDate=gv('mg_d')||today();if(checkPeriod(grnDate))return;const l=S.get('grns')||[];const id=nextId('GRN');l.unshift({id,date:grnDate,po:gv('mg_po').split(' ')[0],supplier:'',loc:gv('mg_wh').split(' ')[0],value:0,je:nextId('JE')});S.set('grns',l);closeM();renderGRN();toast(`${id} confirmed. JE posted: Dr. Inventory / Cr. AP`,'success');}},
   mItem:{title:'New Item',saveLabel:'Save Item',body:()=>`<div class="fr fr2">${inp('Item Code','mi_c','text','',undefined,true)}${inp('Item Name','mi_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','mi_t',['Raw Material','Component','WIP','Finished Good','Service','Consumable'])}${sel('Unit of Measure','mi_u',['kg','pcs','L','m','m²','ton','set','roll'])}</div><div class="fr fr2">${inp('Standard Cost (SAR)','mi_cost','number','','0')}${inp('Reorder Point','mi_ro','number','','0')}</div><div class="fr fr2">${sel('Valuation Method','mi_val',['FIFO','Weighted Average'])}${sel('GL Account','mi_gl',['1300 — Raw Materials','1310 — WIP','1320 — Finished Goods'])}</div>`,
     save:()=>{const c=gv('mi_c'),n=gv('mi_n');if(!c||!n){toast('Code and Name required','error');return;}const l=S.get('items')||[];l.push({code:c,name:n,type:gv('mi_t'),uom:gv('mi_u'),val:gv('mi_val'),cost:parseFloat(gv('mi_cost'))||0,reorder:parseInt(gv('mi_ro'))||0,gl:gv('mi_gl').split(' ')[0]});S.set('items',l);closeM();renderItems();toast('Item saved.','success');}},
   mWH:{title:'New Warehouse',saveLabel:'Create Warehouse',body:()=>`<div class="fr fr2">${inp('Location Code','mwh_c','text','','WH-D',true)}${inp('Name','mwh_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','mwh_t',['Raw Material Store','Production Input','Finished Goods','WIP Zone','Quarantine'])}${sel('Store Keeper','mwh_k',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr2">${inp('Number of Bins','mwh_b','number','','8')}${sel('GL Account','mwh_gl',['1300 — Raw Materials','1310 — WIP','1320 — Finished Goods'])}</div>`,
@@ -2900,27 +2804,27 @@ const mTemplates={
   mBin:{title:'Add Storage Bin',saveLabel:'Add Bin',body:()=>`<div class="fr fr2">${sel('Warehouse','mb_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Code','mb_c','text','','A-13-R1',true)}</div><div class="fr fr2">${inp('Aisle','mb_a','text','','A')}${inp('Rack / Shelf','mb_r','text','','R1')}</div><div class="fr fr2">${inp('Max Weight (kg)','mb_w','number','','500')}${sel('Restriction','mb_rs',['None','Raw Materials Only','Hazardous','Heavy Items'])}</div>`,
     save:()=>{closeM();toast('Bin added.','success');}},
   mTrf:{title:'New Transfer / Issue',saveLabel:'Post',body:()=>`<div class="fr fr2">${sel('Type','mt_t',['Material Issue to Job','Inter-Warehouse Transfer','FG Receipt from Production','Return to Store'])}${inp('Date','mt_d','date','')}</div><div class="fr fr2">${sel('From','mt_f',['WH-A · Main','WH-B · Production','WH-C · FG','FL-1 · Floor'])}${sel('To','mt_to',['FL-1 · Production Floor','WH-A · Main','WH-B · Production','WH-C · FG'])}</div><div class="fr fr2">${sel('Item','mt_i',(S.get('items')||[]).map(i=>i.code+' '+i.name))}${inp('Quantity','mt_q','number','','0')}</div>${sel('Work Order (if Issue)','mt_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)],'')}<div class="fhint">Auto-posts inventory JE on save.</div>`,
-    save:()=>{const trfDate=gv('mt_d')||today();if(checkPeriod(trfDate))return;const l=S.get('transfers')||[];const tp=gv('mt_t');const pfx=tp.includes('Issue')?'ISS':tp.includes('Transfer')?'TRF':tp.includes('FG')?'FGR':'RTN';l.unshift({id:pfx+'-'+(Date.now()%9999),date:trfDate,type:tp.split(' ')[0],item:gv('mt_i').split(' ').slice(1).join(' '),from:gv('mt_f').split(' ')[0],to:gv('mt_to').split(' ')[0],qty:gv('mt_q')+' units',val:0,wo:gv('mt_wo'),status:'Posted'});S.set('transfers',l);closeM();renderTrf();toast('Transfer posted. JE auto-generated.','success');}},
-  mBOM:{title:'New Bill of Materials',saveLabel:'Save BOM',body:()=>`<div class="fr fr2">${inp('BOM #','mbom_id','text','','BOM-004')}${inp('Product Name','mbom_p','text','',undefined,true)}</div><div class="fr fr2">${inp('Version','mbom_v','text','','1.0')}${inp('Batch Size (qty)','mbom_q','number','','1')}</div><div class="fr fr3">${inp('Material Cost / Unit','mbom_m','number','','0')}${inp('Labor Cost / Unit','mbom_l','number','','0')}${inp('Overhead / Unit','mbom_o','number','','0')}</div>`,
-    save:()=>{const p=gv('mbom_p');if(!p){toast('Product name required','error');return;}const m=parseFloat(gv('mbom_m'))||0,l2=parseFloat(gv('mbom_l'))||0,o=parseFloat(gv('mbom_o'))||0;const l=S.get('boms')||[];l.push({id:'BOM-'+(l.length+1).toString().padStart(3,'0'),prod:p,ver:gv('mbom_v')||'1.0',qty:parseInt(gv('mbom_q'))||1,mat:m,lab:l2,oh:o,total:m+l2+o,status:'Active'});S.set('boms',l);closeM();renderBOM();toast('BOM saved.','success');}},
-  mWO:{title:'New Work Order',saveLabel:'Create WO',body:()=>`<div class="fr fr2">${inp('WO Number','mwo_id','text','','WO-2024')}${sel('Customer','mwo_c',custOpts())}</div><div class="fr fr2">${inp('Product','mwo_p','text','')}${inp('Quantity','mwo_q','number','','0')}</div><div class="fr fr2">${inp('Start Date','mwo_sd','date','')}${inp('Target Completion','mwo_td','date','')}</div><div class="fr fr2">${sel('BOM Reference','mwo_bom',['— None —',...bomOpts()])}${inp('Sales Order Ref','mwo_so','text','','SO-')}</div>`,
-    save:()=>{const p=gv('mwo_p'),c=gv('mwo_c');if(!p||!c){toast('Customer and Product required','error');return;}const l=S.get('workorders')||[];l.push({id:'WO-'+(2024+l.length),cust:c,prod:p,qty:parseInt(gv('mwo_q'))||0,dm:0,dl:0,oh:0,done:0,status:'New'});S.set('workorders',l);closeM();renderWO();toast('Work Order created.','success');}},
+    save:()=>{const trfDate=gv('mt_d')||today();if(checkPeriod(trfDate))return;const l=S.get('transfers')||[];const tp=gv('mt_t');const pfx=tp.includes('Issue')?'ISS':tp.includes('Transfer')?'TRF':tp.includes('FG')?'FGR':'RTN';l.unshift({id:nextId(pfx),date:trfDate,type:tp.split(' ')[0],item:gv('mt_i').split(' ').slice(1).join(' '),from:gv('mt_f').split(' ')[0],to:gv('mt_to').split(' ')[0],qty:gv('mt_q')+' units',val:0,wo:gv('mt_wo'),status:'Posted'});S.set('transfers',l);closeM();renderTrf();toast('Transfer posted. JE auto-generated.','success');}},
+  mBOM:{title:'New Bill of Materials',saveLabel:'Save BOM',body:()=>`<div class="fr fr2">${inp('BOM #','mbom_id','text','','')}${inp('Product Name','mbom_p','text','',undefined,true)}</div><div class="fr fr2">${inp('Version','mbom_v','text','','1.0')}${inp('Batch Size (qty)','mbom_q','number','','1')}</div><div class="fr fr3">${inp('Material Cost / Unit','mbom_m','number','','0')}${inp('Labor Cost / Unit','mbom_l','number','','0')}${inp('Overhead / Unit','mbom_o','number','','0')}</div>`,
+    save:()=>{const p=gv('mbom_p');if(!p){toast('Product name required','error');return;}const m=parseFloat(gv('mbom_m'))||0,l2=parseFloat(gv('mbom_l'))||0,o=parseFloat(gv('mbom_o'))||0;const l=S.get('boms')||[];l.push({id:nextId('BOM'),prod:p,ver:gv('mbom_v')||'1.0',qty:parseInt(gv('mbom_q'))||1,mat:m,lab:l2,oh:o,total:m+l2+o,status:'Active'});S.set('boms',l);closeM();renderBOM();toast('BOM saved.','success');}},
+  mWO:{title:'New Work Order',saveLabel:'Create WO',body:()=>`<div class="fr fr2">${inp('WO Number','mwo_id','text','','')}${sel('Customer','mwo_c',custOpts())}</div><div class="fr fr2">${inp('Product','mwo_p','text','')}${inp('Quantity','mwo_q','number','','0')}</div><div class="fr fr2">${inp('Start Date','mwo_sd','date','')}${inp('Target Completion','mwo_td','date','')}</div><div class="fr fr2">${sel('BOM Reference','mwo_bom',['— None —',...bomOpts()])}${inp('Sales Order Ref','mwo_so','text','','SO-')}</div>`,
+    save:()=>{const p=gv('mwo_p'),c=gv('mwo_c');if(!p||!c){toast('Customer and Product required','error');return;}const l=S.get('workorders')||[];l.push({id:nextId('WO'),cust:c,prod:p,qty:parseInt(gv('mwo_q'))||0,dm:0,dl:0,oh:0,done:0,status:'New'});S.set('workorders',l);closeM();renderWO();toast('Work Order created.','success');}},
   mAcc:{title:'New Account',saveLabel:'Add Account',body:()=>`<div class="fr fr2">${inp('Account Code','ma_c','text','',undefined,true)}${inp('Account Name','ma_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','ma_t',['Asset','Liability','Equity','Revenue','COGS','Expense'])}${sel('Normal Balance','ma_nb',['Debit','Credit'])}</div><div class="fr fr2">${sel('Parent Account','ma_pa',['— None —','1000 Current Assets','2000 Liabilities','3000 Equity','4000 Revenue','5000 COGS','6000 Expenses'])}${sel('Cost Center','ma_cc',['All','Production','Admin','Sales'])}</div>`,
     save:()=>{closeM();toast('Account added.','success');renderCOA();}},
-  mJE:{title:'New Journal Entry',saveLabel:'Post Entry',body:()=>`<div class="fr fr3">${inp('JE Number','mje_id','text','','JE-0089')}${inp('Date','mje_d','date','',today())}${sel('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation'])}</div><div class="fg mb12"><label class="fl">Narration</label><input class="fc" id="mje_desc" placeholder="Describe this journal entry"></div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span><span></span></div><div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div><button class="btn btn-g sm mt12" onclick="addJELine()">+ Add Line</button><div class="je-bal" id="jeBal"><span>Dr: <strong id="jeDr">0.00</strong></span><span>Cr: <strong id="jeCr">0.00</strong></span><span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span></div>`,
+  mJE:{title:'New Journal Entry',saveLabel:'Post Entry',body:()=>`<div class="fr fr3">${inp('JE Number','mje_id','text','','')}${inp('Date','mje_d','date','',today())}${sel('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation'])}</div><div class="fg mb12"><label class="fl">Narration</label><input class="fc" id="mje_desc" placeholder="Describe this journal entry"></div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span><span></span></div><div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div><button class="btn btn-g sm mt12" onclick="addJELine()">+ Add Line</button><div class="je-bal" id="jeBal"><span>Dr: <strong id="jeDr">0.00</strong></span><span>Cr: <strong id="jeCr">0.00</strong></span><span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span></div>`,
     save:()=>{updateJEBal();if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const desc=gv('mje_desc')||'Manual Journal Entry';const src=gv('mje_src')||'Manual';const jeId='JE-'+String(Date.now()).slice(-6);const lineEls=document.querySelectorAll('#jeLines .je-grid');const lines=[];let totalDr=0,totalCr=0;lineEls.forEach(el=>{const inputs=el.querySelectorAll('input[type=number]');const selEl=el.querySelector('select');const accCode=selEl?selEl.value:'';const dr=parseFloat(inputs[0]?.value)||0;const cr=parseFloat(inputs[1]?.value)||0;if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}});if(!lines.length){toast('Add at least one line with an amount.','error');return;}const journals=S.get('journals')||[];journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines});S.set('journals',journals);const cur=baseCurr();const ledger=S.get('glLedger')||[];const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};let lastHash='GENESIS';lines.forEach((ln,idx)=>{const hash=buildH(lastHash,ln);lastHash=hash;ledger.push({jeId,date:jeDate,desc,src,account:ln.account,dr:ln.dr,cr:ln.cr,txCurr:cur,txAmt:ln.dr||(-ln.cr),baseAmt:ln.dr||ln.cr,dims:{cc:'CC01'},book:'ifrs',status:'Posted',userId:getSession()?.userId||'USR-001',hash,ts:new Date().toISOString()});});S.set('glLedger',ledger);closeM();renderJE();if(typeof audioPostSuccess==='function')audioPostSuccess();toast('✓ JE '+jeId+' posted — '+lines.length+' lines, Dr/Cr: '+fC(totalDr,cur),'success',4000);}},
   mJETpl:{title:'Journal Entry Templates',saveLabel:'Close',body:()=>`<div style="display:flex;flex-direction:column;gap:8px">${[['GRN Receipt','Dr. Raw Materials / Cr. Accounts Payable'],['Payroll Post','Dr. Wages Expense / Cr. Wages Payable + GOSI'],['OH Allocation','Dr. WIP / Cr. OH Applied'],['WIP → FG','Dr. Finished Goods / Cr. WIP Inventory'],['COGS Entry','Dr. COGS / Cr. Finished Goods'],['Customer Invoice','Dr. AR / Cr. Revenue + VAT Payable'],['Depreciation','Dr. Depreciation / Cr. Accum. Depreciation']].map(([t,d])=>`<div class="fsec flex ic jb"><div><div class="fw6 mb8" style="font-size:12.5px">${t}</div><div class="t-sm t-muted">${d}</div></div><button class="btn btn-s sm" onclick="closeM();openM('mJE')">Use</button></div>`).join('')}</div>`,
     save:()=>closeM()},
   mAct:{title:'New Activity Pool (ABC)',saveLabel:'Add Pool',body:()=>`<div class="fr fr2">${inp('Activity Name','mact_n','text','',undefined,true)}${inp('Cost Driver','mact_d','text','e.g. Machine Hours',undefined,true)}</div><div class="fr fr2">${inp('Total Pool Cost (SAR)','mact_c','number','','0')}${inp('Budgeted Driver Qty','mact_q','number','','0')}</div>`,
     save:()=>{closeM();toast('Activity pool added to ABC model.','success');renderABC();}},
   mEmp:{title:'Add Employee',saveLabel:'Save Employee',body:()=>`<div class="fr fr2">${inp('Full Name','me_n','text','',undefined,true)}${inp('Iqama / National ID','me_id2','text','')}</div><div class="fr fr2">${sel('Department','me_d',['Production','Quality','Warehouse','Admin','Finance'])}${inp('Role / Position','me_r','text','')}</div><div class="fr fr2">${inp('Basic Salary (SAR)','me_s','number','','0')}${inp('Labor Rate / Hour','me_rt','number','','0')}</div>`,
-    save:()=>{const n=gv('me_n');if(!n){toast('Name required','error');return;}const l=S.get('employees')||[];l.push({id:'EMP-'+(l.length+1).toString().padStart(3,'0'),name:n,dept:gv('me_d'),role:gv('me_r'),salary:parseFloat(gv('me_s'))||0,rate:parseFloat(gv('me_rt'))||0,status:'Active'});S.set('employees',l);closeM();renderEmp();toast('Employee added.','success');}},
-  mQT:{title:'New Quotation',saveLabel:'Save Quote',body:()=>`<div class="fr fr2">${inp('Quote #','mq_id','text','','QT-0023')}${inp('Date','mq_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mq_c',custOpts())}${inp('Valid Until','mq_v','date','')}</div><div class="fr fr2">${inp('Item / Product','mq_i','text','')}${inp('Amount (SAR)','mq_a','number','','0')}</div>`,
-    save:()=>{const l=S.get('quotes')||[];l.unshift({id:'QT-00'+(23+l.length),date:gv('mq_d')||today(),cust:gv('mq_c'),items:1,amount:parseFloat(gv('mq_a'))||0,valid:gv('mq_v'),status:'Draft'});S.set('quotes',l);closeM();renderQT();toast('Quotation saved.','success');}},
-  mSO:{title:'New Sales Order',saveLabel:'Create SO',body:()=>`<div class="fr fr2">${inp('SO Number','mso_id','text','','SO-0043')}${inp('Date','mso_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mso_c',custOpts())}${inp('Delivery Date','mso_del','date','')}</div><div class="fr fr2">${inp('Amount (SAR)','mso_a','number','','0')}${sel('Link Work Order','mso_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div>`,
-    save:()=>{const l=S.get('salesorders')||[];l.unshift({id:'SO-00'+(43+l.length),date:gv('mso_d')||today(),cust:gv('mso_c'),amount:parseFloat(gv('mso_a'))||0,delivery:gv('mso_del'),status:'Draft',wo:gv('mso_wo')});S.set('salesorders',l);closeM();renderSO();toast('Sales Order created.','success');}},
-  mInv:{title:'New Sales Invoice',saveLabel:'Post Invoice',body:()=>`<div class="fr fr2">${inp('Invoice #','minv_id','text','','SI-0043')}${inp('Date','minv_d','date','',today())}</div><div class="fr fr2">${sel('Customer','minv_c',custOpts())}${inp('Sales Order Ref','minv_so','text','','SO-')}</div><div class="fr fr2">${inp('Net Amount (SAR)','minv_a','number','','0')}${inp('VAT Rate %','minv_vr','number','','15')}</div><div class="fhint">Auto-posts JE: Dr. Accounts Receivable / Cr. Revenue + VAT Payable</div>`,
-    save:()=>{const invDate=gv('minv_d')||today();if(checkPeriod(invDate))return;const a=parseFloat(gv('minv_a'))||0,vr=parseFloat(gv('minv_vr'))||15,vat=Math.round(a*vr/100);const l=S.get('invoices')||[];l.unshift({id:'SI-00'+(43+l.length),date:invDate,cust:gv('minv_c'),amount:a,vat,total:a+vat,due:'TBD',status:'Open'});S.set('invoices',l);closeM();renderInv();toast('Invoice saved. JE posted: Dr. AR / Cr. Revenue + VAT.','success');}}
+    save:()=>{const n=gv('me_n');if(!n){toast('Name required','error');return;}const l=S.get('employees')||[];l.push({id:nextId('EMP'),name:n,dept:gv('me_d'),role:gv('me_r'),salary:parseFloat(gv('me_s'))||0,rate:parseFloat(gv('me_rt'))||0,status:'Active'});S.set('employees',l);closeM();renderEmp();toast('Employee added.','success');}},
+  mQT:{title:'New Quotation',saveLabel:'Save Quote',body:()=>`<div class="fr fr2">${inp('Quote #','mq_id','text','','')}${inp('Date','mq_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mq_c',custOpts())}${inp('Valid Until','mq_v','date','')}</div><div class="fr fr2">${inp('Item / Product','mq_i','text','')}${inp('Amount (SAR)','mq_a','number','','0')}</div>`,
+    save:()=>{const l=S.get('quotes')||[];l.unshift({id:nextId('QT'),date:gv('mq_d')||today(),cust:gv('mq_c'),items:1,amount:parseFloat(gv('mq_a'))||0,valid:gv('mq_v'),status:'Draft'});S.set('quotes',l);closeM();renderQT();toast('Quotation saved.','success');}},
+  mSO:{title:'New Sales Order',saveLabel:'Create SO',body:()=>`<div class="fr fr2">${inp('SO Number','mso_id','text','','')}${inp('Date','mso_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mso_c',custOpts())}${inp('Delivery Date','mso_del','date','')}</div><div class="fr fr2">${inp('Amount (SAR)','mso_a','number','','0')}${sel('Link Work Order','mso_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div>`,
+    save:()=>{const l=S.get('salesorders')||[];l.unshift({id:nextId('SO'),date:gv('mso_d')||today(),cust:gv('mso_c'),amount:parseFloat(gv('mso_a'))||0,delivery:gv('mso_del'),status:'Draft',wo:gv('mso_wo')});S.set('salesorders',l);closeM();renderSO();toast('Sales Order created.','success');}},
+  mInv:{title:'New Sales Invoice',saveLabel:'Post Invoice',body:()=>`<div class="fr fr2">${inp('Invoice #','minv_id','text','','')}${inp('Date','minv_d','date','',today())}</div><div class="fr fr2">${sel('Customer','minv_c',custOpts())}${inp('Sales Order Ref','minv_so','text','','SO-')}</div><div class="fr fr2">${inp('Net Amount (SAR)','minv_a','number','','0')}${inp('VAT Rate %','minv_vr','number','','15')}</div><div class="fhint">Auto-posts JE: Dr. Accounts Receivable / Cr. Revenue + VAT Payable</div>`,
+    save:()=>{const invDate=gv('minv_d')||today();if(checkPeriod(invDate))return;const a=parseFloat(gv('minv_a'))||0,vr=parseFloat(gv('minv_vr'))||15,vat=Math.round(a*vr/100);const l=S.get('invoices')||[];l.unshift({id:nextId('SI'),date:invDate,cust:gv('minv_c'),amount:a,vat,total:a+vat,due:'TBD',status:'Open'});S.set('invoices',l);closeM();renderInv();toast('Invoice saved. JE posted: Dr. AR / Cr. Revenue + VAT.','success');}}
 };
 
 // JE helpers
@@ -3036,7 +2940,15 @@ function renderCust(){document.getElementById('custTbl').innerHTML=(S.get('custo
 // ── RENDER: PAYMENT TERMS ──
 function renderPT(){
   document.getElementById('ptTbl').innerHTML=(S.get('payterms')||[]).map(p=>`<tr><td class="t-blue fw6">${p.code}</td><td>${p.desc}</td><td class="num">${p.days}</td><td class="num ${p.discPct>0?'t-green':''}">${p.discPct||'—'}</td><td class="num">${p.discDays||'—'}</td></tr>`).join('');
-  document.getElementById('ptSched').innerHTML=[{due:'Jun 14',party:'Global Bearings KSA',type:'AP',amt:28400},{due:'Jun 18',party:'Chem Solutions Arabia',type:'AP',amt:9800},{due:'Jun 22',party:'Saudi Aramco',type:'AR',amt:184800},{due:'Jun 30',party:'SABIC',type:'AR',amt:86400}].map(r=>`<tr><td class="${r.type==='AP'?'t-red':'t-blue'} fw6">${r.due}</td><td>${r.party}</td><td>${sBadge(r.type)}</td><td class="num">SAR ${fN(r.amt)}</td><td><button class="btn ${r.type==='AP'?'btn-ok':'btn-g'} xs" onclick="toast('${r.type==='AP'?'Payment recorded.':'Reminder sent to '+r.party+'.'}','success')">${r.type==='AP'?'Pay Now':'Remind'}</button></td></tr>`).join('');
+  // Payment schedule from real PO/Invoice data
+  const _pos = S.get('pos')||[], _invs = S.get('invoices')||[];
+  const _sched = [
+    ..._pos.filter(p=>p.status==='Open'||p.status==='Draft').slice(0,3).map(p=>({due:p.date||today(),party:p.supplier||'Supplier',type:'AP',amt:p.amount||0})),
+    ..._invs.filter(i=>i.status==='Open').slice(0,3).map(i=>({due:i.due||today(),party:i.cust||'Customer',type:'AR',amt:i.total||0})),
+  ];
+  document.getElementById('ptSched').innerHTML = _sched.length
+    ? _sched.map(r=>`<tr><td class="${r.type==='AP'?'t-red':'t-blue'} fw6">${r.due}</td><td>${r.party}</td><td>${sBadge(r.type)}</td><td class="num">${fC(r.amt,baseCurr())}</td><td><button class="btn ${r.type==='AP'?'btn-ok':'btn-g'} xs" onclick="toast('${r.type==='AP'?'Payment recorded.':'Reminder sent.'}','success')">${r.type==='AP'?'Pay Now':'Remind'}</button></td></tr>`).join('')
+    : '<tr><td colspan="5" class="t-muted" style="text-align:center;padding:16px">No upcoming payments</td></tr>';
 }
 
 // ── RENDER: PO / GRN ──
@@ -3044,7 +2956,7 @@ function renderPO(){document.getElementById('poTbl').innerHTML=(S.get('pos')||[]
 function renderGRN(){document.getElementById('grnTbl').innerHTML=(S.get('grns')||[]).map(g=>`<tr><td class="t-blue fw6">${g.id}</td><td>${g.date}</td><td>${g.po}</td><td>${g.supplier}</td><td><span class="b b-blue">${g.loc}</span></td><td class="num">SAR ${fN(g.value)}</td><td><span class="b b-green">${g.je}</span></td></tr>`).join('');}
 
 // ── RENDER: AGING ──
-const apData=[{n:'Al-Nasser Steel',t:98000,b0:69600,b30:0,b60:0,b90:28400,b120:0,terms:'NET30'},{n:'Global Bearings KSA',t:60200,b0:28600,b30:31600,b60:0,b90:0,b120:0,terms:'NET45'},{n:'Chem Solutions Arabia',t:9800,b0:9800,b30:0,b60:0,b90:0,b120:0,terms:'NET30'},{n:'Makkah Electricals',t:30400,b0:1800,b30:28600,b60:0,b90:0,b120:0,terms:'COD'}];
+const apData=(S.get('suppliers')||[]).map(s=>({n:s.name,t:0,b0:0,b30:0,b60:0,b90:0,b120:0,terms:s.terms||'NET30'}));
 const arData=[{n:'Saudi Aramco',t:184800,b0:184800,b30:0,b60:0,b90:0,b120:0,terms:'NET30'},{n:'SABIC',t:86400,b0:59200,b30:27200,b60:0,b90:0,b120:0,terms:'NET45'},{n:'STC',t:96800,b0:0,b30:56800,b60:40000,b90:0,b120:0,terms:'NET60'},{n:"Ma'aden",t:44000,b0:0,b30:0,b60:0,b90:0,b120:44000,terms:'NET30'}];
 function agRisk(r){if(r.b120>0)return'<span class="b b-red">High</span>';if((r.b60+r.b90+r.b120)/r.t>0.3)return'<span class="b b-orange">Medium</span>';return'<span class="b b-green">Low</span>';}
 function renderAging(type){
@@ -3373,14 +3285,7 @@ function renderARAgingReport() {
 // ── AP AGING REPORT ──
 function renderAPAgingReport() {
   const cur = baseCurr();
-  const data = [
-    { sup:'Al-Nasser Steel',    total:31500,  c:0,    b30:31500, b60:0,    b90:0,    over90:0   },
-    { sup:'Global Bearings KSA',total:28400,  c:28400,b30:0,     b60:0,    b90:0,    over90:0   },
-    { sup:'Chem Solutions',     total:9800,   c:9800, b30:0,     b60:0,    b90:0,    over90:0   },
-    { sup:'Saudi Cables',       total:44200,  c:0,    b30:0,     b60:44200,b90:0,    over90:0   },
-    { sup:'Riyadh Electric',    total:12400,  c:0,    b30:0,     b60:0,    b90:12400,over90:0   },
-    { sup:'Gulf Lubricants',    total:22100,  c:0,    b30:0,     b60:0,    b90:0,    over90:22100},
-  ];
+  const data = (()=>{const sups=S.get('suppliers')||[],pos=S.get('pos')||[];return sups.map(s=>{const spos=pos.filter(p=>p.supplier===s.name&&p.status!=='Paid');const total=spos.reduce((a,p)=>a+(p.amount||0),0);return{sup:s.name,total,c:total,b30:0,b60:0,b90:0,over90:0};}).filter(s=>s.total>0);})()
   const totals = data.reduce((a,r)=>({total:a.total+r.total,c:a.c+r.c,b30:a.b30+r.b30,b60:a.b60+r.b60,b90:a.b90+r.b90,over90:a.over90+r.over90}),{total:0,c:0,b30:0,b60:0,b90:0,over90:0});
 
   document.getElementById('apAgingKPIs').innerHTML = [
@@ -3830,15 +3735,7 @@ function renderFinDim() {
 }
 
 // ── INTERCOMPANY ENGINE ──
-function seedIntercompany() {
-  if (S.get('icTransactions')) return;
-  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
-  S.set('icTransactions', [
-    {id:'IC-001', from:'KSA-Main', to:'UAE-Branch', type:'Goods Sale', amount:284000, currency:'SAR', date:'2025-06-01', status:'Matched', dueFrom:'1410', dueTo:'2410'},
-    {id:'IC-002', from:'KSA-Main', to:'EGY-Office', type:'Management Fee', amount:48000, currency:'SAR', date:'2025-06-05', status:'Open',    dueFrom:'1411', dueTo:'2411'},
-    {id:'IC-003', from:'UAE-Branch', to:'KSA-Main', type:'Royalty Payment', amount:22000, currency:'AED', date:'2025-06-08', status:'Matched', dueFrom:'1410', dueTo:'2410'},
-  ]);
-}
+function seedIntercompany() { /* Demo data removed — new company starts clean */ }
 
 function renderIntercompany() {
   showSkeletonKPIs('icKPIs', 4);
@@ -3888,16 +3785,7 @@ function runICElimination() {
 }
 
 // ── CASH POSITION ──
-function seedBankAccounts() {
-  if (S.get('bankAccounts')) return;
-  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
-  S.set('bankAccounts', [
-    {id:'SNB-001', bank:'Saudi National Bank', name:'Main Operating Account', iban:'SA44 2000 0001 2345 6789 1234', currency:'SAR', balance:284291, signees:['Mahdi Al-Finance','Ahmed Al-Rashid'], status:'Active', type:'Current'},
-    {id:'ANB-002', bank:'Arab National Bank',  name:'Payroll Account',         iban:'SA36 0500 0000 0608 0108 0011', currency:'SAR', balance:142000, signees:['Mahdi Al-Finance'], status:'Active', type:'Current'},
-    {id:'SCB-003', bank:'Standard Chartered',  name:'USD Operations',          iban:'SA03 8000 0000 6080 1016 7519', currency:'USD', balance:48400, signees:['Mahdi Al-Finance','Ahmed Al-Rashid'], status:'Active', type:'Current'},
-    {id:'RJHI-004',bank:'Al-Rajhi Bank',       name:'SAR Reserve',             iban:'SA56 8000 0000 0000 0123 4567', currency:'SAR', balance:98200, signees:['Mahdi Al-Finance'], status:'Active', type:'Savings'},
-  ]);
-}
+function seedBankAccounts() { /* Demo data removed — new company starts clean */ }
 
 function renderCashPos() {
   showSkeletonKPIs('cashKPIs', 4);
@@ -4136,14 +4024,7 @@ function renderCashForecast() {
 }
 
 // ── LANDED COST ──
-function seedVoyages() {
-  if (S.get('voyages')) return;
-  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
-  S.set('voyages', [
-    {id:'VOY-001', supplier:'China Steel Works', po:'PO-0044', origin:'Shanghai, CN', dest:'Dammam, SA', eta:'2025-07-15', freight:18400, customs:12200, insurance:2800, handling:1400, status:'In Transit', items:[{name:'Steel Plates 3mm',qty:500,weight:12500,vol:6.2},{name:'Angle Iron 50x50',qty:200,weight:3200,vol:1.8}]},
-    {id:'VOY-002', supplier:'German Bearings GmbH', po:'PO-0045', origin:'Hamburg, DE', dest:'Dammam, SA', eta:'2025-07-22', freight:8200, customs:4400, insurance:1200, handling:600, status:'Loading', items:[{name:'Bearings SKF 6205',qty:1000,weight:480,vol:0.6}]},
-  ]);
-}
+function seedVoyages() { /* Demo data removed — new company starts clean */ }
 
 function renderLandedCost() {
   showSkeletonKPIs('lcKPIs', 4);
@@ -4228,98 +4109,7 @@ const DEPR_BOOKS = {
 };
 
 // ── SEED ASSETS (enhanced multi-book data) ──
-function seedAssets() {
-  if (S.get('fixedAssets')) return;
-  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
-  S.set('fixedAssets', [
-    { id:'FA-001', desc:'CNC Machining Centre — Haas VF-4', class:'ppe', loc:'Plant A', costCentre:'CC01',
-      cost:840000, salvage:42000, acqDate:'2023-01-15', status:'Active', tag:'TAG-1001',
-      serial:'HVF4-2023-0142', supplier:'Haas Automation', poRef:'PO-0031',
-      books:{
-        ifrs:{ method:'SL',  life:10, rate:10,   accumDepr:168000, nbv:672000 },
-        tax: { method:'DDB', life:7,  rate:28.57, accumDepr:240000, nbv:600000 },
-        mgmt:{ method:'DB',  life:8,  rate:25,    accumDepr:210000, nbv:630000 },
-      },
-      history:[
-        {date:'2023-01-15', event:'Acquisition', amount:840000, ref:'PO-0031'},
-        {date:'2023-12-31', event:'Depreciation Run', amount:-84000, ref:'DEPR-2023'},
-        {date:'2024-12-31', event:'Depreciation Run', amount:-84000, ref:'DEPR-2024'},
-      ]
-    },
-    { id:'FA-002', desc:'Industrial Compressor — Atlas Copco GA55', class:'ppe', loc:'Plant A', costCentre:'CC01',
-      cost:184000, salvage:9200, acqDate:'2022-06-01', status:'Active', tag:'TAG-1002',
-      serial:'GA55-0244-KSA', supplier:'Atlas Copco', poRef:'PO-0018',
-      books:{
-        ifrs:{ method:'SL',  life:8,  rate:12.5, accumDepr:55200, nbv:128800 },
-        tax: { method:'DDB', life:5,  rate:40,   accumDepr:110400, nbv:73600  },
-        mgmt:{ method:'SL',  life:10, rate:10,   accumDepr:36800, nbv:147200 },
-      },
-      history:[
-        {date:'2022-06-01', event:'Acquisition', amount:184000, ref:'PO-0018'},
-        {date:'2022-12-31', event:'Depreciation Run', amount:-11500, ref:'DEPR-2022'},
-      ]
-    },
-    { id:'FA-003', desc:'ERP Software License — ManuCost Platform', class:'intangible', loc:'IT', costCentre:'CC04',
-      cost:48000, salvage:0, acqDate:'2023-07-01', status:'Active', tag:'TAG-1003',
-      serial:'MCE-LIC-2023', supplier:'ManuCost Tech', poRef:'PO-0022',
-      books:{
-        ifrs:{ method:'SL', life:5,  rate:20,   accumDepr:19200, nbv:28800 },
-        tax: { method:'SL', life:3,  rate:33.3, accumDepr:32000, nbv:16000 },
-        mgmt:{ method:'SL', life:5,  rate:20,   accumDepr:19200, nbv:28800 },
-      },
-      history:[{date:'2023-07-01', event:'Acquisition', amount:48000, ref:'PO-0022'}]
-    },
-    { id:'FA-004', desc:'Factory Extension — Building B Construction', class:'cip', loc:'Plant B', costCentre:'CC01',
-      cost:420000, salvage:0, acqDate:'2025-03-01', status:'CIP', tag:'TAG-CIP-004',
-      serial:'—', supplier:'Al-Bina Contracting', poRef:'PRJ-002',
-      books:{
-        ifrs:{ method:'—', life:0, rate:0, accumDepr:0, nbv:420000 },
-        tax: { method:'—', life:0, rate:0, accumDepr:0, nbv:420000 },
-        mgmt:{ method:'—', life:0, rate:0, accumDepr:0, nbv:420000 },
-      },
-      history:[
-        {date:'2025-03-01', event:'CWIP Opened', amount:180000, ref:'PRJ-002'},
-        {date:'2025-04-15', event:'Cost Addition', amount:140000, ref:'GRN-0041'},
-        {date:'2025-05-20', event:'Cost Addition', amount:100000, ref:'GRN-0052'},
-      ]
-    },
-    { id:'FA-005', desc:'Forklift Toyota — 3-Ton Electric', class:'fleet', loc:'Warehouse', costCentre:'CC03',
-      cost:92000, salvage:8000, acqDate:'2021-05-01', status:'Active', tag:'TAG-1005',
-      serial:'TOY-3T-2021-044', supplier:'Toyota Industries', poRef:'PO-0009',
-      books:{
-        ifrs:{ method:'SL', life:7,  rate:14.3, accumDepr:52571, nbv:39429 },
-        tax: { method:'DDB',life:5,  rate:40,   accumDepr:66944, nbv:25056 },
-        mgmt:{ method:'SL', life:7,  rate:14.3, accumDepr:52571, nbv:39429 },
-      },
-      history:[{date:'2021-05-01', event:'Acquisition', amount:92000, ref:'PO-0009'}]
-    },
-    { id:'FA-006', desc:'Lathe Machine — Mazak QuickTurn', class:'ppe', loc:'Plant A', costCentre:'CC01',
-      cost:380000, salvage:19000, acqDate:'2020-01-01', status:'Disposed',
-      disposalDate:'2025-01-15', disposalProceeds:95000, disposalType:'Sale',
-      tag:'TAG-DISP-006', serial:'MAZAK-QT-2020', supplier:'Mazak Corp', poRef:'PO-0004',
-      books:{
-        ifrs:{ method:'SL', life:10, rate:10, accumDepr:285000, nbv:0 },
-        tax: { method:'DDB',life:7,  rate:20, accumDepr:380000, nbv:0 },
-        mgmt:{ method:'SL', life:10, rate:10, accumDepr:285000, nbv:0 },
-      },
-      history:[
-        {date:'2020-01-01', event:'Acquisition', amount:380000, ref:'PO-0004'},
-        {date:'2025-01-15', event:'Disposal — Sale', amount:95000, ref:'DISP-2025-001'},
-      ]
-    },
-  ]);
-
-  // Seed CWIP projects
-  if (!S.get('cwipProjects')) S.set('cwipProjects', [
-    { id:'CWIP-001', desc:'Factory Extension — Building B', wbs:'PRJ-002', budget:500000, committed:420000, actual:420000, status:'In Progress', openDate:'2025-03-01', targetCapDate:'2025-09-30', assetClass:'realestate' },
-    { id:'CWIP-002', desc:'New Paint Line — Automated System', wbs:'PRJ-004', budget:280000, committed:84000, actual:62000, status:'In Progress', openDate:'2025-05-01', targetCapDate:'2025-12-31', assetClass:'ppe' },
-  ]);
-
-  // Seed disposal records
-  if (!S.get('assetDisposals')) S.set('assetDisposals', [
-    { id:'DISP-001', assetId:'FA-006', desc:'Lathe Machine — Mazak QuickTurn', type:'Sale', nbvIFRS:95000, nbvTax:0, proceeds:95000, gainLossIFRS:0, gainLossTax:95000, date:'2025-01-15', approvedBy:'Mahdi Al-Finance', status:'Posted' },
-  ]);
-}
+function seedAssets() { /* Demo data removed — new company starts clean */ }
 
 // ── RENDER: ASSET REGISTER ──
 let _activeAssetTab = 'all';
@@ -5091,21 +4881,7 @@ PT['cwip']            = 'CWIP / CapEx Tracking';
 PT['disposal']        = 'Asset Disposals';
 
 // ── PROJECTS & WBS ──
-function seedProjects() {
-  if (S.get('projects')) return;
-  const _co = S.get('company'); if (_co && _co._wizardComplete) return;
-  S.set('projects', [
-    {id:'PRJ-001', name:'Aramco Valve Assembly Contract', cust:'Saudi Aramco', type:'billable', value:1200000, actualCost:284000, pctComplete:28, revRecognised:336000, status:'Active', wbs:[
-      {id:'1.0',level:1,name:'Project Management',budget:80000,actual:22400},{id:'1.1',level:2,name:'Planning & Design',budget:40000,actual:12000},{id:'1.2',level:2,name:'Reporting',budget:40000,actual:10400},
-      {id:'2.0',level:1,name:'Manufacturing',budget:840000,actual:218400},{id:'2.1',level:2,name:'Procurement',budget:380000,actual:98000},{id:'2.2',level:2,name:'Fabrication',budget:280000,actual:84200},{id:'2.3',level:2,name:'Testing & QC',budget:180000,actual:36200},
-      {id:'3.0',level:1,name:'Delivery & Commissioning',budget:280000,actual:43200},
-    ]},
-    {id:'PRJ-002', name:'Factory Expansion — Phase 2', cust:'Internal CapEx', type:'capex', value:420000, actualCost:182000, pctComplete:43, revRecognised:0, status:'Active', wbs:[
-      {id:'1.0',level:1,name:'Civil Works',budget:180000,actual:82000},{id:'2.0',level:1,name:'Mechanical & Electrical',budget:140000,actual:60000},{id:'3.0',level:1,name:'Equipment Installation',budget:100000,actual:40000},
-    ]},
-    {id:'PRJ-003', name:'SABIC Pump Supply', cust:'SABIC', type:'billable', value:480000, actualCost:480000, pctComplete:100, revRecognised:480000, status:'Completed', wbs:[]},
-  ]);
-}
+function seedProjects() { /* Demo data removed — new company starts clean */ }
 
 let _activeProjTab = 'active';
 function switchProjTab(tab, el) {
@@ -6062,80 +5838,7 @@ const COA_MASTER = [
 
 // ── ACDOCA: UNIVERSAL LEDGER ENTRIES ──
 // Each entry has: txCurrency, txAmount, baseCurrAmt, bookAmts per ledger, dimensions, cryptoHash
-function seedGLData() {
-  if (S.get('glLedger')) return;
-  // Don't seed demo GL data for a freshly wizard-configured company
-  const co = S.get('company');
-  if (co && co._wizardComplete) return;
-  const prevHash = 'GENESIS-0000000000000000';
-
-  const buildHash = (prev, entry) => {
-    // FNV-style chained hash (same as audit log)
-    const str = prev + JSON.stringify({d:entry.date,a:entry.baseAmt,je:entry.jeId});
-    let h = 0x811c9dc5;
-    for (let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=(h*0x01000193)>>>0;}
-    return 'GL' + h.toString(16).padStart(8,'0').toUpperCase();
-  };
-
-  const entries = [
-    // JE-0085: WIP transfer
-    { jeId:'JE-0085', date:'2025-06-05', desc:'WIP transfer — WO-2019 completed to FG', src:'Costing',
-      account:'1320', dr:143200, cr:0, txCurr:'SAR', txAmt:143200, baseAmt:143200,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-003' },
-    { jeId:'JE-0085', date:'2025-06-05', desc:'WIP transfer — WO-2019 completed to FG', src:'Costing',
-      account:'1310', dr:0, cr:143200, txCurr:'SAR', txAmt:-143200, baseAmt:-143200,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-003' },
-    // JE-0086: Payroll
-    { jeId:'JE-0086', date:'2025-06-08', desc:'Payroll — June 2025 Direct Labor', src:'Payroll',
-      account:'5020', dr:112800, cr:0, txCurr:'SAR', txAmt:112800, baseAmt:112800,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-003' },
-    { jeId:'JE-0086', date:'2025-06-08', desc:'Payroll — June 2025 Direct Labor', src:'Payroll',
-      account:'1010', dr:0, cr:112800, txCurr:'SAR', txAmt:-112800, baseAmt:-112800,
-      dims:{cc:'CC02',dept:'D002',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-003' },
-    // JE-0087: GRN
-    { jeId:'JE-0087', date:'2025-06-10', desc:'GRN-0041 — Chem Solutions Arabia', src:'Procurement',
-      account:'1300', dr:9800, cr:0, txCurr:'SAR', txAmt:9800, baseAmt:9800,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-002' },
-    { jeId:'JE-0087', date:'2025-06-10', desc:'GRN-0041 — Chem Solutions Arabia', src:'Procurement',
-      account:'2010', dr:0, cr:9800, txCurr:'SAR', txAmt:-9800, baseAmt:-9800,
-      dims:{cc:'CC02',dept:'D002',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-002' },
-    // JE-0088: OH Allocation
-    { jeId:'JE-0088', date:'2025-06-10', desc:'Manufacturing OH allocation — June', src:'OH Alloc',
-      account:'5030', dr:94200, cr:0, txCurr:'SAR', txAmt:94200, baseAmt:94200,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-001' },
-    { jeId:'JE-0088', date:'2025-06-10', desc:'Manufacturing OH allocation — June', src:'OH Alloc',
-      account:'6020', dr:0, cr:94200, txCurr:'SAR', txAmt:-94200, baseAmt:-94200,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-001' },
-    // USD Foreign currency entry
-    { jeId:'JE-0089', date:'2025-06-12', desc:'USD import payment — Global Bearings', src:'Treasury',
-      account:'1011', dr:0, cr:46540, txCurr:'USD', txAmt:-12411, baseAmt:-46540,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-001',
-      fxRate:3.75, fxNote:'1 USD = 3.75 SAR' },
-    { jeId:'JE-0089', date:'2025-06-12', desc:'USD import payment — Global Bearings', src:'Treasury',
-      account:'2010', dr:46540, cr:0, txCurr:'SAR', txAmt:46540, baseAmt:46540,
-      dims:{cc:'CC01',dept:'D001',lob:'LOB1'}, book:'ifrs', status:'Posted', userId:'USR-001' },
-  ];
-
-  // Add crypto hashes
-  let lastHash = prevHash;
-  const ledger = entries.map((e, i) => {
-    const hash = buildHash(lastHash, e);
-    lastHash = hash;
-    return { ...e, seq: i+1, hash, ts: new Date().toISOString() };
-  });
-
-  S.set('glLedger', ledger);
-
-  // Seed allocation rules
-  if (!S.get('allocRules')) S.set('allocRules', [
-    { id:'ALLOC-001', name:'IT Overhead → Cost Centres', srcAccount:'6020', driver:'headcount',
-      targets:[{cc:'CC01',pct:60},{cc:'CC02',pct:25},{cc:'CC03',pct:15}], freq:'Monthly', active:true },
-    { id:'ALLOC-002', name:'Factory Overhead → Products', srcAccount:'5030', driver:'machine_hours',
-      targets:[{cc:'CC01',pct:70},{cc:'CC03',pct:30}], freq:'Monthly', active:true },
-    { id:'ALLOC-003', name:'Admin G&A Split by Revenue', srcAccount:'6020', driver:'revenue_pct',
-      targets:[{lob:'LOB1',pct:65},{lob:'LOB2',pct:35}], freq:'Monthly', active:false },
-  ]);
-}
+function seedGLData() { /* Demo data removed — new company starts clean */ }
 
 // ── DIMENSION COMBINATION VALIDATOR ──
 const INVALID_DIM_COMBOS = [
@@ -7362,7 +7065,7 @@ const mUserTemplates = {
       const users = S.get('users') || [];
       if (users.find(u => u.username === user)) { toast('Username already exists.', 'error'); return; }
       users.push({
-        id: 'USR-' + String(Date.now()).slice(-4),
+        id:nextId('USR'),
         name, username: user,
         password: hashPw(pass),
         role: gv('mu_role') || 'viewer',
@@ -7385,8 +7088,8 @@ const mUserTemplates = {
       return `
         <input type="hidden" id="mu_edit_id" value="${u.id||''}">
         <div class="fr fr2">${inp('Full Name','mu_ename','text','',u.name||'')}${inp('Email','mu_eemail','email','',u.email||'')}</div>
-        <div class="fr fr2">${inp('Department','mu_edept','text','',u.dept||'')}${sel('Role','mu_erole',['admin','manager','accountant','warehouse','viewer'],u.role||'viewer')}</div>
-        <div class="fr fr2">${sel('Status','mu_estatus',['Active','Inactive'],u.status||'Active')}${inp('New Password (leave blank to keep)','mu_epass','password','')}</div>
+        <div class="fr fr2">${inp('Department','mu_edept','text','',u.dept||'')}${selV('Role','mu_erole',['admin','manager','accountant','warehouse','viewer'],u.role||'viewer')}</div>
+        <div class="fr fr2">${selV('Status','mu_estatus',['Active','Inactive'],u.status||'Active')}${inp('New Password (leave blank to keep)','mu_epass','password','')}</div>
         <div class="alert a-info" style="margin-top:10px">Username: <strong>${u.username||'—'}</strong> · Created: ${u.created||'—'}</div>`;
     },
     save: () => {
@@ -7394,10 +7097,10 @@ const mUserTemplates = {
       const users = S.get('users') || [];
       const u = users.find(x => x.id === userId);
       if (!u) { toast('User not found.', 'error'); return; }
-      u.name   = gv('mu_ename') || u.name;
-      u.email  = gv('mu_eemail') || u.email;
-      u.dept   = gv('mu_edept') || u.dept;
-      u.role   = gv('mu_erole') || u.role;
+      u.name   = gv('mu_ename')   || u.name;
+      u.email  = gv('mu_eemail')  || u.email;
+      u.dept   = gv('mu_edept')   || u.dept;
+      u.role   = gv('mu_erole')   || u.role;
       u.status = gv('mu_estatus') || u.status;
       const newPass = gv('mu_epass');
       if (newPass) {
@@ -7406,7 +7109,7 @@ const mUserTemplates = {
       }
       S.set('users', users);
       closeM(); renderUsers();
-      toast('User ' + u.name + ' updated.', 'success');
+      toast('✓ User ' + u.name + ' updated.', 'success');
     }
   },
 };
@@ -7432,32 +7135,30 @@ try {
   if (_resetPending) {
     localStorage.removeItem('mce_reset_pending');
     localStorage.setItem('mce_gs_url', DEFAULT_GS_URL);
-    localStorage.setItem('mce_data_version', '5');
+    localStorage.setItem('mce_data_version', '6'); // must match DATA_VERSION constant
     sessionStorage.clear();
-    seedCurrencies();
-    seedFiscalData();
-    seedApprovalPolicies();
-    seedAllNew();
     applyTheme();
     document.getElementById('wizOv').style.display = 'flex';
     wRender();
-    toast('All data has been cleared. Please complete the setup wizard.', 'info', 4000);
+    toast('All data cleared. Complete the setup wizard.', 'info', 4000);
   } else {
   // ── NORMAL BOOT ──
   // VERSION 5: added trialBalanceData to localStorage (was const)
   const DATA_VERSION = '6';
   if (localStorage.getItem('mce_data_version') !== DATA_VERSION) {
-    const theme = localStorage.getItem('mce_theme');
-    const gsUrl = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
+    const theme    = localStorage.getItem('mce_theme');
+    const gsUrl    = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
     const existingCo = localStorage.getItem('mce_company');
-    // Only full-clear if no company configured — preserve wizard users
+    // Only full-clear if no company has been configured yet
     if (!existingCo) {
       Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
     }
-    localStorage.setItem('mce_theme', theme || 'light');
+    // Always restore essentials
+    if (theme) localStorage.setItem('mce_theme', theme);
     localStorage.setItem('mce_gs_url', gsUrl);
     localStorage.setItem('mce_data_version', DATA_VERSION);
-    sessionStorage.clear();
+    // Only clear session if no company — otherwise keep user logged in
+    if (!existingCo) sessionStorage.clear();
   }
   // Retroactively protect wizard-configured companies from demo seeding
   (function fixWizardFlag() {
