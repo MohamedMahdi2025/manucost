@@ -707,7 +707,7 @@ textarea.fc{resize:vertical;min-height:68px}
 </div>
 
 <!-- ═══ WIZARD ═══ -->
-<div class="wiz-ov" id="wizOv">
+<div class="wiz-ov" id="wizOv" style="display:none">
   <div class="wiz-card">
     <div class="wiz-hdr">
       <div class="wiz-logo">
@@ -2271,6 +2271,9 @@ function doLogin() {
 }
 
 function showLogin() {
+  // Hide everything else first
+  const wizEl = document.getElementById('wizOv');
+  if (wizEl) wizEl.style.display = 'none';
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginOv').style.display = 'flex';
   const co = S.get('company') || {};
@@ -7133,6 +7136,9 @@ const mUserTemplates = {
       co._wizardComplete = true;
       localStorage.setItem('mce_company', JSON.stringify(co));
     }
+    // HIDE wizard overlay before showing anything else
+    var wizEl = document.getElementById('wizOv');
+    if (wizEl) wizEl.style.display = 'none';
     var sess=null; try{sess=getSession();}catch(e){}
     if (sess) {
       document.getElementById('app').style.display='flex';
