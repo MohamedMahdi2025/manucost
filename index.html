@@ -317,8 +317,8 @@ textarea.fc{resize:vertical;min-height:68px}
 .wh-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:box-shadow .15s}
 .wh-card{transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}.wh-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.12);transform:translateY(-3px)}
 /* ── LOGIN SCREEN ── */
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-.login-ov { display:none }
+@keyframes loginPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+.login-ov { display:none;position:fixed;inset:0;z-index:3000 }
 .login-card{background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.15);width:400px;overflow:hidden}
 .login-header{background:var(--blue);padding:28px 32px 24px;text-align:center}
 .login-logo{width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px}
@@ -653,133 +653,136 @@ textarea.fc{resize:vertical;min-height:68px}
 </nav>
 
 <!-- ═══ LOGIN SCREEN ═══ -->
-<div class="login-ov" id="loginOv" style="display:none;position:fixed;inset:0;z-index:3000;display:none">
-  <div style="display:flex;min-height:100vh;font-family:Calibri,Inter,sans-serif">
+<div class="login-ov" id="loginOv" style="display:none;position:fixed;inset:0;z-index:3000">
+  <div style="display:flex;width:100%;height:100%;font-family:Calibri,Inter,sans-serif">
 
-    <!-- Left: Form -->
-    <div style="width:100%;max-width:480px;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;z-index:10">
-      <div style="max-width:380px;width:100%;margin:0 auto">
+    <!-- ═══ LEFT: Form Panel ═══ -->
+    <div style="width:460px;min-width:380px;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:40px 48px;box-shadow:4px 0 24px rgba(0,0,0,.08);position:relative;z-index:2">
+      <div style="max-width:360px;width:100%">
 
-        <!-- Logo -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px">
-          <div style="width:36px;height:36px;background:#0f172a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700" id="loginLogoLetter">M</div>
+        <!-- Company Logo -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:36px">
+          <div style="width:40px;height:40px;background:#0f172a;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:800;flex-shrink:0" id="loginLogoLetter">M</div>
           <div>
-            <div style="font-size:16px;font-weight:700;color:#0f172a;line-height:1" id="loginCompanyTitle">ManuCost ERP</div>
-            <div style="font-size:11px;color:#64748b;letter-spacing:.04em" id="loginCompanyName">Manufacturing ERP System</div>
+            <div style="font-size:15px;font-weight:700;color:#0f172a;line-height:1.2" id="loginCompanyTitle">ManuCost ERP</div>
+            <div style="font-size:11px;color:#94a3b8;letter-spacing:.03em" id="loginCompanyName">Manufacturing ERP System</div>
           </div>
         </div>
 
-        <!-- Header -->
+        <!-- Heading -->
         <div style="margin-bottom:28px">
-          <h2 style="font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;margin-bottom:4px">Sign In</h2>
-          <p style="font-size:13px;color:#64748b">Enter your credentials to access your secure workspace.</p>
+          <h2 style="font-size:24px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;margin:0 0 6px">Sign In</h2>
+          <p style="font-size:13px;color:#64748b;margin:0">Enter your credentials to access your secure workspace.</p>
         </div>
 
-        <!-- Form -->
-        <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Username -->
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px">Username</label>
+          <input id="loginUser" type="text" placeholder="Enter your username" autocomplete="username"
+            onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()"
+            style="width:100%;padding:11px 14px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;color:#0f172a;transition:all .15s"
+            onfocus="this.style.borderColor='#0078D4';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(0,120,212,.1)'"
+            onblur="this.style.borderColor='#E2E8F0';this.style.background='#F8FAFC';this.style.boxShadow='none'">
+        </div>
 
-          <!-- Username -->
-          <div>
-            <label style="display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Username</label>
-            <input id="loginUser" type="text" placeholder="Enter your username" autocomplete="username"
+        <!-- Password -->
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:7px">Password</label>
+          <div style="position:relative">
+            <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"
               onkeydown="if(event.key==='Enter')doLogin()"
-              style="width:100%;padding:10px 14px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;transition:.15s"
-              onfocus="this.style.borderColor='#0078D4';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(0,120,212,.12)'"
-              onblur="this.style.borderColor='#E2E8F0';this.style.background='#F1F5F9';this.style.boxShadow='none'">
+              style="width:100%;padding:11px 44px 11px 14px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;color:#0f172a;transition:all .15s"
+              onfocus="this.style.borderColor='#0078D4';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(0,120,212,.1)'"
+              onblur="this.style.borderColor='#E2E8F0';this.style.background='#F8FAFC';this.style.boxShadow='none'">
+            <button onclick="togglePw()" id="pwToggle"
+              style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:4px;line-height:1">👁</button>
           </div>
+        </div>
 
-          <!-- Password -->
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <label style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b">Password</label>
-            </div>
-            <div style="position:relative">
-              <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"
-                onkeydown="if(event.key==='Enter')doLogin()"
-                style="width:100%;padding:10px 40px 10px 14px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;transition:.15s"
-                onfocus="this.style.borderColor='#0078D4';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(0,120,212,.12)'"
-                onblur="this.style.borderColor='#E2E8F0';this.style.background='#F1F5F9';this.style.boxShadow='none'">
-              <button onclick="togglePw()" id="pwToggle"
-                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0">👁</button>
-            </div>
-          </div>
+        <!-- Sign In Button -->
+        <button id="loginBtn" onclick="doLogin()"
+          style="width:100%;padding:13px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.01em;transition:all .15s"
+          onmouseover="this.style.background='#1e293b';this.style.transform='translateY(-1px)'"
+          onmouseout="this.style.background='#0f172a';this.style.transform='translateY(0)'">
+          Sign In &nbsp;→
+        </button>
 
-          <!-- Sign In Button -->
-          <button id="loginBtn" onclick="doLogin()"
-            style="width:100%;padding:11px 16px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;margin-top:4px"
-            onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
-            Sign In <span style="font-size:16px">→</span>
-          </button>
-
-          <!-- Hint (shown on failed login) -->
-          <div id="loginHint" style="display:none;padding:10px 14px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;font-size:12px;color:#92400E">
-            💡 Default credentials: <strong>admin</strong> / <strong>Admin@1234</strong>
-          </div>
-
+        <!-- Hint -->
+        <div id="loginHint" style="display:none;margin-top:14px;padding:10px 14px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:12px;color:#92400E;text-align:center">
+          💡 Default: <strong>admin</strong> / <strong>Admin@1234</strong>
         </div>
 
         <!-- Divider -->
-        <div style="display:flex;align-items:center;gap:12px;margin:24px 0">
+        <div style="display:flex;align-items:center;gap:14px;margin:24px 0">
           <div style="flex:1;height:1px;background:#E2E8F0"></div>
           <span style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8">Enterprise Access</span>
           <div style="flex:1;height:1px;background:#E2E8F0"></div>
         </div>
 
         <!-- SSO Button -->
-        <button style="width:100%;padding:10px 16px;border:1px solid #E2E8F0;background:#fff;border-radius:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s"
-          onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
-          🏢 Sign in with SSO
+        <button style="width:100%;padding:11px;border:1.5px solid #E2E8F0;background:#fff;border-radius:8px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.15s"
+          onmouseover="this.style.background='#F8FAFC';this.style.borderColor='#CBD5E1'"
+          onmouseout="this.style.background='#fff';this.style.borderColor='#E2E8F0'">
+          🏢 &nbsp;Sign in with SSO
         </button>
 
         <!-- Footer -->
-        <div style="margin-top:28px;padding-top:20px;border-top:1px solid #E2E8F0">
-          <div style="display:flex;align-items:center;gap:6px;color:#64748b;margin-bottom:10px">
-            <span style="font-size:13px">🔒</span>
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid #F1F5F9">
+          <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;margin-bottom:8px">
+            <span style="font-size:14px">🔒</span>
             <span style="font-size:12px">256-bit AES encryption · Data secured</span>
           </div>
-          <div id="loginDebug" style="font-size:10px;color:#94a3b8"></div>
+          <div id="loginDebug" style="font-size:10px;color:#cbd5e1"></div>
         </div>
 
       </div>
     </div>
 
-    <!-- Right: Hero -->
+    <!-- ═══ RIGHT: Hero Panel ═══ -->
     <div style="flex:1;background:#0f172a;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
-      <!-- Dot grid pattern -->
-      <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 2px 2px, rgba(255,255,255,.06) 1px, transparent 0);background-size:24px 24px"></div>
+      <!-- Dot-grid background -->
+      <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 2px 2px,rgba(255,255,255,.07) 1px,transparent 0);background-size:28px 28px"></div>
       <!-- Blue glow -->
-      <div style="position:absolute;top:20%;left:30%;width:400px;height:400px;background:rgba(0,120,212,.15);border-radius:50%;filter:blur(80px)"></div>
+      <div style="position:absolute;top:15%;left:20%;width:500px;height:500px;background:rgba(0,120,212,.12);border-radius:50%;filter:blur(100px);pointer-events:none"></div>
 
-      <div style="position:relative;z-index:2;text-align:center;padding:40px;max-width:480px">
+      <!-- Content -->
+      <div style="position:relative;z-index:2;text-align:center;padding:40px 48px;max-width:520px;width:100%">
 
-        <!-- System status pill -->
-        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:99px;margin-bottom:32px">
-          <span style="width:6px;height:6px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite"></span>
-          <span style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8)">System Secure & Operational</span>
+        <!-- Status pill -->
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:7px 18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:99px;margin-bottom:32px">
+          <span style="width:7px;height:7px;background:#22c55e;border-radius:50%;animation:loginPulse 2s ease-in-out infinite"></span>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85)">System Secure &amp; Operational</span>
         </div>
 
-        <!-- ERP Logo icon -->
-        <div style="font-size:56px;margin-bottom:16px">🏭</div>
+        <!-- Icon -->
+        <div style="font-size:64px;margin-bottom:18px;line-height:1">🏭</div>
 
         <!-- Title -->
-        <h1 style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-0.02em;margin-bottom:12px">ManuCost ERP</h1>
-        <p style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:32px">
+        <h1 style="font-size:34px;font-weight:800;color:#fff;letter-spacing:-0.03em;margin:0 0 12px">ManuCost ERP</h1>
+        <p style="font-size:15px;color:rgba(255,255,255,.65);line-height:1.65;margin:0 0 36px">
           Monitor global performance, secure assets, and drive enterprise growth from a single source of truth.
         </p>
 
-        <!-- Mini KPI cards -->
+        <!-- KPI Cards (plain HTML — no JS) -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-          ${['GL Modules','Security Tier','Uptime'].map((l,i)=>
-            `<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:left">
-              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px">${l}</div>
-              <div style="font-size:18px;font-weight:700;color:#fff">${['55+','Level 4','99.9%'][i]}</div>
-            </div>`).join('')}
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:16px;text-align:left">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px">GL Modules</div>
+            <div style="font-size:20px;font-weight:700;color:#fff">55+</div>
+          </div>
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:16px;text-align:left">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px">Security Tier</div>
+            <div style="font-size:20px;font-weight:700;color:#fff">Level 4</div>
+          </div>
+          <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:16px;text-align:left">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:8px">Uptime</div>
+            <div style="font-size:20px;font-weight:700;color:#fff">99.9%</div>
+          </div>
         </div>
 
       </div>
 
-      <!-- Version footer -->
-      <div style="position:absolute;bottom:16px;right:20px;font-size:11px;color:rgba(255,255,255,.3)">
+      <!-- Version -->
+      <div style="position:absolute;bottom:18px;right:22px;font-size:11px;color:rgba(255,255,255,.28)">
         © 2025 ManuCost ERP · v2.1.0
       </div>
     </div>
@@ -1687,8 +1690,95 @@ textarea.fc{resize:vertical;min-height:68px}
 </div>
 <!-- ════ WORK ORDERS ════ -->
 <div class="page" id="page-workorders">
-  <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mWO')">+ New Work Order</button><button class="btn btn-g sm" onclick="nav('jobcost')">Cost Sheets</button><select class="fc" style="width:150px" onchange="filterTbl('woTbl',9,this.value)"><option value="">All Status</option><option>New</option><option>Early Stage</option><option>In Progress</option><option>Near Done</option><option>Done</option></select></div>
-  <div class="card mt12"><div class="card-hdr"><span class="card-title">Work Order Register</span></div><div class="tw"><table><thead><tr><th>WO #</th><th>Customer</th><th>Product</th><th>Qty</th><th>DM</th><th>DL</th><th>OH Applied</th><th>Total Cost</th><th>% Done</th><th>Status</th><th></th></tr></thead><tbody id="woTbl"></tbody></table></div></div>
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="font-size:28px;font-weight:700;color:var(--text1);letter-spacing:-0.02em;margin-bottom:4px">Work Orders</h1>
+      <p style="color:var(--text2);font-size:13px">Real-time machine utilization and personnel labor rates across cost centers.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fc" style="height:36px;width:160px" onchange="filterTbl('woTbl',9,this.value)">
+        <option value="">All Status</option><option>New</option><option>Early Stage</option>
+        <option>In Progress</option><option>Near Done</option><option>Done</option>
+      </select>
+      <button class="btn btn-g" onclick="nav('jobcost')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px">📊 Cost Sheets</button>
+      <button class="btn btn-g" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px">↓ Export CSV</button>
+      <button class="btn btn-p" onclick="openM('mWO')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>+</span> New Work Order</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid g4 mb16" id="woKPIs"></div>
+
+  <!-- Main bento: Gantt + Cost Distribution -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+
+    <!-- Work Order Gantt/Table Card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)">
+        <span style="font-size:15px;font-weight:700;color:var(--text1)">Work Order Register</span>
+        <div style="display:flex;gap:4px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+          <button style="padding:4px 12px;font-size:12px;font-weight:700;background:var(--blue);color:#fff;border:none;cursor:pointer">Active</button>
+          <button style="padding:4px 12px;font-size:12px;font-weight:600;background:none;border:none;cursor:pointer;color:var(--text2)">All</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+              <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Worker / Machine</th>
+              <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">WO #</th>
+              <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Product</th>
+              <th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Total Cost</th>
+              <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Progress</th>
+              <th style="padding:9px 14px;text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Status</th>
+              <th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="woTbl"></tbody>
+        </table>
+      </div>
+      <div style="padding:10px 16px;background:var(--surface2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;gap:16px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:var(--blue);border-radius:2px"></span>Direct Production</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:var(--orange);border-radius:2px"></span>In Progress</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:var(--green);border-radius:2px"></span>Done</span>
+        </div>
+        <span style="font-size:12px;color:var(--text3)" id="woCount">—</span>
+      </div>
+    </div>
+
+    <!-- Cost Center Distribution + Overhead Burden -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px">
+        <h3 style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:16px">Cost Center Distribution</h3>
+        <div id="woCostBars" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Total Direct Labor</span>
+          <span style="font-size:17px;font-weight:700;color:var(--text1)" id="woTotalDL">—</span>
+        </div>
+      </div>
+      <!-- Overhead Burden Card -->
+      <div style="background:var(--blue);border-radius:10px;padding:18px;color:#fff;position:relative;overflow:hidden">
+        <div style="position:relative;z-index:1">
+          <h3 style="font-size:14px;font-weight:700;margin-bottom:6px">⚙ Overhead Burden</h3>
+          <p style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:14px">Fixed & variable overhead applied per labor hour.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:rgba(255,255,255,.12);border-radius:8px;padding:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px">Fixed Multiplier</div>
+              <div style="font-size:18px;font-weight:700;font-family:monospace">1.45×</div>
+            </div>
+            <div style="background:rgba(255,255,255,.12);border-radius:8px;padding:12px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:4px">Variable Rate</div>
+              <div style="font-size:18px;font-weight:700;font-family:monospace" id="woOHRate">—</div>
+            </div>
+          </div>
+          <button onclick="nav('overhead')" style="width:100%;margin-top:14px;padding:8px;background:#fff;color:var(--blue);border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">Adjust Burden Rates</button>
+        </div>
+        <div style="position:absolute;right:-20px;bottom:-20px;font-size:100px;opacity:.08">🏭</div>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- ════ JOB COST SHEET ════ -->
 <div class="page" id="page-jobcost">
@@ -1754,8 +1844,55 @@ textarea.fc{resize:vertical;min-height:68px}
 </div>
 <!-- ════ TIMESHEETS ════ -->
 <div class="page" id="page-timesheets">
-  <div class="cmd-bar"><button class="btn btn-p sm">+ New Timesheet</button><button class="btn btn-ok sm" onclick="toast('Timesheets posted to Work Orders.','success')">Post to WOs</button></div>
-  <div class="card mt12"><div class="card-hdr"><span class="card-title">Timesheet Register</span></div><div class="tw"><table><thead><tr><th>Employee</th><th>Work Order</th><th>Activity</th><th>Date</th><th>Hours</th><th>Rate/hr</th><th>DL Cost</th></tr></thead><tbody id="tsTbl"></tbody></table></div></div>
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="font-size:28px;font-weight:700;color:var(--text1);letter-spacing:-0.02em;margin-bottom:4px">Timesheets</h1>
+      <p style="color:var(--text2);font-size:13px">Personnel labor logs with base rates, overtime, and fully burdened costs.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-s" onclick="toast('Timesheets posted to Work Orders.','success')" style="height:36px;padding:0 14px">Post to WOs</button>
+      <button class="btn btn-g" style="height:36px;padding:0 14px">↓ Export CSV</button>
+      <button class="btn btn-p" onclick="openM('mTS')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>+</span> New Entry</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid g4 mb16" id="tsKPIs"></div>
+
+  <!-- Table Card -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)">
+      <span style="font-size:15px;font-weight:700;color:var(--text1)">Detailed Labor Logs</span>
+      <span style="font-size:12px;color:var(--text3)" id="tsCount">—</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+            <th style="padding:9px 18px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Worker</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Shift ID</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Work Order</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Activity</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Date</th>
+            <th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Base Rate</th>
+            <th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">OT Hours</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Cost Center</th>
+            <th style="padding:9px 14px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Burdened Cost</th>
+            <th style="padding:9px 14px;text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tsTbl"></tbody>
+      </table>
+    </div>
+    <div style="padding:10px 18px;background:var(--surface2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:var(--text3)" id="tsFootNote">—</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-g" style="height:28px;padding:0 12px;font-size:12px">← Prev</button>
+        <button class="btn btn-g" style="height:28px;padding:0 12px;font-size:12px">Next →</button>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- ════ PAYROLL ════ -->
 <div class="page" id="page-payroll">
@@ -3442,7 +3579,161 @@ function showBins(code,name){const bins=whBins[code]||[];document.getElementById
 
 // ── RENDER: BOM / WO / JC ──
 function renderBOM(){document.getElementById('bomTbl').innerHTML=(S.get('boms')||[]).map(b=>`<tr><td class="t-blue fw6">${b.id}</td><td>${b.prod}</td><td>${b.ver}</td><td class="num">${b.qty}</td><td class="num">SAR ${fN(b.mat)}</td><td class="num">SAR ${fN(b.lab)}</td><td class="num">SAR ${fN(b.oh)}</td><td class="num fw6">SAR ${fN(b.total)}</td><td>${sBadge(b.status)}</td></tr>`).join('');}
-function renderWO(){document.getElementById('woTbl').innerHTML=(S.get('workorders')||[]).map(w=>`<tr><td class="t-blue fw6">${w.id}</td><td>${w.cust}</td><td>${w.prod}</td><td class="num">${w.qty}</td><td class="num">SAR ${fN(w.dm)}</td><td class="num">SAR ${fN(w.dl)}</td><td class="num">SAR ${fN(w.oh)}</td><td class="num fw6">SAR ${fN(w.dm+w.dl+w.oh)}</td><td><div class="prog"><div class="prog-bar ${w.done>70?'pb-green':w.done>30?'pb-blue':'pb-orange'}" style="width:${w.done}%"></div></div> ${w.done}%</td><td>${sBadge(w.status)}</td><td><button class="btn btn-g xs" onclick="document.getElementById('jcSel').value='${w.id}';nav('jobcost');renderJC('${w.id}')">Cost Sheet</button></td></tr>`).join('');}
+function renderWO() {
+  const wos = S.get('workorders') || [];
+  const cur = baseCurr();
+  const ts  = S.get('timesheets') || [];
+
+  // KPIs
+  const open    = wos.filter(w => w.status !== 'Done').length;
+  const done    = wos.filter(w => w.status === 'Done').length;
+  const totalCost = wos.reduce((s,w) => s+(w.dm||0)+(w.dl||0)+(w.oh||0), 0);
+  const avgDone   = wos.length ? Math.round(wos.reduce((s,w)=>s+(w.done||0),0)/wos.length) : 0;
+  const woKPIs = document.getElementById('woKPIs');
+  if (woKPIs) woKPIs.innerHTML = [
+    { l:'Active Machine Utilization', v: avgDone+'%', sub: open+' orders in progress', c:'c-blue', bar:true, pct:avgDone },
+    { l:'Total Hours Logged',         v: ts.length ? ts.reduce((s,t)=>s+(t.hours||0),0)+'h' : '—', sub:'All timesheets', c:'c-teal' },
+    { l:'Avg Labor Rate',             v: cur+' '+(wos.length?fN(totalCost/Math.max(wos.reduce((s,w)=>s+(w.dl||0),0)/Math.max(wos.length,1),1)):'—')+'/hr', sub:'Incl. overhead load', c:'c-orange' },
+    { l:'Overhead Variance',          v: fC(wos.reduce((s,w)=>s+(w.oh||0),0), cur), sub:'Applied overhead total', c:'c-green' },
+  ].map(k=>`<div class="kpi ${k.c}">
+    <div class="kpi-lbl">${k.l}</div>
+    <div class="kpi-val">${k.v}</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px">${k.sub}</div>
+    ${k.bar?`<div style="margin-top:8px;height:4px;background:var(--surface2);border-radius:99px;overflow:hidden"><div style="height:100%;width:${k.pct}%;background:var(--blue);border-radius:99px"></div></div>`:''}
+  </div>`).join('');
+
+  // Cost center bars
+  const bars = document.getElementById('woCostBars');
+  if (bars) {
+    const centers = ['Direct Materials','Direct Labor','Overhead'];
+    const vals = [
+      wos.reduce((s,w)=>s+(w.dm||0),0),
+      wos.reduce((s,w)=>s+(w.dl||0),0),
+      wos.reduce((s,w)=>s+(w.oh||0),0),
+    ];
+    const maxVal = Math.max(...vals, 1);
+    const colors = ['var(--blue)','var(--green)','var(--orange)'];
+    bars.innerHTML = centers.map((c,i)=>`
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="font-weight:600;color:var(--text1)">${c}</span>
+          <span style="font-family:monospace;color:var(--text2)">${fC(vals[i],cur)}</span>
+        </div>
+        <div style="height:6px;background:var(--surface2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(vals[i]/maxVal*100)}%;background:${colors[i]};border-radius:99px"></div>
+        </div>
+      </div>`).join('');
+    const totalDL = document.getElementById('woTotalDL');
+    if (totalDL) totalDL.textContent = fC(vals[1], cur);
+  }
+
+  // OH rate
+  const ohRateEl = document.getElementById('woOHRate');
+  if (ohRateEl) {
+    const ohRates = S.get('ohRates') || [];
+    const rate = ohRates[0]?.rate || 0;
+    ohRateEl.textContent = rate ? fC(rate, cur)+'/hr' : cur+' —';
+  }
+
+  // Table rows
+  const statusColors = { 'Done':'var(--green)', 'In Progress':'var(--blue)', 'New':'var(--text3)', 'Near Done':'var(--teal)', 'Early Stage':'var(--orange)' };
+
+  document.getElementById('woTbl').innerHTML = wos.length ? wos.map(w => {
+    const totalCostW = (w.dm||0)+(w.dl||0)+(w.oh||0);
+    const done = w.done || 0;
+    const barColor = done >= 80 ? 'var(--green)' : done >= 40 ? 'var(--blue)' : 'var(--orange)';
+    const sColor = statusColors[w.status] || 'var(--text3)';
+    return `<tr onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background=''">
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:6px;background:var(--blue-xlt);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">⚙</div>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--text1)">${w.cust||'—'}</div>
+            <div style="font-size:11px;color:var(--text3)">Cost Center: ${w.cc||'Production'}</div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:12px;color:var(--blue);font-weight:700">${w.id}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text1)">${w.prod||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;font-weight:700;color:var(--text1)">${fC(totalCostW,cur)}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:80px;height:6px;background:var(--surface2);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${done}%;background:${barColor};border-radius:99px;transition:width .4s"></div>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:${barColor}">${done}%</span>
+        </div>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center">
+        <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:${sColor}18;color:${sColor}">${w.status||'New'}</span>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right">
+        <button onclick="document.getElementById('jcSel').value='${w.id}';nav('jobcost');renderJC('${w.id}')" style="padding:3px 10px;border:1px solid var(--border2);background:var(--surface);border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text1)" onmouseover="this.style.background='var(--blue)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface)';this.style.color='var(--text1)'">Cost Sheet →</button>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--text3)">No work orders found. Click + New Work Order to create one.</td></tr>`;
+
+  const cnt = document.getElementById('woCount');
+  if (cnt) cnt.textContent = wos.length + ' work order' + (wos.length!==1?'s':'') + ' · ' + done + ' completed';
+}
+
+function renderTS() {
+  const ts  = S.get('timesheets') || [];
+  const cur = baseCurr();
+
+  // KPIs
+  const totalH   = ts.reduce((s,t)=>s+(t.hours||0),0);
+  const totalCost= ts.reduce((s,t)=>s+(t.cost||0),0);
+  const overtime = ts.filter(t=>(t.ot||0)>0);
+  const avgRate  = totalH > 0 ? totalCost/totalH : 0;
+
+  const tsKPIs = document.getElementById('tsKPIs');
+  if (tsKPIs) tsKPIs.innerHTML = [
+    { l:'Total Hours Logged',   v: fN(totalH)+'h',   sub:'Last 7 days target: 1,400h', c:'c-blue' },
+    { l:'Avg. Labor Rate',      v: fC(avgRate,cur)+'/hr', sub:'Incl. overtime load', c:'c-teal' },
+    { l:'Overtime Entries',     v: String(overtime.length), sub: overtime.length+' workers on OT', c: overtime.length>0?'c-orange':'c-green' },
+    { l:'Total Labor Cost',     v: fCM(totalCost,cur), sub:'All timesheets', c:'c-green' },
+  ].map(k=>`<div class="kpi ${k.c}">
+    <div class="kpi-lbl">${k.l}</div>
+    <div class="kpi-val">${k.v}</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px">${k.sub}</div>
+  </div>`).join('');
+
+  const statusColors = { 'Posted':'var(--green)', 'Approved':'var(--blue)', 'Draft':'var(--text3)', 'Overtime':'var(--orange)' };
+
+  document.getElementById('tsTbl').innerHTML = ts.length ? ts.map(t => {
+    const isOT   = (t.ot||0) > 0;
+    const status = isOT ? 'Overtime' : (t.status||'Posted');
+    const sColor = statusColors[status] || 'var(--text3)';
+    const burdened = (t.rate||0) * 1.45 + 12.5;
+    const initials = (t.emp||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'XX';
+    return `<tr onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background=''">
+      <td style="padding:10px 18px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2)">${initials}</div>
+          <span style="font-weight:600;font-size:13px;color:var(--text1)">${t.emp||'—'}</span>
+        </div>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:12px;color:var(--text3)">SH-${t.wo||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:12px;color:var(--blue);font-weight:700">${t.wo||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">${t.activity||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;font-family:monospace;color:var(--text2)">${t.date||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;color:var(--text1)">${fC(t.rate||0,cur)}/h</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:12px;color:${isOT?'var(--orange)':'var(--text3)'}">${t.ot||0}h</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">${t.cc||'Production'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;font-weight:700;color:var(--text1)">${fC(burdened,cur)}/h</td>
+      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center">
+        <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;background:${sColor}18;color:${sColor}">${status}</span>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" style="padding:32px;text-align:center;color:var(--text3)">No timesheet entries found.</td></tr>`;
+
+  const cnt = document.getElementById('tsCount');
+  if (cnt) cnt.textContent = ts.length + ' entr' + (ts.length===1?'y':'ies');
+  const fn = document.getElementById('tsFootNote');
+  if (fn) fn.textContent = 'Showing ' + ts.length + ' of ' + ts.length + ' employees · Total: ' + fC(totalCost, cur);
+}
+
 function buildJCSel(){const s=document.getElementById('jcSel');if(s){s.innerHTML=(S.get('workorders')||[]).map(w=>`<option value="${w.id}">${w.id} — ${w.prod}</option>`).join('');const el=document.getElementById('jcAddSel');if(el)el.innerHTML=s.innerHTML;if(s.value)renderJC(s.value);}}
 function renderJC(id){const wo=(S.get('workorders')||[]).find(w=>w.id===id);if(!wo){return;}document.getElementById('jcTitle').textContent='Cost Sheet — '+wo.id;const tot=wo.dm+wo.dl+wo.oh,cpuEst=tot/wo.qty,spEst=cpuEst*1.32,gpu=spEst-cpuEst;document.getElementById('jcBody').innerHTML=`<div class="t-sm t-muted mb12">${wo.cust} | ${wo.prod} | Qty: ${wo.qty}</div><div class="cs-lbl">1. Direct Materials</div><div class="cs-row"><span>Per BOM / issues</span><span>SAR ${fN(wo.dm)}</span></div><div class="cs-row cs-st"><span>Total DM</span><span>SAR ${fN(wo.dm)}</span></div><div class="cs-lbl">2. Direct Labor</div><div class="cs-row"><span>Timesheets charged</span><span>SAR ${fN(wo.dl)}</span></div><div class="cs-row cs-st"><span>Total DL</span><span>SAR ${fN(wo.dl)}</span></div><div class="cs-lbl">3. Manufacturing Overhead</div><div class="cs-row"><span>Applied @ 83.75% of DL</span><span>SAR ${fN(wo.oh)}</span></div><div class="cs-row cs-st"><span>Total OH</span><span>SAR ${fN(wo.oh)}</span></div><div class="cs-row cs-tot"><span>TOTAL JOB COST</span><span>SAR ${fN(tot)}</span></div><div class="divider"></div><div class="cs-row"><span>Cost Per Unit</span><span class="fw6">SAR ${fN(cpuEst,2)}</span></div><div class="cs-row"><span>Estimated Selling Price</span><span>SAR ${fN(spEst,2)}</span></div><div class="cs-row" style="color:var(--green)"><span>Gross Profit Per Unit</span><span class="fw6">SAR ${fN(gpu,2)}</span></div>`;}
 
@@ -6559,6 +6850,11 @@ function showJEDetail(jeId) {
   if (!lines.length) return;
   const je = lines[0];
 
+  // Get full journal record (has attachment)
+  const journals = S.get('journals')||[];
+  const jeRecord = journals.find(j=>j.id===jeId) || {};
+  const attachment = jeRecord.attachment || null;
+
   // Show live canvas
   const canvas = document.getElementById('jeLiveCanvas');
   const body = document.getElementById('jeCanvasBody');
@@ -6568,6 +6864,25 @@ function showJEDetail(jeId) {
   const totalCr = lines.reduce((s,l)=>s+(l.cr||0),0);
   const balanced = Math.abs(totalDr-totalCr)<0.01;
 
+  // Attachment panel HTML
+  const attachHTML = attachment ? `
+    <div style="margin-bottom:14px;padding:12px 14px;background:#EBF3FB;border:1px solid #C7E0F4;border-radius:8px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:24px">${attachment.type?.includes('pdf')?'📕':attachment.type?.includes('image')?'🖼':attachment.type?.includes('sheet')||attachment.name?.match(/xlsx?/i)?'📊':attachment.type?.includes('word')||attachment.name?.match(/docx?/i)?'📝':'📎'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${attachment.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${attachment.size > 1024*1024 ? (attachment.size/1024/1024).toFixed(1)+' MB' : Math.round(attachment.size/1024)+' KB'}</div>
+      </div>
+      <button onclick="jeViewAttachment('${jeId}')" style="padding:6px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
+        📥 Download
+      </button>
+      <button onclick="jePreviewAttachment('${jeId}')" style="padding:6px 14px;background:var(--surface);border:1px solid var(--border2);color:var(--text1);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+        👁 Preview
+      </button>
+    </div>` : `
+    <div style="margin-bottom:14px;padding:10px 14px;background:#FFF4CE;border:1px solid #F0C060;border-radius:8px;font-size:12px;color:#8a6000;display:flex;align-items:center;gap:8px">
+      ⚠ <strong>No attachment</strong> — This journal entry was posted without a supporting document.
+    </div>`;
+
   body.innerHTML = `
     <div class="flex ic gap10 mb12">
       <span class="fw6">${je.jeId}</span>
@@ -6575,6 +6890,7 @@ function showJEDetail(jeId) {
       <span class="b ${balanced?'b-green':'b-red'}">${balanced?'✓ Balanced':'✗ Out of balance'}</span>
       <span class="hash-badge">${je.hash||'—'}</span>
     </div>
+    ${attachHTML}
     <div style="display:flex;gap:10px;margin-bottom:12px">
       ${Object.entries(GL_BOOKS).map(([bk,bd])=>`
         <div class="book-col ${bk==='ifrs'?'active-book':''}">
@@ -6607,7 +6923,6 @@ function showJEDetail(jeId) {
     </table></div>`;
   canvas.scrollIntoView({behavior:'smooth',block:'start'});
 }
-
 function filterJETable(q) {
   document.querySelectorAll('#jeTbl tr').forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
@@ -7791,7 +8106,7 @@ function jeRemoveAttach() {
   if (fileInput) fileInput.value = '';
 }
 
-// View attachment from posted JE
+// View attachment from posted JE — download
 function jeViewAttachment(jeId) {
   const journals = S.get('journals') || [];
   const je = journals.find(j => j.id === jeId);
@@ -7802,6 +8117,39 @@ function jeViewAttachment(jeId) {
   a.click();
   toast('Downloading: ' + je.attachment.name, 'info', 2000);
 }
+
+// Preview attachment inline (opens in new tab for PDF/images)
+function jePreviewAttachment(jeId) {
+  const journals = S.get('journals') || [];
+  const je = journals.find(j => j.id === jeId);
+  if (!je || !je.attachment) { toast('No attachment found for ' + jeId, 'error'); return; }
+  const att = je.attachment;
+  // For images and PDFs, open inline preview modal
+  if (att.type?.startsWith('image/') || att.type?.includes('pdf')) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;cursor:pointer';
+    overlay.onclick = () => overlay.remove();
+    const inner = document.createElement('div');
+    inner.style.cssText = 'background:#fff;border-radius:12px;padding:20px;max-width:90vw;max-height:90vh;overflow:auto;position:relative';
+    inner.onclick = e => e.stopPropagation();
+    const closeBtn = `<button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:12px;right:12px;border:none;background:var(--surface2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px;font-weight:700">✕ Close</button>`;
+    const title = `<div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:14px;padding-right:60px">${att.name}</div>`;
+    let preview = '';
+    if (att.type?.startsWith('image/')) {
+      preview = `<img src="${att.data}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block">`;
+    } else if (att.type?.includes('pdf')) {
+      preview = `<iframe src="${att.data}" style="width:min(800px,80vw);height:70vh;border:none;border-radius:6px"></iframe>`;
+    }
+    inner.innerHTML = closeBtn + title + preview;
+    overlay.appendChild(inner);
+    document.body.appendChild(overlay);
+  } else {
+    // For other file types, just download
+    jeViewAttachment(jeId);
+    toast('File downloaded — ' + att.name, 'info', 2000);
+  }
+}
+
 
 
 // Each step wrapped individually — one failure never blocks the rest
