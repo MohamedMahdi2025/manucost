@@ -2333,6 +2333,12 @@ function fC(amt,code,opts) {
   const sym=(S.get('currencies')||[]).find(c=>c.code===code)?.symbol || (CURRENCY_MASTER[code||'SAR']?.symbol||code||'');
   return sym+' '+Number(amt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2,...(opts||{})});
 }
+// Compact currency format: SAR 1.2M, SAR 44K etc.
+function fCM(amt,code) {
+  if(amt==null||amt===undefined) return '—';
+  const sym=(S.get('currencies')||[]).find(c=>c.code===code)?.symbol || (CURRENCY_MASTER[code||'SAR']?.symbol||code||'');
+  return sym+' '+fM(amt);
+}
 
 // ── SEED FUNCTIONS ──
 // ── ROLES & ACCESS CONTROL ──
