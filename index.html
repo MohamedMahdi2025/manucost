@@ -2106,7 +2106,7 @@ const ta=(lbl,id,ph)=>`<div class="fg"><label class="fl">${lbl}</label><textarea
 // Every write goes to Sheets first, localStorage is just a speed layer
 // ════════════════════════════════════════════════════════════
 
-const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbyHrE8C-OmMjZqVJbODnA3eYtBrS6QezU2v3uS7KTTpm5dElMiwST8MCz8s-zdkNyDKSw/exec';
+const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbwlNIsDVUuSNG6JlNamy2NQbloxWY-EGNb0PDgTddQ1R1YMOQBaa2UzSfFnsez7gx8MbQ/exec';
 
 // GS_URL: always read from localStorage first, fall back to default
 let GS_URL = '';
@@ -2145,62 +2145,42 @@ const GS = {
 // All writes are mirrored to Google Sheets asynchronously.
 // On first load (no cache), S.load() pulls everything from Sheets.
 
-const SKIP_KEYS = new Set(['gs_url','theme','data_version','last_boot','persist_test','ls_ok','ls_test']);
-
 const S = {
-  // Synchronous read — always from localStorage cache
   get(k) {
     try {
       const v = localStorage.getItem('mce_' + k);
       return v && v !== 'undefined' && v !== 'null' ? JSON.parse(v) : null;
-    } catch { return null; }
+    } catch(e) { return null; }
   },
-
-  // Write to localStorage immediately, then write to Sheets immediately (awaited)
-  // Returns a Promise — await S.set(...) to know when Sheets write completes
-  async set(k, v) {
-    // 1. localStorage first (instant, synchronous)
+  set(k, v) {
     try {
       if (v === null || v === undefined) {
         localStorage.removeItem('mce_' + k);
       } else {
         localStorage.setItem('mce_' + k, JSON.stringify(v));
       }
-    } catch(e) { console.warn('LS write failed:', k, e.message); }
-
-    // 2. Sheets write (awaited — not fire-and-forget)
-    if (GS_URL && !SKIP_KEYS.has(k) && v !== null && v !== undefined) {
-      try { await GS.set(k, v); } catch(e) { console.warn('GS.set failed:', k, e.message); }
+    } catch(e) { console.error('[ManuCost] localStorage WRITE FAILED for key:', k, e.message); }
+    // Background Sheets sync — completely separate, never blocks localStorage write
+    if (GS_URL) {
+      setTimeout(function() {
+        GS.set(k, v).catch(function(){});
+      }, 0);
     }
   },
-
-  // Synchronous set — writes to localStorage now, Sheets in background
-  // Use this in render functions and non-critical paths
-  setFast(k, v) {
-    try {
-      if (v === null || v === undefined) localStorage.removeItem('mce_' + k);
-      else localStorage.setItem('mce_' + k, JSON.stringify(v));
-    } catch {}
-    if (GS_URL && !SKIP_KEYS.has(k) && v !== null && v !== undefined) {
-      GS.set(k, v).catch(() => {});
-    }
-  },
-
   del(k) {
-    try { localStorage.removeItem('mce_' + k); } catch {}
-    if (GS_URL) GS.set(k, null).catch(() => {});
+    try { localStorage.removeItem('mce_' + k); } catch(e) {}
+    if (GS_URL) setTimeout(function(){ GS.set(k, null).catch(function(){}); }, 0);
   },
-
-  // Pull ALL data from Sheets into localStorage
   async load() {
     if (!GS_URL) return false;
     try {
       const backup = await GS.backup();
       if (!backup || typeof backup !== 'object') return false;
+      const skip = new Set(['gs_url','theme','data_version','last_boot','ls_ok','ls_test']);
       let count = 0;
-      Object.entries(backup).forEach(([k, v]) => {
-        if (!k || SKIP_KEYS.has(k)) return;
-        try { localStorage.setItem('mce_' + k, JSON.stringify(v)); count++; } catch {}
+      Object.entries(backup).forEach(function([k, v]) {
+        if (!k || skip.has(k)) return;
+        try { localStorage.setItem('mce_' + k, JSON.stringify(v)); count++; } catch(e) {}
       });
       console.log('[ManuCost] Pulled', count, 'keys from Sheets');
       return count > 0;
@@ -2209,28 +2189,25 @@ const S = {
       return false;
     }
   },
-
-  // Push all localStorage data to Sheets in one bulk call
   async push() {
     if (!GS_URL) return false;
+    const skip = new Set(['gs_url','theme','data_version','last_boot','ls_ok','ls_test','persist_test']);
     const entries = {};
-    try {
-      Object.keys(localStorage)
-        .filter(k => k.startsWith('mce_') && !SKIP_KEYS.has(k.replace('mce_','')))
-        .forEach(k => {
-          try {
-            const val = localStorage.getItem(k);
-            if (val && val !== 'null' && val !== 'undefined') {
-              entries[k.replace('mce_', '')] = JSON.parse(val);
-            }
-          } catch {}
-        });
-    } catch {}
+    Object.keys(localStorage)
+      .filter(function(k){ return k.startsWith('mce_') && !skip.has(k.replace('mce_','')); })
+      .forEach(function(k) {
+        try {
+          const val = localStorage.getItem(k);
+          if (val && val !== 'null' && val !== 'undefined') {
+            entries[k.replace('mce_', '')] = JSON.parse(val);
+          }
+        } catch(e) {}
+      });
     if (!Object.keys(entries).length) return true;
     const ok = await GS.bulkSet(entries);
-    console.log('[ManuCost] Push:', Object.keys(entries).length, 'keys —', ok ? 'OK' : 'FAILED');
+    console.log('[ManuCost] Pushed', Object.keys(entries).length, 'keys to Sheets:', ok ? 'OK' : 'FAILED');
     return ok;
-  },
+  }
 };
 
 // ── SYNC STATUS ──
@@ -2350,32 +2327,22 @@ function wSave(step){
 function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchApp();return;}wStep++;wRender();if(wStep===WS)wFillDoneScreen();}
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
-async function launchApp(){
-  // 1. Save company with _wizardComplete flag — await Sheets write
+function launchApp(){
+  // 1. Mark wizard complete and save to localStorage immediately
   var co = {};
   try { co = JSON.parse(localStorage.getItem('mce_company') || '{}'); } catch(e) {}
   co._wizardComplete = true;
   co._launchedAt = new Date().toISOString();
 
-  // Show saving indicator
-  const wizBtn = document.getElementById('wNextBtn');
-  if (wizBtn) { wizBtn.disabled = true; wizBtn.textContent = '💾 Saving to Sheets…'; }
-
-  // Write company to localStorage + Sheets (awaited)
+  // Direct localStorage writes — no async, guaranteed to persist
   localStorage.setItem('mce_company', JSON.stringify(co));
-  localStorage.setItem('mce_seeded', 'true');
+  localStorage.setItem('mce_seeded', JSON.stringify(true));
   localStorage.setItem('mce_data_version', '6');
+  localStorage.setItem('mce_gs_url', GS_URL || DEFAULT_GS_URL);
 
-  // Push to Sheets immediately and wait
-  if (GS_URL) {
-    try {
-      await GS.set('company', co);
-      await GS.set('seeded', true);
-      console.log('[ManuCost] launchApp: company saved to Sheets ✓');
-    } catch(e) {
-      console.warn('[ManuCost] launchApp: Sheets write failed:', e.message);
-    }
-  }
+  // Verify it was written
+  var verify = localStorage.getItem('mce_company');
+  console.log('[ManuCost] launchApp saved company:', verify ? 'OK ('+JSON.parse(verify).name+')' : 'FAILED!');
 
   // 2. Wipe leftover demo data
   ['journals','glLedger','grns','pos','invoices','salesorders','quotes',
@@ -2383,17 +2350,20 @@ async function launchApp(){
    'assetDisposals','bankAccounts','voyages','projects','icTransactions',
    'auditLog','allocRules','aprRequests','syncLog','trialBalanceData',
    'suppliers','customers','payterms','items','stock'
-  ].forEach(k => localStorage.removeItem('mce_' + k));
+  ].forEach(function(k) { localStorage.removeItem('mce_' + k); });
 
   // 3. Seed structural data
-  try { seedCurrencies(); }       catch(e) {}
-  try { seedFiscalData(); }       catch(e) {}
+  try { seedCurrencies(); } catch(e) {}
+  try { seedFiscalData(); } catch(e) {}
   try { seedApprovalPolicies(); } catch(e) {}
 
-  // 4. Push everything to Sheets
-  if (GS_URL) {
-    try { await S.push(); } catch(e) {}
-  }
+  // 4. Push to Sheets in background (don't wait for it)
+  setTimeout(function() {
+    S.push().then(function(ok) {
+      console.log('[ManuCost] Background push to Sheets:', ok ? 'OK' : 'failed');
+      if (ok) setSyncBadge('on');
+    }).catch(function(){});
+  }, 500);
 
   document.getElementById('wizOv').style.display = 'none';
   showLogin();
@@ -6958,7 +6928,24 @@ const mUserTemplates = {
     return;
   }
 
-  // ── Step 3: Check if we have a company in localStorage cache ──
+  // ── Step 3: Self-test — write and read back a known value ──
+  var selfTestOK = false;
+  try {
+    localStorage.setItem('mce_selftest', 'ok');
+    selfTestOK = localStorage.getItem('mce_selftest') === 'ok';
+    localStorage.removeItem('mce_selftest');
+  } catch(e) {}
+
+  if (!selfTestOK) {
+    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;text-align:center;max-width:400px;margin:auto">'
+      + '<h2 style="color:red">⚠ Storage Error</h2>'
+      + '<p>This browser is blocking data storage. Your data cannot be saved.</p>'
+      + '<p><strong>Fix:</strong> Open this link in Chrome or Edge in a normal (non-private) tab.</p>'
+      + '</div>';
+    return;
+  }
+
+  // ── Step 4: Check if we have a company in localStorage cache ──
   var co = null;
   try { co = S.get('company'); } catch(e) {}
 
