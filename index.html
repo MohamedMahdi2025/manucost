@@ -276,6 +276,8 @@ body{
 .btn-red:hover{filter:brightness(.9)}
 .btn.sm{padding:4px 10px;font-size:12px}
 .btn.xs{padding:2px 8px;font-size:11px}
+.btn-d{background:var(--red-lt);color:var(--red);border-color:var(--red-lt)}
+.btn-d:hover{background:var(--red);color:#fff}
 .btn.lg{padding:9px 18px;font-size:14px}
 .btn.w100{width:100%}
 .btn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -2929,9 +2931,16 @@ function seedApprovalPolicies() {
   ]);
 }
 function seedFiscalData() {
-  if (S.get('fiscalYears')) return;
+  const existing = S.get('fiscalYears') || [];
   const yr = new Date().getFullYear();
-  S.set('fiscalYears', [{ year:yr, status:'Open', periods: Array.from({length:12},(_,i)=>({ month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i], status:'Open' })) }]);
+  const mkFY = y => ({ year:y, status:'Open', periods: Array.from({length:12},(_,i)=>({ month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i], status:'Open' })) });
+  // Ensure current year and adjacent years exist
+  const years = [yr-1, yr, yr+1];
+  let changed = false;
+  years.forEach(y => {
+    if (!existing.find(f => f.year === y)) { existing.push(mkFY(y)); changed = true; }
+  });
+  if (!S.get('fiscalYears') || changed) S.set('fiscalYears', existing);
 }
 function seedApprovalRequests() { if (S.get('aprRequests')) return; S.set('aprRequests', []); }
 function seedAllNew() {
@@ -8529,18 +8538,25 @@ function closePeriod(year, month) {
 
 function checkPeriod(date) {
   const d = new Date(date);
-  const years = S.get('fiscalYears') || [];
-  const fy = years.find(y => y.year === d.getFullYear());
-  if (!fy || fy.status === 'Closed') {
-    toast(`Cannot post to ${d.getFullYear()} — fiscal year is closed.`, 'error');
-    return true; // blocked
+  const yr = d.getFullYear();
+  let years = S.get('fiscalYears') || [];
+  let fy = years.find(y => y.year === yr);
+  // Auto-create fiscal year if missing (don't block the user)
+  if (!fy) {
+    fy = { year:yr, status:'Open', periods: Array.from({length:12},(_,i)=>({ month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i], status:'Open' })) };
+    years.push(fy);
+    S.set('fiscalYears', years);
+  }
+  if (fy.status === 'Closed') {
+    toast('Cannot post to ' + yr + ' — fiscal year is closed. Reopen it in Settings → Fiscal Year.', 'error');
+    return true;
   }
   const p = fy.periods?.find(p => p.month === d.getMonth()+1);
-  if (p?.locked) {
-    toast(`Cannot post to ${date} — period is locked.`, 'error');
-    return true; // blocked
+  if (p?.status === 'Closed' || p?.locked) {
+    toast('Cannot post to ' + date + ' — period is locked.', 'error');
+    return true;
   }
-  return false; // allowed
+  return false;
 }
 
 function renderPeriodClose() {
