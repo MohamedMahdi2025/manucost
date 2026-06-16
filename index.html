@@ -2833,8 +2833,90 @@ const mTemplates={
     save:()=>{const p=gv('mwo_p'),c=gv('mwo_c');if(!p||!c){toast('Customer and Product required','error');return;}const l=S.get('workorders')||[];l.push({id:nextId('WO'),cust:c,prod:p,qty:parseInt(gv('mwo_q'))||0,dm:0,dl:0,oh:0,done:0,status:'New'});S.set('workorders',l);closeM();renderWO();toast('Work Order created.','success');}},
   mAcc:{title:'New Account',saveLabel:'Add Account',body:()=>`<div class="fr fr2">${inp('Account Code','ma_c','text','',undefined,true)}${inp('Account Name','ma_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','ma_t',['Asset','Liability','Equity','Revenue','COGS','Expense'])}${sel('Normal Balance','ma_nb',['Debit','Credit'])}</div><div class="fr fr2">${sel('Parent Account','ma_pa',['— None —','1000 Current Assets','2000 Liabilities','3000 Equity','4000 Revenue','5000 COGS','6000 Expenses'])}${sel('Cost Center','ma_cc',['All','Production','Admin','Sales'])}</div>`,
     save:()=>{closeM();toast('Account added.','success');renderCOA();}},
-  mJE:{title:'New Journal Entry',saveLabel:'Post Entry',body:()=>`<div class="fr fr3">${inp('JE Number','mje_id','text','','')}${inp('Date','mje_d','date','',today())}${sel('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation'])}</div><div class="fg mb12"><label class="fl">Narration</label><input class="fc" id="mje_desc" placeholder="Describe this journal entry"></div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span><span></span></div><div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div><button class="btn btn-g sm mt12" onclick="addJELine()">+ Add Line</button><div class="je-bal" id="jeBal"><span>Dr: <strong id="jeDr">0.00</strong></span><span>Cr: <strong id="jeCr">0.00</strong></span><span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span></div>`,
-    save:()=>{updateJEBal();if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const desc=gv('mje_desc')||'Manual Journal Entry';const src=gv('mje_src')||'Manual';const jeId='JE-'+String(Date.now()).slice(-6);const lineEls=document.querySelectorAll('#jeLines .je-grid');const lines=[];let totalDr=0,totalCr=0;lineEls.forEach(el=>{const inputs=el.querySelectorAll('input[type=number]');const selEl=el.querySelector('select');const accCode=selEl?selEl.value:'';const dr=parseFloat(inputs[0]?.value)||0;const cr=parseFloat(inputs[1]?.value)||0;if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}});if(!lines.length){toast('Add at least one line with an amount.','error');return;}const journals=S.get('journals')||[];journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines});S.set('journals',journals);const cur=baseCurr();const ledger=S.get('glLedger')||[];const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};let lastHash='GENESIS';lines.forEach((ln,idx)=>{const hash=buildH(lastHash,ln);lastHash=hash;ledger.push({jeId,date:jeDate,desc,src,account:ln.account,dr:ln.dr,cr:ln.cr,txCurr:cur,txAmt:ln.dr||(-ln.cr),baseAmt:ln.dr||ln.cr,dims:{cc:'CC01'},book:'ifrs',status:'Posted',userId:getSession()?.userId||'USR-001',hash,ts:new Date().toISOString()});});S.set('glLedger',ledger);closeM();renderJE();if(typeof audioPostSuccess==='function')audioPostSuccess();toast('✓ JE '+jeId+' posted — '+lines.length+' lines, Dr/Cr: '+fC(totalDr,cur),'success',4000);}},
+  mJE:{title:'New Journal Entry',saveLabel:'Post Entry',
+body:()=>`
+<div class="fr fr3">${inp('JE Number','mje_id','text','','')}${inp('Date','mje_d','date','',today())}${selV('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation','Treasury','Intercompany'],'Manual')}</div>
+<div class="fg mb10"><label class="fl">Narration / Description <span style="color:var(--red)">*</span></label><input class="fc" id="mje_desc" placeholder="Describe this journal entry — purpose, reference, period"></div>
+<div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px">
+  <span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span>
+  <span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span>
+  <span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span>
+  <span></span>
+</div>
+<div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div>
+<button class="btn btn-g sm mt8" onclick="addJELine()">+ Add Line</button>
+<div class="je-bal mt8" id="jeBal">
+  <span>Dr: <strong id="jeDr">0.00</strong></span>
+  <span>Cr: <strong id="jeCr">0.00</strong></span>
+  <span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span>
+</div>
+<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+  <label class="fl mb6">Supporting Document <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--text3);font-weight:400">(required before posting)</span></label>
+  <div id="jeAttachArea" style="border:2px dashed var(--border2);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:.2s;background:var(--surface2)" onclick="document.getElementById('jeFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--blue)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="jeHandleDrop(event)">
+    <div style="font-size:28px;margin-bottom:6px">📎</div>
+    <div style="font-size:13px;font-weight:600;color:var(--blue)">Click to attach or drag & drop</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">PDF, Image, Excel, Word — max 5MB</div>
+  </div>
+  <input type="file" id="jeFileInput" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.doc,.docx,.txt,.csv" onchange="jeHandleFile(this.files[0])">
+  <div id="jeAttachPreview" style="display:none;margin-top:10px;padding:10px 12px;background:var(--blue-xlt);border-radius:6px;border:1px solid var(--blue-lt)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="jeAttachIcon" style="font-size:20px">📄</span>
+      <div style="flex:1">
+        <div id="jeAttachName" style="font-size:12px;font-weight:600;color:var(--blue)"></div>
+        <div id="jeAttachSize" style="font-size:11px;color:var(--text3)"></div>
+      </div>
+      <button onclick="jeRemoveAttach()" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:16px;padding:4px">✕</button>
+    </div>
+  </div>
+  <div id="jeAttachError" style="display:none;margin-top:6px;font-size:11px;color:var(--red)">⚠ Please attach a supporting document before posting.</div>
+</div>`,
+
+save:()=>{
+  updateJEBal();
+  // 1. Balance check
+  if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}
+  // 2. Description required
+  const desc=gv('mje_desc').trim();
+  if(!desc){toast('Narration / description is required.','error');document.getElementById('mje_desc').focus();return;}
+  // 3. Attachment required
+  const attachData = window._jeAttachment;
+  if(!attachData){
+    document.getElementById('jeAttachError').style.display='block';
+    document.getElementById('jeAttachArea').style.borderColor='var(--red)';
+    toast('Please attach a supporting document before posting.','error');
+    return;
+  }
+  const jeDate=gv('mje_d')||today();
+  if(checkPeriod(jeDate))return;
+  const src=gv('mje_src')||'Manual';
+  const jeId='JE-'+String(Date.now()).slice(-6);
+  const lineEls=document.querySelectorAll('#jeLines .je-grid');
+  const lines=[];let totalDr=0,totalCr=0;
+  lineEls.forEach(el=>{
+    const inputs=el.querySelectorAll('input[type=number]');
+    const selEl=el.querySelector('select');
+    const accCode=selEl?selEl.value:'';
+    const dr=parseFloat(inputs[0]?.value)||0;
+    const cr=parseFloat(inputs[1]?.value)||0;
+    if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}
+  });
+  if(!lines.length){toast('Add at least one line with an amount.','error');return;}
+  // Save journal with attachment metadata
+  const journals=S.get('journals')||[];
+  journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines,
+    attachment:{name:attachData.name,size:attachData.size,type:attachData.type,data:attachData.data}
+  });
+  S.set('journals',journals);
+  // Post to GL ledger
+  const cur=baseCurr();const ledger=S.get('glLedger')||[];
+  const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};
+  let lastHash='GENESIS';
+  lines.forEach(ln=>{const hash=buildH(lastHash,ln);lastHash=hash;ledger.push({jeId,date:jeDate,desc,src,account:ln.account,dr:ln.dr,cr:ln.cr,txCurr:cur,txAmt:ln.dr||(-ln.cr),baseAmt:ln.dr||ln.cr,dims:{cc:'CC01'},book:'ifrs',status:'Posted',userId:getSession()?.userId||'USR-001',hash,ts:new Date().toISOString()});});
+  S.set('glLedger',ledger);
+  window._jeAttachment=null;
+  closeM();renderJE();
+  toast('✓ JE '+jeId+' posted with attachment — '+lines.length+' lines, Dr/Cr: '+fC(totalDr,cur),'success',4000);
+}},
   mJETpl:{title:'Journal Entry Templates',saveLabel:'Close',body:()=>`<div style="display:flex;flex-direction:column;gap:8px">${[['GRN Receipt','Dr. Raw Materials / Cr. Accounts Payable'],['Payroll Post','Dr. Wages Expense / Cr. Wages Payable + GOSI'],['OH Allocation','Dr. WIP / Cr. OH Applied'],['WIP → FG','Dr. Finished Goods / Cr. WIP Inventory'],['COGS Entry','Dr. COGS / Cr. Finished Goods'],['Customer Invoice','Dr. AR / Cr. Revenue + VAT Payable'],['Depreciation','Dr. Depreciation / Cr. Accum. Depreciation']].map(([t,d])=>`<div class="fsec flex ic jb"><div><div class="fw6 mb8" style="font-size:12.5px">${t}</div><div class="t-sm t-muted">${d}</div></div><button class="btn btn-s sm" onclick="closeM();openM('mJE')">Use</button></div>`).join('')}</div>`,
     save:()=>closeM()},
   mAct:{title:'New Activity Pool (ABC)',saveLabel:'Add Pool',body:()=>`<div class="fr fr2">${inp('Activity Name','mact_n','text','',undefined,true)}${inp('Cost Driver','mact_d','text','e.g. Machine Hours',undefined,true)}</div><div class="fr fr2">${inp('Total Pool Cost (SAR)','mact_c','number','','0')}${inp('Budgeted Driver Qty','mact_q','number','','0')}</div>`,
@@ -5880,61 +5962,68 @@ function validateDimCombo(dims) {
 function renderCOA() {
   const cur = baseCurr();
   const ledger = S.get('glLedger') || [];
-  const tree = COA_MASTER;
 
-  // Compute balances from ledger
+  // Compute balances from ledger + opening balances
   const balances = {};
   ledger.forEach(e => {
     balances[e.account] = (balances[e.account] || 0) + (e.dr || 0) - (e.cr || 0);
   });
-  // Add opening balances
-  // Opening balances from tbRows — single source of truth
-  const openBal = {};
-  getTBData().forEach(r => { openBal[r.c] = (r.dr||0) - (r.cr||0); });
-  Object.entries(openBal).forEach(([acc,bal]) => { balances[acc] = (balances[acc]||0) + bal; });
+  getTBData().forEach(r => { balances[r.c] = (balances[r.c]||0) + (r.dr||0) - (r.cr||0); });
+
+  // Merge COA_MASTER + custom accounts into one list
+  const customAccounts = S.get('customAccounts') || [];
+  const allAccounts = [
+    ...COA_MASTER,
+    ...customAccounts.map(a => ({ code:a.c, name:a.n, category:a.cat, type:'detail', custom:true }))
+  ];
 
   // KPIs
-  const totalAssets = ['1010','1011','1020','1300','1310','1320','1500','1700'].reduce((s,a)=>s+(balances[a]||0),0);
-  const totalLiab = ['2010','2020','2030','2040','2500'].reduce((s,a)=>s+Math.abs(balances[a]||0),0);
-  const totalEquity = Math.abs(balances['3010']||0)+Math.abs(balances['3020']||0);
-  const totalRev = Math.abs(balances['4010']||0)+Math.abs(balances['4020']||0);
+  const totalAssets  = allAccounts.filter(a=>a.category==='Assets'&&a.type==='detail').reduce((s,a)=>s+(balances[a.code]||0),0);
+  const totalLiab    = allAccounts.filter(a=>a.category==='Liabilities'&&a.type==='detail').reduce((s,a)=>s+Math.abs(balances[a.code]||0),0);
+  const totalEquity  = allAccounts.filter(a=>a.category==='Equity'&&a.type==='detail').reduce((s,a)=>s+Math.abs(balances[a.code]||0),0);
+  const totalRev     = allAccounts.filter(a=>a.category==='Revenue'&&a.type==='detail').reduce((s,a)=>s+Math.abs(balances[a.code]||0),0);
 
   document.getElementById('coaKPIs').innerHTML = [
-    {l:'Total Assets',     v:fC(totalAssets,cur), c:'c-blue'},
-    {l:'Total Liabilities',v:fC(totalLiab,cur),   c:'c-red'},
-    {l:'Total Equity',     v:fC(totalEquity,cur),  c:'c-green'},
-    {l:'YTD Revenue',      v:fC(totalRev,cur),     c:'c-teal'},
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+    {l:'Total Accounts', v:String(allAccounts.filter(a=>a.type==='detail').length + ' (' + customAccounts.length + ' custom)'), c:'c-blue'},
+    {l:'Total Assets',   v:fC(totalAssets,cur),  c:'c-teal'},
+    {l:'Total Liabilities', v:fC(totalLiab,cur), c:'c-red'},
+    {l:'Total Equity',   v:fC(totalEquity,cur),  c:'c-green'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:${k.v.length>12?'11':'14'}px">${k.v}</div></div>`).join('');
 
   const catColors = {Assets:'#0078D4',Liabilities:'#A4262C',Equity:'#5C2D91',Revenue:'#107C10',COGS:'#CA5010',Expenses:'#F59E0B'};
+  const categories = ['Assets','Liabilities','Equity','Revenue','COGS','Expenses'];
 
-  // Group by category
-  const categories = [...new Set(tree.map(a=>a.category))];
   document.getElementById('coaTree').innerHTML = categories.map(cat => {
-    const headers = tree.filter(a=>a.type==='header'&&a.category===cat);
-    const details = tree.filter(a=>a.type==='detail'&&a.category===cat);
-    const catBal = details.reduce((s,a)=>s+(balances[a.code]||0),0);
-    const color = catColors[cat]||'var(--blue)';
+    const details = allAccounts.filter(a => a.type==='detail' && a.category===cat)
+                                .sort((a,b) => a.code.localeCompare(b.code));
+    if (!details.length) return '';
+    const catBal = details.reduce((s,a) => s+(balances[a.code]||0), 0);
+    const color = catColors[cat] || 'var(--blue)';
     return `<div class="coa-group" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="border-left:4px solid ${color}">
-      <span>${cat}</span>
+      <span>${cat} <span style="font-size:11px;opacity:.6">(${details.length})</span></span>
       <span style="color:${color};font-size:12px">${fC(Math.abs(catBal),cur)}</span>
     </div>
     <div>
       ${details.map(a => {
         const bal = balances[a.code] || 0;
         const balCls = bal >= 0 ? 'coa-balance-pos' : 'coa-balance-neg';
+        const customBadge = a.custom ? '<span style="font-size:9px;background:#EBF3FB;color:#0078D4;padding:1px 5px;border-radius:8px;margin-left:4px">custom</span>' : '';
         return `<div class="coa-item" onclick="showCOADetail('${a.code}','${a.name}','${a.category}',${bal})">
-          <span><span style="color:var(--text3);font-size:11px;margin-right:8px">${a.code}</span>${a.name}</span>
-          <span class="${balCls}">${fC(Math.abs(bal),cur)}</span>
+          <span><span style="color:var(--text3);font-size:11px;margin-right:8px">${a.code}</span>${a.name}${customBadge}</span>
+          <span class="${balCls}">${bal ? fC(Math.abs(bal),cur) : '—'}</span>
         </div>`;
       }).join('')}
     </div>`;
   }).join('');
 
-  // Populate GL account selector
-  const sel = document.getElementById('lgAccSel');
-  if (sel) {
-    sel.innerHTML = tree.filter(a=>a.type==='detail').map(a=>`<option value="${a.code}">${a.code} — ${a.name}</option>`).join('');
+  // Populate GL account selector with all accounts including custom
+  const selEl = document.getElementById('lgAccSel');
+  if (selEl) {
+    selEl.innerHTML = allAccounts
+      .filter(a => a.type==='detail')
+      .sort((a,b) => a.code.localeCompare(b.code))
+      .map(a => `<option value="${a.code}">${a.code} — ${a.name}</option>`)
+      .join('');
   }
 }
 
@@ -6026,7 +6115,12 @@ function renderJE() {
       <td><span class="b b-blue t-xs">IFRS</span></td>
       <td>${sBadge(j.src||'Manual')}</td>
       <td>${sBadge(j.status||'Posted')}</td>
-      <td><button class="btn btn-g xs" onclick="showJEDetail('${j.id}')">Detail</button></td>
+      <td>
+        <div class="btn-row">
+          <button class="btn btn-g xs" onclick="showJEDetail('${j.id}')">Detail</button>
+          ${j.attachment ? `<button class="btn btn-g xs" onclick="jeViewAttachment('${j.id}')" title="${j.attachment.name}">📎</button>` : '<span style="font-size:11px;color:var(--red);padding:2px 6px" title="No attachment">⚠</span>'}
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -7075,6 +7169,39 @@ function renderOH() {
       </tbody></table></div></div>`;
 }
 
+// ── COA MODALS ──
+const mTemplatesExtra = {
+  mAddAccount: {
+    title: 'Add New Account', saveLabel: 'Add Account',
+    body: () => {
+      return '<div class="fr fr2">' + inp('Account Code','mac_code','text','e.g. 1050',undefined,true) + inp('Account Name','mac_name','text','e.g. Petty Cash',undefined,true) + '</div>'
+        + '<div class="fr fr2">' + selV('Category','mac_cat',['Assets','Liabilities','Equity','Revenue','COGS','Expenses'],'Assets') + selV('Normal Balance','mac_normal',['Dr','Cr'],'Dr') + '</div>'
+        + '<div class="fr fr2">' + inp('Sub-category','mac_sub','text','e.g. Current Assets') + inp('Cost Centre','mac_cc','text','CC01') + '</div>'
+        + inp('Description','mac_desc','text','Optional description');
+    },
+    save: () => {
+      const code = gv('mac_code').trim();
+      const name = gv('mac_name').trim();
+      if (!code || !name) { toast('Account code and name are required.', 'error'); return; }
+      if (!/^\d{4,6}$/.test(code)) { toast('Account code must be 4-6 digits.', 'error'); return; }
+      const existing = S.get('customAccounts') || [];
+      const allCodes = [...tbRows_TEMPLATE.map(r=>r.c), ...existing.map(r=>r.c)];
+      if (allCodes.includes(code)) { toast('Account ' + code + ' already exists.', 'error'); return; }
+      const newAcc = { c:code, n:name, cat:gv('mac_cat')||'Assets', normal:gv('mac_normal')||'Dr', sub:gv('mac_sub')||'', desc:gv('mac_desc')||'', custom:true, createdAt:today() };
+      existing.push(newAcc);
+      S.set('customAccounts', existing);
+      const tbd = getTBData();
+      if (!tbd.find(r=>r.c===code)) {
+        tbd.push({c:code, n:name, cat:newAcc.cat, normal:newAcc.normal, dr:0, cr:0});
+        tbd.sort((a,b)=>a.c.localeCompare(b.c));
+        S.set('trialBalanceData', tbd);
+      }
+      closeM(); renderCOA();
+      toast('Account ' + code + ' added successfully.', 'success');
+    }
+  },
+};
+
 // ── USER MANAGEMENT MODALS ──
 const mUserTemplates = {
   mAddUser: {
@@ -7142,7 +7269,74 @@ const mUserTemplates = {
   },
 };
 
-// ── BOOT ──
+// ── JOURNAL ENTRY ATTACHMENT HANDLERS ──
+window._jeAttachment = null;
+
+function jeHandleFile(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large — maximum 5MB.', 'error'); return; }
+  const allowed = ['application/pdf','image/jpeg','image/png','image/gif',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel','application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain','text/csv'];
+  if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|jpg|jpeg|png|gif|xlsx|xls|doc|docx|txt|csv)$/i)) {
+    toast('File type not supported.', 'error'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window._jeAttachment = { name: file.name, size: file.size, type: file.type, data: e.target.result };
+    jeShowAttachPreview(file);
+  };
+  reader.readAsDataURL(file);
+}
+
+function jeHandleDrop(event) {
+  event.preventDefault();
+  document.getElementById('jeAttachArea').style.borderColor = 'var(--border2)';
+  const file = event.dataTransfer.files[0];
+  if (file) jeHandleFile(file);
+}
+
+function jeShowAttachPreview(file) {
+  const area   = document.getElementById('jeAttachArea');
+  const preview = document.getElementById('jeAttachPreview');
+  const errEl  = document.getElementById('jeAttachError');
+  if (!preview) return;
+  const icons = { 'application/pdf':'📕', 'image/':'🖼', 'spreadsheet':'📊', 'word':'📝', 'text/':'📄' };
+  const icon = Object.entries(icons).find(([k])=>file.type.startsWith(k)||file.name.includes(k.replace('/','')))?.[1] || '📎';
+  const size = file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+' MB' : Math.round(file.size/1024)+' KB';
+  document.getElementById('jeAttachIcon').textContent = icon;
+  document.getElementById('jeAttachName').textContent = file.name;
+  document.getElementById('jeAttachSize').textContent = size;
+  if (area) { area.style.display = 'none'; area.style.borderColor = 'var(--border2)'; }
+  preview.style.display = 'block';
+  if (errEl) errEl.style.display = 'none';
+}
+
+function jeRemoveAttach() {
+  window._jeAttachment = null;
+  const area = document.getElementById('jeAttachArea');
+  const preview = document.getElementById('jeAttachPreview');
+  const fileInput = document.getElementById('jeFileInput');
+  if (area) area.style.display = 'block';
+  if (preview) preview.style.display = 'none';
+  if (fileInput) fileInput.value = '';
+}
+
+// View attachment from posted JE
+function jeViewAttachment(jeId) {
+  const journals = S.get('journals') || [];
+  const je = journals.find(j => j.id === jeId);
+  if (!je || !je.attachment) { toast('No attachment found for ' + jeId, 'error'); return; }
+  const a = document.createElement('a');
+  a.href = je.attachment.data;
+  a.download = je.attachment.name;
+  a.click();
+  toast('Downloading: ' + je.attachment.name, 'info', 2000);
+}
+
+
 // Each step wrapped individually — one failure never blocks the rest
 (function boot() {
 
