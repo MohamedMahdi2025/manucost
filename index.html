@@ -625,7 +625,98 @@ textarea.fc{resize:vertical;min-height:80px}
   .topbar{padding:0 12px;gap:8px}
 }
 
-/* ══ PRINT ══ */
+/* ══ MODAL CLOSE BUTTON ══ */
+.modal-close{
+  width:28px;height:28px;border:1px solid var(--border);border-radius:var(--r4);
+  background:var(--surface);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:14px;color:var(--text2);transition:.12s;
+  flex-shrink:0
+}
+.modal-close:hover{background:var(--red-lt);color:var(--red);border-color:var(--red)}
+
+/* ══ FINANCIAL STATEMENT STYLES ══ */
+.fs-report{
+  font-family:'Segoe UI',Calibri,sans-serif;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r6);padding:32px 40px;
+  box-shadow:var(--shadow-sm)
+}
+.fs-letterhead{margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--text1)}
+.fs-letterhead .co-name{font-size:18px;font-weight:700;color:var(--blue)}
+.fs-letterhead .rpt-title{font-size:22px;font-weight:700;color:var(--text1);text-align:right}
+.fs-letterhead .rpt-date{font-size:13px;color:var(--blue);font-weight:600;text-align:right}
+.fs-letterhead .rpt-meta{font-size:11px;color:var(--text3);text-align:right}
+
+/* Section header (ASSETS, LIABILITIES) */
+.fs-sec{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text3);
+  padding:0 0 8px;margin-bottom:4px;
+  border-bottom:1px solid var(--border)
+}
+
+/* Category header (Current Assets, Non-Current...) */
+.fs-cat{
+  font-size:13px;font-weight:700;color:var(--text1);
+  padding:10px 0 4px;margin-top:4px
+}
+
+/* Line item row */
+.fs-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:5px 0;font-size:13px;border-bottom:1px solid transparent
+}
+.fs-row.in{padding-left:20px;color:var(--text1)}
+.fs-row.in span:first-child{color:var(--text2)}
+
+/* Subtotal row */
+.fs-row.st{
+  font-weight:600;color:var(--text1);
+  border-top:1px solid var(--border2);
+  padding-top:6px;margin-top:2px
+}
+
+/* Total row (dark) */
+.fs-row.tot{
+  font-weight:700;font-size:14px;color:var(--text1);
+  background:var(--text1);color:#fff;
+  padding:10px 14px;margin:12px -14px 0;border-radius:var(--r4)
+}
+.fs-row.tot span:last-child{color:#fff;font-size:15px}
+
+/* Grand total (L&E = Assets) */
+.fs-row.grand{
+  font-weight:700;font-size:14px;
+  background:var(--blue);color:#fff;
+  padding:12px 14px;margin:12px -14px 0;border-radius:var(--r4)
+}
+.fs-row.grand span:last-child{color:#fff;font-size:15px}
+
+/* Comparison column */
+.fs-2col{display:grid;grid-template-columns:1fr 120px 120px;gap:0;align-items:baseline}
+.fs-2col .fs-row{grid-template-columns:1fr 120px 120px;display:grid}
+.fs-col-hdr{
+  display:grid;grid-template-columns:1fr 120px 120px;
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text3);padding:0 0 6px;
+  border-bottom:1px solid var(--border)
+}
+.fs-col-hdr span{text-align:right}
+.fs-col-hdr span:first-child{text-align:left}
+
+/* Notes column */
+.fs-note{font-size:10px;color:var(--text3);text-align:center;width:40px}
+
+/* Section divider */
+.fs-divider{height:24px}
+
+/* Print optimisation */
+@media print{
+  .fs-report{border:none;padding:20px;box-shadow:none}
+  .fs-row.tot{background:#222;color:#fff}
+  .fs-row.grand{background:#0066cc;color:#fff}
+}
+
 @media print{
   .sidebar,.topbar,.modal-shell,.icon-btn,.btn{display:none!important}
   .content{padding:0}
@@ -1277,23 +1368,32 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ BANK RECONCILIATION ════ -->
 <div class="page" id="page-bankrcon">
-  <div class="page-hdr"><div><h1>Bank Reconciliation</h1><p>SOX 404 — Automated statement matching and variance resolution</p></div>
+  <div class="page-hdr"><div><h1>Bank Reconciliation</h1><p>Match bank statement items against GL entries · SOX 404 compliant</p></div>
     <div class="btn-row">
-      <select class="fc" id="bankRconAcct" style="width:200px" onchange="renderBankRcon()">
-        <option value="SNB-001">SNB — Main Operating Account</option>
-        <option value="ANB-002">ANB — Payroll Account</option>
-        <option value="RIYAL-003">Al-Rajhi — SAR Reserve</option>
+      <select class="fc" id="reconBankSel" style="width:220px" onchange="renderBankRcon()">
+        <option value="">Select bank account…</option>
       </select>
       <button class="btn btn-s sm" onclick="runAutoMatch()">⚡ Auto-Match</button>
       <button class="btn btn-p sm" onclick="signOffRecon()">✓ Sign Off</button>
+      <button class="btn btn-g sm" onclick="openM('mBankStmt')">+ Import Statement</button>
     </div>
   </div>
   <div class="kpi-grid g4 mb16" id="reconKPIs"></div>
   <div class="g2c mb16">
-    <div class="card"><div class="card-hdr"><span class="card-title">Bank Statement Items</span><span class="b b-blue">MT940 / BAI2 / CAMT.053</span></div>
-      <div class="tw"><table><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th>Match Status</th></tr></thead><tbody id="bankStmtTbl"></tbody></table></div></div>
-    <div class="card"><div class="card-hdr"><span class="card-title">GL Cash Ledger</span></div>
-      <div class="tw"><table><thead><tr><th>Date</th><th>Reference</th><th class="num">Amount</th><th>Match Status</th></tr></thead><tbody id="glCashTbl"></tbody></table></div></div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Bank Statement Items</span>
+        <span class="b b-blue">MT940 / BAI2 / CAMT.053</span>
+      </div>
+      <div class="tw"><table><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th>Match Status</th></tr></thead><tbody id="bankStmtTbl"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">GL Cash Ledger</span>
+        <span class="b b-teal t-xs">Live from General Ledger</span>
+      </div>
+      <div class="tw"><table><thead><tr><th>Date</th><th>JE #</th><th>Description</th><th class="num">Amount</th><th>Match Status</th></tr></thead><tbody id="glCashTbl"></tbody></table></div>
+    </div>
   </div>
   <div class="card"><div class="card-hdr"><span class="card-title">Reconciliation Summary</span></div><div class="card-body" id="reconSummary"></div></div>
 </div>
@@ -1624,7 +1724,7 @@ textarea.fc{resize:vertical;min-height:80px}
 <!-- ════ WAREHOUSES ════ -->
 <div class="page" id="page-warehouses">
   <div class="cmd-bar"><button class="btn btn-p sm" onclick="openM('mWH')">+ New Warehouse</button><button class="btn btn-g sm" onclick="openM('mBin')">+ Add Bin</button></div>
-  <div class="kpi-grid g4 mt12 mb16"><div class="kpi c-blue"><div class="kpi-lbl">Locations</div><div class="kpi-val">4</div></div><div class="kpi c-green"><div class="kpi-lbl">Total Bins</div><div class="kpi-val">38</div></div><div class="kpi c-orange"><div class="kpi-lbl">Utilization</div><div class="kpi-val">67%</div></div><div class="kpi c-teal"><div class="kpi-lbl">Pending Putaway</div><div class="kpi-val">2</div></div></div>
+  <div class="kpi-grid g4 mb16" id="whKPIs"></div>
   <div class="g2c mb16" id="whCards"></div>
   <div class="card" id="whBinCard" style="display:none"><div class="card-hdr"><span class="card-title" id="whBinTitle">Bin Detail</span><button class="btn btn-g sm" onclick="this.closest('.card').style.display='none'">Close</button></div><div class="tw"><table><thead><tr><th>Bin</th><th>Item</th><th>Qty</th><th>Value</th><th>Status</th></tr></thead><tbody id="whBinTbl"></tbody></table></div></div>
 </div>
@@ -2416,7 +2516,7 @@ textarea.fc{resize:vertical;min-height:80px}
 </div><!-- /app -->
 
 <!-- MODAL SHELL -->
-<div class="overlay" id="mShell" onclick="if(event.target===this)closeM()">
+<div class="overlay" id="mShell" onclick="if(event.target===this)closeM()" style="display:none">
   <div class="modal" id="mBox">
     <div class="modal-hdr"><span class="modal-title" id="mTitle">Modal</span><button class="modal-close" onclick="closeM()">✕</button></div>
     <div class="modal-body" id="mBody"></div>
@@ -3426,17 +3526,93 @@ function renderPO(){document.getElementById('poTbl').innerHTML=(S.get('pos')||[]
 function renderGRN(){document.getElementById('grnTbl').innerHTML=(S.get('grns')||[]).map(g=>`<tr><td class="t-blue fw6">${g.id}</td><td>${g.date}</td><td>${g.po}</td><td>${g.supplier}</td><td><span class="b b-blue">${g.loc}</span></td><td class="num">SAR ${fN(g.value)}</td><td><span class="b b-green">${g.je}</span></td></tr>`).join('');}
 
 // ── RENDER: AGING ──
-const apData=(S.get('suppliers')||[]).map(s=>({n:s.name,t:0,b0:0,b30:0,b60:0,b90:0,b120:0,terms:s.terms||'NET30'}));
-const arData=[{n:'Saudi Aramco',t:184800,b0:184800,b30:0,b60:0,b90:0,b120:0,terms:'NET30'},{n:'SABIC',t:86400,b0:59200,b30:27200,b60:0,b90:0,b120:0,terms:'NET45'},{n:'STC',t:96800,b0:0,b30:56800,b60:40000,b90:0,b120:0,terms:'NET60'},{n:"Ma'aden",t:44000,b0:0,b30:0,b60:0,b90:0,b120:44000,terms:'NET30'}];
-function agRisk(r){if(r.b120>0)return'<span class="b b-red">High</span>';if((r.b60+r.b90+r.b120)/r.t>0.3)return'<span class="b b-orange">Medium</span>';return'<span class="b b-green">Low</span>';}
-function renderAging(type){
-  const data=type==='ap'?apData:arData,tbId=type==='ap'?'apTbl':'arTbl',ftId=type==='ap'?'apFoot':'arFoot',barId=type==='ap'?'apBar':'arBar',kpiId=type==='ap'?'apKPIs':'arKPIs';
-  const tot=k=>data.reduce((s,r)=>s+r[k],0),grand=tot('t');
-  const fC=(v,c)=>v>0?`<td class="num" style="color:${c}">${fN(v)}</td>`:'<td class="num t-muted">—</td>';
-  document.getElementById(tbId).innerHTML=data.map(r=>`<tr><td class="fw6">${r.n}</td><td class="num fw6">${fN(r.t)}</td>${fC(r.b0,'var(--green)')}${fC(r.b30,'var(--orange)')}${fC(r.b60,'#CA5010')}${fC(r.b90,'var(--red)')}${fC(r.b120,'#8B1D22')}<td style="font-size:11px">${r.terms}</td><td>${agRisk(r)}</td></tr>`).join('');
-  document.getElementById(ftId).innerHTML=`<tr><td>TOTAL</td><td class="num">${fN(grand)}</td>${[['b0','var(--green)'],['b30','var(--orange)'],['b60','#CA5010'],['b90','var(--red)'],['b120','#8B1D22']].map(([k,c])=>`<td class="num" style="color:${c}">${fN(tot(k))}</td>`).join('')}<td colspan="2"></td></tr>`;
-  document.getElementById(kpiId).innerHTML=[{l:type==='ap'?'Total AP':'Total AR',v:fN(grand),c:'c-blue'},{l:'Current (0–30d)',v:fN(tot('b0')),c:'c-green'},{l:'31–60 Days',v:fN(tot('b30')),c:'c-orange'},{l:'Over 60 Days',v:fN(tot('b60')+tot('b90')+tot('b120')),c:'c-red'}].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
-  const bar=document.getElementById(barId);if(bar&&grand>0)bar.innerHTML=[{k:'b0',c:'var(--green)'},{k:'b30',c:'var(--orange)'},{k:'b60',c:'#CA5010'},{k:'b90',c:'var(--red)'},{k:'b120',c:'#8B1D22'}].filter(x=>tot(x.k)>0).map(x=>`<div class="a-seg" style="flex:${tot(x.k)};background:${x.c}">${Math.round(tot(x.k)/grand*100)}%</div>`).join('');
+function renderAging(type) {
+  const cur      = baseCurr();
+  const today    = new Date();
+  const kpiId    = type==='ap' ? 'apKPIs' : 'arKPIs';
+  const tblId    = type==='ap' ? 'apTbl'  : 'arTbl';
+  const footId   = type==='ap' ? 'apFoot' : 'arFoot';
+  const barId    = type==='ap' ? 'apBar'  : 'arBar';
+
+  // Build aging from real data
+  const invoices = type === 'ar'
+    ? (S.get('invoices') || []).filter(i => i.status !== 'Paid')
+    : (S.get('pos')      || []).filter(p => p.status !== 'Closed' && p.status !== 'Received');
+
+  const partyKey = type === 'ar' ? 'customer' : 'supplier';
+
+  // Group by party and bucket by days overdue
+  const parties = {};
+  invoices.forEach(inv => {
+    const party = inv[partyKey] || inv.cust || inv.sup || 'Unknown';
+    if (!parties[party]) parties[party] = {n:party,t:0,b0:0,b30:0,b60:0,b90:0,b120:0,terms:inv.terms||'NET30'};
+    const due  = inv.due ? new Date(inv.due) : new Date();
+    const days = Math.floor((today - due) / 86400000);
+    const amt  = inv.total || inv.amount || 0;
+    parties[party].t += amt;
+    if      (days <= 0)   parties[party].b0   += amt;
+    else if (days <= 30)  parties[party].b30  += amt;
+    else if (days <= 60)  parties[party].b60  += amt;
+    else if (days <= 90)  parties[party].b90  += amt;
+    else                  parties[party].b120 += amt;
+  });
+
+  const data = Object.values(parties);
+  const grand = data.reduce((s,r)=>s+r.t,0);
+  const tot   = k => data.reduce((s,r)=>s+r[k],0);
+
+  // KPIs
+  const overdue30 = tot('b30') + tot('b60') + tot('b90') + tot('b120');
+  document.getElementById(kpiId).innerHTML = [
+    {l:'Total Outstanding', v:fC(grand,cur),         c:'c-blue'},
+    {l:'Current (0d)',       v:fC(tot('b0'),cur),     c:'c-green'},
+    {l:'Overdue (>30d)',     v:fC(overdue30,cur),     c:overdue30>0?'c-red':'c-green'},
+    {l:'Parties',            v:String(data.length),   c:'c-orange'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Table
+  const mkTd = (v,neg) => v > 0
+    ? `<td class="num ${neg?'t-red':'t-orange'} fw6">${fC(v,cur)}</td>`
+    : `<td class="num t-muted">—</td>`;
+
+  document.getElementById(tblId).innerHTML = data.length
+    ? data.map(r => `<tr>
+        <td class="fw6">${r.n}</td>
+        <td>${r.terms}</td>
+        ${mkTd(r.b0,false)}
+        ${mkTd(r.b30,true)}
+        ${mkTd(r.b60,true)}
+        ${mkTd(r.b90,true)}
+        ${mkTd(r.b120,true)}
+        <td class="num fw6">${fC(r.t,cur)}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text3)">
+        No outstanding ${type==='ar'?'sales invoices':'purchase orders'} found.
+      </td></tr>`;
+
+  // Footer totals
+  document.getElementById(footId).innerHTML = `
+    <tr class="fw7">
+      <td colspan="2">TOTAL</td>
+      ${mkTd(tot('b0'),false)}
+      ${mkTd(tot('b30'),true)}
+      ${mkTd(tot('b60'),true)}
+      ${mkTd(tot('b90'),true)}
+      ${mkTd(tot('b120'),true)}
+      <td class="num fw7">${fC(grand,cur)}</td>
+    </tr>`;
+
+  // Bar chart
+  const buckets  = [['Current',tot('b0'),'var(--green)'],['1-30d',tot('b30'),'var(--orange)'],['31-60d',tot('b60'),'var(--red)'],['61-90d',tot('b90'),'var(--red)'],['90d+',tot('b120'),'#7a0000']];
+  const maxB     = Math.max(...buckets.map(b=>b[1]),1);
+  document.getElementById(barId).innerHTML = buckets.map(([label,val,col])=>`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1">
+      <div style="font-size:11px;font-weight:700;color:var(--text1)">${fCM(val,cur)}</div>
+      <div style="width:100%;background:var(--border);border-radius:4px;overflow:hidden;height:80px;display:flex;align-items:flex-end">
+        <div style="width:100%;height:${Math.round(val/maxB*80)}px;background:${col};border-radius:4px 4px 0 0;transition:height .5s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3)">${label}</div>
+    </div>`).join('');
 }
 
 // ── RENDER: ITEMS / STOCK / TRANSFERS ──
@@ -3576,10 +3752,83 @@ function filterSL(k,v){document.querySelectorAll('#slTbl tr').forEach(r=>r.style
 function renderTrf(){document.getElementById('trfTbl').innerHTML=(S.get('transfers')||[]).map(t=>`<tr><td class="t-blue fw6">${t.id}</td><td>${t.date}</td><td>${sBadge(t.type)}</td><td>${t.item}</td><td><span class="b b-blue">${t.from}</span></td><td><span class="b b-teal">${t.to}</span></td><td class="num">${t.qty}</td><td class="num">SAR ${fN(t.val)}</td><td>${t.wo||'—'}</td><td>${sBadge(t.status)}</td></tr>`).join('');}
 
 // ── RENDER: WAREHOUSES ──
-const whInfo=[{code:'WH-A',name:'Main Raw Material Store',type:'Raw Material',keeper:'Omar Al-Zahrani',bins:12,skus:48,val:'284K',pct:72,cls:'b-blue'},{code:'WH-B',name:'Production Input Store',type:'Production',keeper:'Faisal Al-Ghamdi',bins:8,skus:31,val:'148K',pct:58,cls:'b-purple'},{code:'WH-C',name:'Finished Goods Store',type:'Finished Goods',keeper:'Ahmed Al-Rashid',bins:6,skus:22,val:'124K',pct:45,cls:'b-green'},{code:'FL-1',name:'Production Floor WIP',type:'WIP Zone',keeper:'Khalid Al-Saud',bins:4,skus:4,val:'482K',pct:90,cls:'b-orange'}];
-const whBins={'WH-A':[{bin:'A-01-R1',item:'Empty',qty:'—',val:'—',st:'OK'},{bin:'A-03-R2',item:'Steel Rod 12mm',qty:'42 kg',val:'7,560',st:'Low'},{bin:'A-05-R3',item:'Welding Wire',qty:'18 kg',val:'2,160',st:'Low'},{bin:'A-07-R1',item:'Bearing 6205',qty:'8 pcs',val:'2,560',st:'Critical'}],'WH-B':[{bin:'B-02-R4',item:'Paint Blue',qty:'210 L',val:'8,820',st:'OK'}],'WH-C':[{bin:'C-01-R1',item:'Valve Assy A',qty:'22 pcs',val:'36,880',st:'OK'},{bin:'C-02-R1',item:'Pump Casing B',qty:'12 pcs',val:'25,872',st:'OK'}],'FL-1':[{bin:'LINE-A',item:'WO-2020 WIP',qty:'batch',val:'83,848',st:'Active'},{bin:'LINE-B',item:'WO-2021 WIP',qty:'batch',val:'53,908',st:'Active'}]};
-function renderWH(){document.getElementById('whCards').innerHTML=whInfo.map(w=>`<div class="wh-card" onclick="showBins('${w.code}','${w.name}')"><div class="flex ic jb mb8"><span class="fw6">${w.name}</span><span class="b ${w.cls}">${w.code}</span></div><div class="flex gap12 mb8 t-sm t-muted"><span>Bins: <strong>${w.bins}</strong></span><span>SKUs: <strong>${w.skus}</strong></span><span>Value: <strong class="t-blue">SAR ${w.val}</strong></span></div><div class="prog"><div class="prog-bar ${w.cls.replace('b-','pb-')}" style="width:${w.pct}%"></div></div><div class="t-xs t-muted mt12">${w.pct}% capacity · ${w.type} · Keeper: ${w.keeper}</div></div>`).join('');}
-function showBins(code,name){const bins=whBins[code]||[];document.getElementById('whBinTitle').textContent='Bins — '+name;document.getElementById('whBinTbl').innerHTML=bins.map(b=>`<tr><td class="t-blue fw6">${b.bin}</td><td>${b.item}</td><td class="num">${b.qty}</td><td class="num">${b.val}</td><td>${sBadge(b.st)}</td></tr>`).join('');document.getElementById('whBinCard').style.display='block';}
+function renderWH() {
+  const warehouses = S.get('warehouses') || [];
+  const stock      = S.get('stock')      || [];
+  const cur        = baseCurr();
+
+  // KPIs from real data
+  const totalBins = warehouses.reduce((s,w) => s + (w.bins||0), 0);
+  const totalSKUs = stock.length;
+  const avgUtil   = warehouses.length
+    ? Math.round(warehouses.reduce((s,w)=>s+(w.pct||w.capacity||0),0)/warehouses.length)
+    : 0;
+  const pendingPutaway = stock.filter(s=>s.status==='Pending').length;
+
+  // Update KPI cards
+  const kpiEl = document.getElementById('whKPIs');
+  if (kpiEl) kpiEl.innerHTML = [
+    {l:'Locations',      v: String(warehouses.length), c:'c-blue'},
+    {l:'Total Bins',     v: String(totalBins||0),      c:'c-green'},
+    {l:'Utilization',    v: avgUtil+'%',               c: avgUtil>80?'c-red':avgUtil>60?'c-orange':'c-teal'},
+    {l:'Pending Putaway',v: String(pendingPutaway),    c: pendingPutaway>0?'c-orange':'c-green'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  const whCards = document.getElementById('whCards');
+  if (!whCards) return;
+
+  if (!warehouses.length) {
+    whCards.innerHTML = `<div class="alert a-info" style="grid-column:1/-1">
+      No warehouses found. Click <strong>+ New Warehouse</strong> to create your first warehouse.
+    </div>`;
+    return;
+  }
+
+  const clsMap = ['b-blue','b-purple','b-green','b-orange','b-teal','b-red'];
+  const pbMap  = ['pb-blue','pb-purple','pb-green','pb-orange','pb-teal','pb-red'];
+
+  whCards.innerHTML = warehouses.map((w, idx) => {
+    const cls    = clsMap[idx % clsMap.length];
+    const pb     = pbMap[idx % pbMap.length];
+    const pct    = w.pct || w.capacity || 0;
+    const whStock = stock.filter(s => s.wh === w.code);
+    const skuCount = whStock.length;
+    const whValue  = whStock.reduce((s,i) => s+(i.val||0), 0);
+    return `<div class="wh-card" onclick="showBins('${w.code}','${w.name}')">
+      <div class="flex ic jb mb8">
+        <span class="fw6">${w.name}</span>
+        <span class="b ${cls}">${w.code}</span>
+      </div>
+      <div class="flex gap12 mb8 t-sm t-muted">
+        <span>Bins: <strong>${w.bins||0}</strong></span>
+        <span>SKUs: <strong>${skuCount}</strong></span>
+        <span>Value: <strong class="t-blue">${fCM(whValue,cur)}</strong></span>
+      </div>
+      <div class="prog"><div class="prog-bar ${pb}" style="width:${pct}%"></div></div>
+      <div class="t-xs t-muted mt12">${pct}% capacity · ${w.type||'General'} · Keeper: ${w.keeper||'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function showBins(code, name) {
+  const stock = S.get('stock') || [];
+  const cur   = baseCurr();
+  const bins  = stock.filter(s => s.wh === code);
+
+  document.getElementById('whBinTitle').textContent = 'Stock in ' + name + ' (' + code + ')';
+  document.getElementById('whBinTbl').innerHTML = bins.length
+    ? bins.map(b => `<tr>
+        <td class="t-blue fw6">${b.bin||'—'}</td>
+        <td>${b.name||b.code||'—'}</td>
+        <td class="num">${b.qty||0} ${b.uom||''}</td>
+        <td class="num">${fC(b.val||0,cur)}</td>
+        <td>${sBadge(b.status||'OK')}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3)">
+        No stock items in ${name}. Transfer items to this warehouse to see them here.
+      </td></tr>`;
+  document.getElementById('whBinCard').style.display = 'block';
+}
 
 // ── RENDER: BOM / WO / JC ──
 function renderBOM(){document.getElementById('bomTbl').innerHTML=(S.get('boms')||[]).map(b=>`<tr><td class="t-blue fw6">${b.id}</td><td>${b.prod}</td><td>${b.ver}</td><td class="num">${b.qty}</td><td class="num">SAR ${fN(b.mat)}</td><td class="num">SAR ${fN(b.lab)}</td><td class="num">SAR ${fN(b.oh)}</td><td class="num fw6">SAR ${fN(b.total)}</td><td>${sBadge(b.status)}</td></tr>`).join('');}
@@ -3746,9 +3995,40 @@ function calcOH(){const b=parseFloat(document.getElementById('ohBudget').value)|
 
 // ── RENDER: ABC ──
 function renderABC(){
-  document.getElementById('abcPoolTbl').innerHTML=[['Machine Setup','Setup Hours',48000,240,'200.00'],['Machining','Machine Hours',120000,6000,'20.00'],['Quality Inspection','Insp Hours',36000,720,'50.00'],['Material Handling','# Moves',18000,900,'20.00'],['Packing','# Orders',24000,200,'120.00']].map(([a,d,c,q,r])=>`<tr><td>${a}</td><td>${d}</td><td class="num">${fN(c)}</td><td class="num">${fN(q)}</td><td class="num fw6 t-blue">SAR ${r}</td></tr>`).join('');
-  document.getElementById('abcCmpTbl').innerHTML=[['Valve Assembly A',324.96,640.00],['Pump Casing B',408.32,2400.00],['Tower Bracket C',70.32,64.00]].map(([p,t,a])=>`<tr><td>${p}</td><td class="num">SAR ${t.toFixed(2)}</td><td class="num fw6">SAR ${a.toFixed(2)}</td><td class="num ${a>t?'t-red':'t-green'}">${a>t?'+':''}${(a-t).toFixed(2)}</td><td>${a>t?'<span class="b b-red">Under-costed</span>':'<span class="b b-green">Over-costed</span>'}</td></tr>`).join('');
+  const cur = baseCurr();
+  const ohRates = S.get('ohRates') || [];
+  const wos     = S.get('workorders') || [];
+
+  // Pool table from real OH rates
+  const poolRows = ohRates.length
+    ? ohRates.map(r => [r.name||'—', r.driver||'—', r.budget||0, r.qty||0, r.qty>0?((r.budget||0)/(r.qty||1)).toFixed(2):'—'])
+    : [['No overhead rates defined','Set up in Manufacturing → Overhead Rates',0,0,'—']];
+
+  document.getElementById('abcPoolTbl').innerHTML = poolRows.map(([a,d,c,q,r])=>
+    `<tr><td>${a}</td><td>${d}</td><td class="num">${fN(c)}</td><td class="num">${fN(q)}</td><td class="num fw6 t-blue">${r!=='—'?fC(parseFloat(r),cur):r}</td></tr>`
+  ).join('');
+
+  // Product cost comparison from real work orders
+  const cmpRows = wos.length
+    ? wos.map(w => {
+        const actual   = (w.dm||0)+(w.dl||0)+(w.oh||0);
+        const standard = actual * 0.95; // std vs actual
+        return [w.prod||w.id, standard, actual];
+      })
+    : [];
+
+  document.getElementById('abcCmpTbl').innerHTML = cmpRows.length
+    ? cmpRows.map(([p,t,a])=>`<tr>
+        <td>${p}</td>
+        <td class="num">${fC(t,cur)}</td>
+        <td class="num fw6">${fC(a,cur)}</td>
+        <td class="num ${a>t?'t-red':'t-green'}">${a>t?'+':''}${fC(a-t,cur)}</td>
+        <td>${a>t?'<span class="b b-red">Under-costed</span>':'<span class="b b-green">Over-costed</span>'}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3)">No work orders found. Create work orders to see ABC cost comparison.</td></tr>`;
 }
+
+
 
 // ── RENDER: SELLING ──
 function renderQT(){document.getElementById('qtTbl').innerHTML=(S.get('quotes')||[]).map(q=>`<tr><td class="t-blue fw6">${q.id}</td><td>${q.date}</td><td>${q.cust}</td><td class="num">${q.items}</td><td class="num">SAR ${fN(q.amount)}</td><td>${q.valid}</td><td>${sBadge(q.status)}</td></tr>`).join('');}
@@ -3852,55 +4132,119 @@ function renderPnL() {
 }
 
 function renderBS() {
-  const t = _tb();
+  const t   = _tb();
   const cur = t.cur;
-  const f = (n) => fC(Math.abs(n), cur);
+  const co  = S.get('company') || {};
   const balanced = Math.abs(t.totalAssets - t.totalLandE) < 1;
+  const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  // Format: positive number, right-aligned
+  const f  = n => `<span style="font-variant-numeric:tabular-nums;font-family:Consolas,monospace">${fC(Math.abs(n||0),cur)}</span>`;
+  // Row builder
+  const row  = (label, val, cls='in', note='') =>
+    `<div class="fs-row ${cls}"><span>${label}</span>${note?`<span class="fs-note">${note}</span>`:''}<span>${f(val)}</span></div>`;
+  const cat  = label => `<div class="fs-cat">${label}</div>`;
+  const sec  = label => `<div class="fs-sec">${label}</div>`;
+  const tot  = (label, val) => `<div class="fs-row st"><span>${label}</span><span>${f(val)}</span></div>`;
+  const gtot = (label, val, cls='tot') =>
+    `<div class="fs-row ${cls}" style="margin:14px 0 0"><span>${label}</span><span>${f(val)}</span></div>`;
 
   document.getElementById('bsRpt').innerHTML = `
-    ${rptLetterhead('Balance Sheet','As at June 30, 2025','IAS 1 — Statement of Financial Position')}
-    ${!balanced ? `<div class="alert a-err mb12">⚠ Balance sheet is OUT OF BALANCE by ${fC(Math.abs(t.totalAssets-t.totalLandE),cur)} — check closing entries</div>` : ''}
-    <div class="g2c" style="gap:24px">
+  <div class="fs-report">
+
+    <!-- Letterhead -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--text1)">
       <div>
-        <div class="fs-sec">ASSETS</div>
-        <div class="fs-row fw6"><span>Current Assets</span></div>
-        <div class="fs-row in"><span>Cash & Bank</span><span>${f(t.cashBank)}</span></div>
-        <div class="fs-row in"><span>Trade Receivables</span><span>${f(t.ar)}</span></div>
-        <div class="fs-row in"><span>Prepaid Expenses</span><span>${f(t.prepaid)}</span></div>
-        <div class="fs-row in"><span>Raw Materials Inventory</span><span>${f(t.rmInv)}</span></div>
-        <div class="fs-row in"><span>Work in Progress</span><span>${f(t.wipInv)}</span></div>
-        <div class="fs-row in"><span>Finished Goods</span><span>${f(t.fgInv)}</span></div>
-        <div class="fs-row st"><span>Total Current Assets</span><span>${f(t.totalCA)}</span></div>
-        <div class="fs-row fw6 mt8"><span>Non-Current Assets</span></div>
-        <div class="fs-row in"><span>Property, Plant & Equipment (net)</span><span>${f(t.ppe)}</span></div>
-        <div class="fs-row in"><span>Intangible Assets</span><span>${f(t.intangible)}</span></div>
-        <div class="fs-row st"><span>Total Non-Current Assets</span><span>${f(t.totalNCA)}</span></div>
-        <div class="fs-row tot"><span>TOTAL ASSETS</span><span>${f(t.totalAssets)}</span></div>
+        <div style="font-size:18px;font-weight:700;color:var(--blue)">${co.name||'Company Name'}</div>
+        <div style="font-size:12px;color:var(--text3)">VAT: ${co.vat||'—'} &nbsp;·&nbsp; CR: ${co.cr||'—'}</div>
       </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:700;color:var(--text1)">Balance Sheet</div>
+        <div style="font-size:13px;font-weight:600;color:var(--blue)">${today}</div>
+        <div style="font-size:11px;color:var(--text3)">IAS 1 — Statement of Financial Position</div>
+        <div style="font-size:11px;color:var(--text3)">Prepared: ${new Date().toISOString().slice(0,10)} · Currency: ${cur}</div>
+      </div>
+    </div>
+
+    ${!t.isSeeded ? `<div class="alert a-info mb16">No financial data yet. Post journal entries or import opening balances to populate this report.</div>` : ''}
+    ${!balanced && t.isSeeded ? `<div class="alert a-err mb16">⚠ Balance sheet is OUT OF BALANCE by ${fC(Math.abs(t.totalAssets-t.totalLandE),cur)} — check closing entries</div>` : ''}
+
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:1fr 200px;gap:0;padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Account Description</span>
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);text-align:right">${today.split(',')[1]?.trim()||today} (${cur})</span>
+    </div>
+
+    <!-- TWO COLUMN LAYOUT -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:4px">
+
+      <!-- LEFT: ASSETS -->
       <div>
-        <div class="fs-sec">LIABILITIES</div>
-        <div class="fs-row fw6"><span>Current Liabilities</span></div>
-        <div class="fs-row in"><span>Trade Payables</span><span>${f(t.ap)}</span></div>
-        <div class="fs-row in"><span>Accrued Liabilities</span><span>${f(t.accrued)}</span></div>
-        <div class="fs-row in"><span>VAT Payable</span><span>${f(t.vatPayable)}</span></div>
-        <div class="fs-row in"><span>Income Tax Payable</span><span>${f(t.taxPayable)}</span></div>
-        <div class="fs-row st"><span>Total Current Liabilities</span><span>${f(t.totalCL)}</span></div>
-        <div class="fs-row fw6 mt8"><span>Non-Current Liabilities</span></div>
-        <div class="fs-row in"><span>Long-term Borrowings</span><span>${f(t.ltDebt)}</span></div>
-        <div class="fs-row st"><span>Total Non-Current Liabilities</span><span>${f(t.totalNCL)}</span></div>
-        <div class="fs-row tot"><span>TOTAL LIABILITIES</span><span>${f(t.totalLiab)}</span></div>
-        <div class="fs-sec mt12">EQUITY</div>
-        <div class="fs-row in"><span>Share Capital</span><span>${f(t.shareCapital)}</span></div>
-        <div class="fs-row in"><span>Retained Earnings (opening)</span><span>${f(t.retainedEarnings)}</span></div>
-        <div class="fs-row in"><span>Net Income for the Period</span><span>${f(t.netIncome)}</span></div>
-        <div class="fs-row st"><span>Total Equity</span><span>${f(t.totalEquity)}</span></div>
-        <div class="fs-row tot" style="color:${balanced?'var(--green)':'var(--red)'}"><span>TOTAL LIABILITIES & EQUITY</span><span>${f(t.totalLandE)}</span></div>
-        <div class="fs-note" style="margin-top:8px;color:${balanced?'var(--green)':'var(--red)'}">
-          ${balanced ? '✓ Balance Sheet is in agreement' : '✗ Out of balance — Difference: '+fC(Math.abs(t.totalAssets-t.totalLandE),cur)}
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:8px 0 10px;border-bottom:1px solid var(--border);margin-bottom:8px">STATEMENT OF FINANCIAL POSITION: ASSETS</div>
+
+        ${cat('Current Assets')}
+        ${row('Cash and Cash Equivalents', t.cashBank, 'in', 'Note 1')}
+        ${row('Trade Receivables, Net',    t.ar,       'in', 'Note 2')}
+        ${row('Prepaid Expenses',          t.prepaid,  'in')}
+        ${row('Raw Materials Inventory',   t.rmInv,    'in', 'Note 3')}
+        ${row('Work in Progress',          t.wipInv,   'in')}
+        ${row('Finished Goods',            t.fgInv,    'in')}
+        ${tot('Total Current Assets',      t.totalCA)}
+
+        <div style="height:16px"></div>
+        ${cat('Non-Current Assets')}
+        ${row('Property, Plant and Equipment', t.ppe,       'in', 'Note 4')}
+        ${row('Intangible Assets, Net',         t.intangible,'in', 'Note 5')}
+        ${tot('Total Non-Current Assets',       t.totalNCA)}
+
+        ${gtot('TOTAL ASSETS', t.totalAssets)}
+      </div>
+
+      <!-- RIGHT: LIABILITIES + EQUITY -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:8px 0 10px;border-bottom:1px solid var(--border);margin-bottom:8px">STATEMENT OF FINANCIAL POSITION: LIABILITIES &amp; EQUITY</div>
+
+        ${cat('Current Liabilities')}
+        ${row('Trade Payables',        t.ap,        'in', 'Note 6')}
+        ${row('Accrued Liabilities',   t.accruedLiab||0, 'in', 'Note 7')}
+        ${row('VAT Payable',           t.vatPay||0, 'in')}
+        ${row('Income Tax Payable',    t.taxPay||0, 'in')}
+        ${tot('Total Current Liabilities', t.totalCL)}
+
+        <div style="height:16px"></div>
+        ${cat('Non-Current Liabilities')}
+        ${row('Long-term Borrowings', t.ltDebt||0, 'in', 'Note 8')}
+        ${tot('Total Non-Current Liabilities', t.totalNCL)}
+        ${tot('TOTAL LIABILITIES', t.totalLiab)}
+
+        <div style="height:16px"></div>
+        ${cat('Shareholders\' Equity')}
+        ${row('Share Capital',              t.shareCap||0,    'in', 'Note 9')}
+        ${row('Additional Paid-in Capital', t.apic||0,        'in')}
+        ${row('Retained Earnings (opening)',t.retEarnings||0,  'in', 'Note 10')}
+        ${row('Net Income for the Period',  t.netIncome||0,    'in')}
+        ${tot('Total Shareholders\' Equity', t.totalEquity)}
+
+        ${gtot('TOTAL LIABILITIES & EQUITY', t.totalLandE, 'grand')}
+
+        <div style="margin-top:20px;padding:12px 16px;background:${balanced?'var(--green-lt)':'var(--red-lt)'};border-radius:var(--r4);border:1px solid ${balanced?'var(--green)':'var(--red)'}">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:${balanced?'var(--green)':'var(--red)'}">
+            ${balanced
+              ? `<span style="width:20px;height:20px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px">✓</span> Equation Balanced`
+              : `<span style="font-size:16px">⚠</span> Balance Sheet Imbalance`}
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px">Assets = Liabilities + Equity (Δ ${fC(Math.abs(t.totalAssets-t.totalLandE),cur)})</div>
         </div>
       </div>
     </div>
-    <div class="fs-note">Prepared per IAS 1 · ${cur} · As at June 30, 2025</div>`;
+
+    <!-- Footer -->
+    <div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:12px;color:var(--text3)">Prepared per IAS 1 · ${cur} · ${today}</div>
+      <div style="font-size:11px;color:var(--text3)">Prepared by: ${S.get('company')?.name||'—'} · Reviewed by: Finance Team</div>
+    </div>
+
+  </div>`;
 }
 
 function renderCF() {
@@ -3944,7 +4288,7 @@ function renderCF() {
     <div class="fs-note">IAS 7 Indirect Method · ${cur} · Cash per TB: ${f(t.cashBank)}</div>`;
 }
 function renderEquity() {
-  const cur = baseCurr();
+  const t = _tb(); const cur = t.cur;
   const col = (v, cls='') => `<td class="num ${cls}" style="font-variant-numeric:tabular-nums">${v < 0 ? `<span style="color:var(--red)">(${fC(Math.abs(v),cur)})</span>` : fC(v,cur)}</td>`;
   document.getElementById('equityRpt').innerHTML = `
     <div class="fs-report" id="equityPrintArea">
@@ -3971,70 +4315,18 @@ function renderEquity() {
 
 // ── AR AGING REPORT ──
 function renderARAgingReport() {
-  const cur = baseCurr();
-  const data = [
-    { cust:'Saudi Aramco',    total:184800, c:184800, b30:0,    b60:0,    b90:0,    over90:0     },
-    { cust:'SABIC',           total:86400,  c:86400,  b30:0,    b60:0,    b90:0,    over90:0     },
-    { cust:'STC',             total:96800,  c:0,      b30:96800,b60:0,    b90:0,    over90:0     },
-    { cust:'Saudi Railways',  total:44200,  c:0,      b30:0,    b60:44200,b90:0,    over90:0     },
-    { cust:'Al-Rajhi Bank',   total:28400,  c:0,      b30:0,    b60:0,    b90:28400,over90:0     },
-    { cust:'Marafiq Utilities',total:16000, c:0,      b30:0,    b60:0,    b90:0,    over90:16000 },
-  ];
-  const totals = data.reduce((a,r) => ({
-    total:a.total+r.total, c:a.c+r.c, b30:a.b30+r.b30, b60:a.b60+r.b60, b90:a.b90+r.b90, over90:a.over90+r.over90
-  }), {total:0,c:0,b30:0,b60:0,b90:0,over90:0});
-
-  // IFRS 9 ECL provision rates
-  const eclRates = {c:0.005, b30:0.02, b60:0.05, b90:0.15, over90:0.35};
-  const ecl = data.reduce((a,r) => a + r.c*eclRates.c + r.b30*eclRates.b30 + r.b60*eclRates.b60 + r.b90*eclRates.b90 + r.over90*eclRates.over90, 0);
-
-  document.getElementById('arAgingKPIs').innerHTML = [
-    {l:'Total AR Outstanding', v:fC(totals.total,cur), c:'c-blue'},
-    {l:'Current (0–30 days)',  v:fC(totals.c+totals.b30,cur), c:'c-green'},
-    {l:'Overdue (31–90 days)', v:fC(totals.b60+totals.b90,cur), c:'c-orange'},
-    {l:'Critical (>90 days)',  v:fC(totals.over90,cur), c:'c-red'},
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:16px">${k.v}</div></div>`).join('');
-
-  const cols = '2fr 1fr 1fr 1fr 1fr 1fr 1fr';
-  document.getElementById('arAgingRpt').innerHTML = `
-    <div class="fs-report" id="arAgingPrintArea">
-      ${rptLetterhead('AR Aging Report', 'As at June 30, 2025', 'IFRS 9 — Expected Credit Loss Analysis')}
-      <div class="aging-hdr" style="grid-template-columns:${cols}">
-        <span>Customer</span><span class="num">Total</span><span class="num">Current</span>
-        <span class="num">31–60 days</span><span class="num">61–90 days</span><span class="num">91–120 days</span><span class="num">>120 days</span>
-      </div>
-      ${data.map(r => {
-        const risk = r.over90 > 0 ? 'b-red' : r.b90 > 0 ? 'b-orange' : r.b60 > 0 ? 'b-yellow' : 'b-green';
-        const num = v => v > 0 ? `<span>${fC(v,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
-        return `<div class="aging-row" style="grid-template-columns:${cols}">
-          <span class="fw6">${r.cust}</span>
-          <span class="num fw6">${fC(r.total,cur)}</span>
-          ${num(r.c)} ${num(r.b30)} ${num(r.b60)} ${num(r.b90)} ${num(r.over90)}
-        </div>`;
-      }).join('')}
-      <div class="aging-row" style="grid-template-columns:${cols};background:var(--blue-xlt);font-weight:700;border-radius:0 0 6px 6px">
-        <span>TOTAL</span>
-        <span class="num t-blue">${fC(totals.total,cur)}</span>
-        <span class="num">${fC(totals.c,cur)}</span>
-        <span class="num">${fC(totals.b30,cur)}</span>
-        <span class="num">${fC(totals.b60,cur)}</span>
-        <span class="num ${totals.b90>0?'t-orange':''}">${fC(totals.b90,cur)}</span>
-        <span class="num ${totals.over90>0?'t-red':''}">${fC(totals.over90,cur)}</span>
-      </div>
-      <div style="margin-top:20px">
-        <div class="fs-sec">IFRS 9 — Expected Credit Loss (ECL) Provision</div>
-        <div class="tw"><table>
-          <thead><tr><th>Aging Bucket</th><th class="num">Balance</th><th class="num">ECL Rate</th><th class="num">Provision Required</th></tr></thead>
-          <tbody>
-            ${[['Current (0-30d)', totals.c+totals.b30, 0.005],['31–60 days', totals.b30, 0.02],['61–90 days', totals.b60, 0.05],['91–120 days', totals.b90, 0.15],['>120 days', totals.over90, 0.35]]
-              .map(([b,v,r])=>`<tr><td>${b}</td><td class="num">${fC(v,cur)}</td><td class="num">${(r*100).toFixed(1)}%</td><td class="num t-red">${fC(v*r,cur)}</td></tr>`).join('')}
-            <tr style="font-weight:700;background:var(--red-lt)"><td>Total ECL Provision</td><td class="num">${fC(totals.total,cur)}</td><td class="num">—</td><td class="num t-red">${fC(ecl,cur)}</td></tr>
-          </tbody>
-        </table></div>
-        <div class="fs-note">ECL provision calculated per IFRS 9 simplified approach. Rates based on historical default experience.</div>
-      </div>
-    </div>`;
+  // Delegate to the unified renderAging function
+  renderAging('ar');
+  // Also populate the dedicated report page elements if they exist
+  const el = document.getElementById('page-rpt-ar-aging');
+  if (el) {
+    const kpi = document.getElementById('arKPIs');
+    const tbl = document.getElementById('arTbl');
+    if (kpi) el.querySelector('[id$="KPIs"]')?.replaceWith(kpi.cloneNode(true));
+  }
 }
+
+
 
 // ── AP AGING REPORT ──
 function renderAPAgingReport() {
@@ -4078,86 +4370,42 @@ function renderAPAgingReport() {
 
 // ── BUDGET VS ACTUAL ──
 function renderBudgetReport() {
-  const cur = baseCurr();
+  const t   = _tb();
+  const cur = t.cur;
+  const b   = S.get('budgets') || {};
   const lines = [
-    {cat:'Revenue',               items:[
-      {l:'Product Sales',     bud:420000, act:412000},
-      {l:'Service Revenue',   bud:25000,  act:28000},
-      {l:'Other Income',      bud:10000,  act:8400},
+    {cat:'Revenue', items:[
+      {l:'Product Sales',    bud:b.rev||0,    act:t.rev||0},
+      {l:'Service Revenue',  bud:0,            act:0},
     ]},
-    {cat:'Cost of Goods Sold',    items:[
-      {l:'Direct Materials',  bud:275000, act:285400},
-      {l:'Direct Labour',     bud:110000, act:112800},
-      {l:'Overhead Applied',  bud:90000,  act:94200},
+    {cat:'Cost of Sales', items:[
+      {l:'Direct Materials', bud:b.dm||0,     act:t.dmCost||0},
+      {l:'Direct Labour',    bud:b.dl||0,     act:t.dlCost||0},
+      {l:'Overhead Applied', bud:b.oh||0,     act:t.ohCost||0},
     ]},
-    {cat:'Operating Expenses',    items:[
-      {l:'Selling Expenses',  bud:32000,  act:34200},
-      {l:'Admin Expenses',    bud:26000,  act:28600},
-      {l:'Depreciation',      bud:12000,  act:12400},
+    {cat:'Operating Expenses', items:[
+      {l:'Selling Expenses', bud:b.sellExp||0, act:t.sellExp||0},
+      {l:'G&A Expenses',     bud:b.gaExp||0,  act:t.gaExp||0},
     ]},
   ];
-
-  const kpiData = (() => {
-    const totBudRev = 420000+25000+10000, totActRev = 412000+28000+8400;
-    const totBudCogs = 275000+110000+90000, totActCogs = 285400+112800+94200;
-    const totBudOpex = 32000+26000+12000, totActOpex = 34200+28600+12400;
-    const budProfit = totBudRev-totBudCogs-totBudOpex, actProfit = totActRev-totActCogs-totActOpex;
-    return {totBudRev,totActRev,budProfit,actProfit};
-  })();
-
-  document.getElementById('budgetKPIs').innerHTML = [
-    {l:'Budget Revenue', v:fC(kpiData.totBudRev,cur), c:'c-blue'},
-    {l:'Actual Revenue',  v:fC(kpiData.totActRev,cur), c:`c-${kpiData.totActRev>=kpiData.totBudRev?'green':'orange'}`},
-    {l:'Budget Profit',  v:fC(kpiData.budProfit,cur), c:'c-blue'},
-    {l:'Actual Profit',  v:fC(kpiData.actProfit,cur), c:`c-${kpiData.actProfit>=kpiData.budProfit?'green':'red'}`},
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:15px">${k.v}</div></div>`).join('');
-
-  const buildRows = (items, isCost=false) => items.map(r => {
-    const var_ = r.act - r.bud;
-    const varPct = (var_/Math.abs(r.bud)*100).toFixed(1);
-    // For cost: over budget is bad (red), for revenue: under is bad
-    const isBad = isCost ? var_ > 0 : var_ < 0;
-    const varStr = `${var_>0?'+':''}${fC(var_,cur)}`;
-    const barPct = Math.min(100, Math.abs(r.act/r.bud*100));
-    return `<tr>
-      <td>${r.l}</td>
-      <td class="num">${fC(r.bud,cur)}</td>
-      <td class="num">${fC(r.act,cur)}</td>
-      <td class="num ${isBad?'var-neg':'var-pos'}">${varStr}</td>
-      <td class="num ${isBad?'var-neg':'var-pos'}">${varPct}%</td>
-      <td style="width:80px">
-        <div class="var-bar"><div class="var-fill" style="width:${barPct}%;background:${isBad?'var(--red)':'var(--green)'}"></div></div>
-      </td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('budgetRpt').innerHTML = `
-    <div class="fs-report" id="budgetPrintArea">
-      ${rptLetterhead('Budget vs Actual Report', 'Q2 2025 (April – June)', 'Management Commentary · IAS 1')}
-      ${lines.map(section => {
-        const isCost = section.cat !== 'Revenue';
-        const totBud = section.items.reduce((a,r)=>a+r.bud,0);
-        const totAct = section.items.reduce((a,r)=>a+r.act,0);
-        const totVar = totAct-totBud;
-        const isBad = isCost ? totVar > 0 : totVar < 0;
-        return `
-          ${fsSection(section.cat)}
-          <div class="tw"><table>
-            <thead><tr><th>Line Item</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Variance</th><th class="num">%</th><th>Trend</th></tr></thead>
-            <tbody>${buildRows(section.items, isCost)}</tbody>
-            <tfoot><tr style="font-weight:700;background:var(--surface2)">
-              <td>Subtotal — ${section.cat}</td>
-              <td class="num">${fC(totBud,cur)}</td>
-              <td class="num">${fC(totAct,cur)}</td>
-              <td class="num ${isBad?'var-neg':'var-pos'}">${totVar>0?'+':''}${fC(totVar,cur)}</td>
-              <td class="num ${isBad?'var-neg':'var-pos'}">${(totVar/Math.abs(totBud)*100).toFixed(1)}%</td>
-              <td></td>
-            </tr></tfoot>
-          </table></div>`;
-      }).join('')}
-      <div class="fs-note" style="margin-top:16px">Variances > ±5% require management commentary per internal policy. Positive variance on revenue = favorable. Positive variance on costs = unfavorable.</div>
-    </div>`;
-  setTimeout(animateBars, 100);
+  const el = document.getElementById('budgetRpt');
+  if (!el) return;
+  el.innerHTML = lines.map(section => `
+    <div class="fw7 t-sm mb4 mt12" style="color:var(--blue);text-transform:uppercase;letter-spacing:.04em">${section.cat}</div>
+    ${section.items.map(r => {
+      const var_ = r.act - r.bud;
+      const pct  = r.bud > 0 ? (var_/r.bud*100).toFixed(1) : '—';
+      return `<div class="cs-row">
+        <span>${r.l}</span>
+        <span class="num">${fC(r.bud,cur)}</span>
+        <span class="num">${fC(r.act,cur)}</span>
+        <span class="num ${var_>0?'t-red':'t-green'} fw6">${var_>0?'+':''}${fC(var_,cur)}</span>
+        <span class="num t-muted t-xs">${pct}%</span>
+      </div>`;
+    }).join('')}`).join('');
+  if (!b.rev && !t.rev) {
+    el.innerHTML = '<div class="alert a-info">No budget data. Set budgets in Settings → Fiscal Year, and post journal entries to see actuals.</div>';
+  }
 }
 
 // ── COST VARIANCE ANALYSIS ──
@@ -4170,10 +4418,7 @@ function renderCostVariance() {
     stdDM: Math.round(w.dm*0.95), actDM: w.dm,
     stdDL: Math.round(w.dl*0.92), actDL: w.dl,
     stdOH: Math.round(w.oh*0.98), actOH: w.oh,
-  })) : [
-    {wo:'WO-2020',prod:'Valve Assembly A',cust:'Saudi Aramco',stdDM:271000,actDM:285400,stdDL:103000,actDL:112800,stdOH:91200,actOH:94200},
-    {wo:'WO-2021',prod:'Pump Casing B',   cust:'SABIC',       stdDM:124000,actDM:128400,stdDL:68000, actDL:71200, stdOH:44000, actOH:46800},
-  ];
+  })) : [];
 
   const totals = data.reduce((a,r)=>({
     stdDM:a.stdDM+r.stdDM,actDM:a.actDM+r.actDM,
@@ -4465,67 +4710,63 @@ function validateDimString() {
 }
 
 function renderFinDim() {
-  showSkeletonKPIs('dimKPIs', 4);
-  setTimeout(() => {
-    document.getElementById('dimKPIs').innerHTML = [
-      {l:'Dimension Sets', v: FIN_DIMS.length, c:'c-blue'},
-      {l:'Total Dimension Values', v: FIN_DIMS.reduce((a,d)=>a+d.values.length,0), c:'c-teal'},
-      {l:'Active Account Strings', v: getTBData().length, c:'c-green'},
-      {l:'Validation Rules', v: 12, c:'c-orange'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('dimKPIs').innerHTML = [
+  {l:'Dimension Sets', v: FIN_DIMS.length, c:'c-blue'},
+  {l:'Total Dimension Values', v: FIN_DIMS.reduce((a,d)=>a+d.values.length,0), c:'c-teal'},
+  {l:'Active Account Strings', v: getTBData().length, c:'c-green'},
+  {l:'Validation Rules', v: 12, c:'c-orange'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    document.getElementById('dimSets').innerHTML = FIN_DIMS.map(d => `
-      <div class="fsec mb2">${d.name} <span class="t-muted t-xs">(Segment ${d.segment})</span></div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
-        ${d.values.map(v=>`<span class="b b-blue t-xs">${v}</span>`).join('')}
-      </div>`).join('');
+document.getElementById('dimSets').innerHTML = FIN_DIMS.map(d => `
+  <div class="fsec mb2">${d.name} <span class="t-muted t-xs">(Segment ${d.segment})</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+    ${d.values.map(v=>`<span class="b b-blue t-xs">${v}</span>`).join('')}
+  </div>`).join('');
 
-    document.getElementById('dimFramework').innerHTML = `
-      <div style="font-size:12px;color:var(--text2);line-height:2">
-        Account String Format: <strong style="color:var(--blue);font-family:monospace">[Main Account] - [Cost Centre] - [Department] - [Line of Business] - [Project]</strong><br>
-        Example: <code style="background:var(--surface2);padding:2px 8px;border-radius:3px">1010 - CC01 - D001 - LOB1 - PRJ-001</code>
-      </div>`;
-  }, 400);
+document.getElementById('dimFramework').innerHTML = `
+  <div style="font-size:12px;color:var(--text2);line-height:2">
+    Account String Format: <strong style="color:var(--blue);font-family:monospace">[Main Account] - [Cost Centre] - [Department] - [Line of Business] - [Project]</strong><br>
+    Example: <code style="background:var(--surface2);padding:2px 8px;border-radius:3px">1010 - CC01 - D001 - LOB1 - PRJ-001</code>
+  </div>`;
+
 }
 
 // ── INTERCOMPANY ENGINE ──
 function seedIntercompany() { /* Demo data removed — new company starts clean */ }
 
 function renderIntercompany() {
-  showSkeletonKPIs('icKPIs', 4);
-  setTimeout(() => {
-    const txs = S.get('icTransactions') || [];
-    const cur = baseCurr();
-    const open = txs.filter(t=>t.status==='Open');
+const txs = S.get('icTransactions') || [];
+const cur = baseCurr();
+const open = txs.filter(t=>t.status==='Open');
 
-    document.getElementById('icKPIs').innerHTML = [
-      {l:'Total IC Transactions', v: txs.length, c:'c-blue'},
-      {l:'Open / Unmatched',      v: open.length, c: open.length>0?'c-orange':'c-green'},
-      {l:'Matched & Eliminated',  v: txs.filter(t=>t.status==='Matched').length, c:'c-green'},
-      {l:'Total IC Volume',       v: fCM(txs.reduce((a,t)=>a+t.amount,0),cur), c:'c-teal'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('icKPIs').innerHTML = [
+  {l:'Total IC Transactions', v: txs.length, c:'c-blue'},
+  {l:'Open / Unmatched',      v: open.length, c: open.length>0?'c-orange':'c-green'},
+  {l:'Matched & Eliminated',  v: txs.filter(t=>t.status==='Matched').length, c:'c-green'},
+  {l:'Total IC Volume',       v: fCM(txs.reduce((a,t)=>a+t.amount,0),cur), c:'c-teal'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    // Intercompany matrix
-    const entities = [...new Set([...txs.map(t=>t.from), ...txs.map(t=>t.to)])];
-    let matrix = `<table><thead><tr><th>Entity</th>${entities.map(e=>`<th class="num">${e}</th>`).join('')}</tr></thead><tbody>`;
-    entities.forEach(from => {
-      matrix += `<tr><td class="fw6">${from}</td>`;
-      entities.forEach(to => {
-        if (from === to) { matrix += `<td style="background:var(--surface2);text-align:center">—</td>`; return; }
-        const amt = txs.filter(t=>t.from===from&&t.to===to).reduce((a,t)=>a+t.amount,0);
-        matrix += `<td class="num ${amt>0?'t-blue':''}">${amt>0?fC(amt,cur):'—'}</td>`;
-      });
-      matrix += '</tr>';
-    });
-    matrix += '</tbody></table>';
-    document.getElementById('icMatrix').innerHTML = matrix;
+// Intercompany matrix
+const entities = [...new Set([...txs.map(t=>t.from), ...txs.map(t=>t.to)])];
+let matrix = `<table><thead><tr><th>Entity</th>${entities.map(e=>`<th class="num">${e}</th>`).join('')}</tr></thead><tbody>`;
+entities.forEach(from => {
+  matrix += `<tr><td class="fw6">${from}</td>`;
+  entities.forEach(to => {
+    if (from === to) { matrix += `<td style="background:var(--surface2);text-align:center">—</td>`; return; }
+    const amt = txs.filter(t=>t.from===from&&t.to===to).reduce((a,t)=>a+t.amount,0);
+    matrix += `<td class="num ${amt>0?'t-blue':''}">${amt>0?fC(amt,cur):'—'}</td>`;
+  });
+  matrix += '</tr>';
+});
+matrix += '</tbody></table>';
+document.getElementById('icMatrix').innerHTML = matrix;
 
-    document.getElementById('icTbl').innerHTML = txs.map(t =>
-      `<tr><td class="fw6 t-blue">${t.from}</td><td class="fw6">${t.to}</td><td>${t.type}</td>
-       <td class="num fw6">${fC(t.amount,t.currency)}</td><td class="t-muted">${t.date}</td>
-       <td>${t.status==='Matched'?'<span class="match-auto">✓ Matched</span>':'<span class="match-unmatched">⚠ Open</span>'}</td></tr>`
-    ).join('');
-  }, 350);
+document.getElementById('icTbl').innerHTML = txs.map(t =>
+  `<tr><td class="fw6 t-blue">${t.from}</td><td class="fw6">${t.to}</td><td>${t.type}</td>
+   <td class="num fw6">${fC(t.amount,t.currency)}</td><td class="t-muted">${t.date}</td>
+   <td>${t.status==='Matched'?'<span class="match-auto">✓ Matched</span>':'<span class="match-unmatched">⚠ Open</span>'}</td></tr>`
+).join('');
+
 }
 
 function runICElimination() {
@@ -4542,166 +4783,253 @@ function runICElimination() {
 function seedBankAccounts() { /* Demo data removed — new company starts clean */ }
 
 function renderCashPos() {
-  showSkeletonKPIs('cashKPIs', 4);
-  setTimeout(() => {
-    const banks = S.get('bankAccounts') || [];
-    const cur = baseCurr();
-    const totalBase = banks.reduce((a,b) => a + toBase(b.balance, b.currency), 0);
+  const banks = S.get('bankAccounts') || [];
+  const ledger = S.get('glLedger') || [];
+  const cur = baseCurr();
+  const totalBase = banks.reduce((a,b) => a + toBase(b.balance||0, b.currency||cur), 0);
 
-    document.getElementById('cashKPIs').innerHTML = [
-      {l:'Total Liquid Assets',   v: fC(totalBase,cur), c:'c-blue'},
-      {l:'SAR Accounts',          v: fC(banks.filter(b=>b.currency==='SAR').reduce((a,b)=>a+b.balance,0),cur), c:'c-green'},
-      {l:'Foreign Currency (Base)',v: fC(banks.filter(b=>b.currency!=='SAR').reduce((a,b)=>a+toBase(b.balance,b.currency),0),cur), c:'c-teal'},
-      {l:'Bank Accounts',         v: banks.length, c:'c-orange'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+  document.getElementById('cashKPIs').innerHTML = [
+    {l:'Total Liquid Assets',    v: fC(totalBase,cur), c:'c-blue'},
+    {l:'SAR Accounts',           v: fC(banks.filter(b=>b.currency===cur||!b.currency).reduce((a,b)=>a+(b.balance||0),0),cur), c:'c-green'},
+    {l:'Foreign Currency (Base)',v: fC(banks.filter(b=>b.currency&&b.currency!==cur).reduce((a,b)=>a+toBase(b.balance||0,b.currency),0),cur), c:'c-teal'},
+    {l:'Bank Accounts',          v: banks.length, c:'c-orange'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    // Bank account tiles
-    document.getElementById('cashPosBanks').innerHTML = banks.map(b => {
-      const baseAmt = toBase(b.balance, b.currency);
-      const pct = (baseAmt / totalBase * 100).toFixed(0);
-      return `<div class="fsec mb10">
-        <div class="flex ic gap10 mb6">
-          <div style="width:36px;height:36px;border-radius:6px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${b.bank.charAt(0)}</div>
-          <div>
-            <div class="fw6 t-sm">${b.name}</div>
-            <div class="t-xs t-muted">${b.bank} · ${b.iban.slice(0,12)}…</div>
-          </div>
-          <div style="margin-left:auto;text-align:right">
-            <div class="fw6 t-blue">${fC(b.balance, b.currency)}</div>
-            <div class="t-xs t-muted">${fC(baseAmt,cur)} base</div>
-          </div>
+  // Bank account tiles
+  document.getElementById('cashPosBanks').innerHTML = banks.length ? banks.map(b => {
+    const baseAmt = toBase(b.balance||0, b.currency||cur);
+    const pct = totalBase > 0 ? (baseAmt/totalBase*100).toFixed(0) : 0;
+    return `<div class="fsec mb10">
+      <div class="flex ic gap10 mb6">
+        <div style="width:36px;height:36px;border-radius:6px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${(b.bank||b.name||'B').charAt(0)}</div>
+        <div>
+          <div class="fw6 t-sm">${b.name}</div>
+          <div class="t-xs t-muted">${b.bank||'—'} · ${(b.iban||'—').slice(0,12)}…</div>
         </div>
-        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-          <div class="prog-bar" style="width:${pct}%;background:var(--blue);height:100%;border-radius:3px"></div>
+        <div style="margin-left:auto;text-align:right">
+          <div class="fw6 t-blue">${fC(b.balance||0, b.currency||cur)}</div>
+          <div class="t-xs t-muted">${fC(baseAmt,cur)} base</div>
         </div>
-      </div>`;
-    }).join('');
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;background:var(--blue);height:100%;border-radius:3px"></div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="alert a-info">No bank accounts found. Add bank accounts in Treasury → Bank Accounts.</div>`;
 
-    // Currency exposure
-    const byCurr = {};
-    banks.forEach(b => { byCurr[b.currency] = (byCurr[b.currency]||0) + toBase(b.balance, b.currency); });
-    document.getElementById('cashPosCurr').innerHTML = Object.entries(byCurr).map(([code, amt]) => {
-      const meta = CURRENCY_MASTER[code] || {};
-      const pct = (amt/totalBase*100).toFixed(1);
-      return `<div class="flex ic gap10 mb10">
-        <span style="font-size:18px">${meta.flag||'🏳'}</span>
-        <div style="flex:1">
-          <div class="flex ic gap6 mb4"><span class="fw6 t-sm">${code}</span><span class="t-muted t-xs">${pct}%</span></div>
-          <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
-            <div class="prog-bar" style="width:${pct}%;background:var(--teal);height:100%;border-radius:4px"></div>
-          </div>
+  // Currency exposure
+  const byCurr = {};
+  banks.forEach(b => { const c=b.currency||cur; byCurr[c]=(byCurr[c]||0)+toBase(b.balance||0,c); });
+  document.getElementById('cashPosCurr').innerHTML = Object.entries(byCurr).map(([code, amt]) => {
+    const meta = CURRENCY_MASTER[code] || {};
+    const pct = totalBase > 0 ? (amt/totalBase*100).toFixed(1) : 0;
+    return `<div class="flex ic gap10 mb10">
+      <span style="font-size:18px">${meta.flag||'🏳'}</span>
+      <div style="flex:1">
+        <div class="flex ic gap6 mb4"><span class="fw6 t-sm">${code}</span><span class="t-muted t-xs">${pct}%</span></div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+          <div style="width:${pct}%;background:var(--teal);height:100%;border-radius:4px"></div>
         </div>
-        <span class="fw6 num t-sm">${fC(amt,cur)}</span>
-      </div>`;
-    }).join('');
+      </div>
+      <span class="fw6 num t-sm">${fC(amt,cur)}</span>
+    </div>`;
+  }).join('') || `<div class="t-muted t-sm">No currency data.</div>`;
 
-    // Recent transactions
-    document.getElementById('cashTxTbl').innerHTML = [
-      {date:'2025-06-10',bank:'SNB-001',desc:'Customer Receipt — Aramco',ref:'RC-0042',dr:0,cr:184800,bal:284291,status:'Reconciled'},
-      {date:'2025-06-09',bank:'SNB-001',desc:'Supplier Payment — Al-Nasser',ref:'PV-0088',dr:98000,cr:0,bal:99491,status:'Reconciled'},
-      {date:'2025-06-08',bank:'ANB-002',desc:'Payroll June 2025',ref:'PAY-JUN',dr:31909,cr:0,bal:142000,status:'Reconciled'},
-      {date:'2025-06-07',bank:'SCB-003',desc:'USD wire — Import duty',ref:'WT-0021',dr:12400,cr:0,bal:48400,status:'Matched'},
-      {date:'2025-06-05',bank:'RJHI-004',desc:'Transfer from SNB',ref:'TRF-012',dr:0,cr:50000,bal:98200,status:'Reconciled'},
-    ].map(t=>`<tr>
-      <td class="t-muted">${t.date}</td><td>${t.bank}</td><td class="fw6">${t.desc}</td><td class="t-blue">${t.ref}</td>
-      <td class="num t-red">${t.dr?fC(t.dr,cur):'—'}</td>
-      <td class="num t-green">${t.cr?fC(t.cr,cur):'—'}</td>
-      <td class="num fw6">${fC(t.bal,cur)}</td>
-      <td><span class="match-auto">${t.status}</span></td>
-    </tr>`).join('');
-    animateBars();
-  }, 450);
+  // Recent transactions — from REAL GL ledger, cash accounts only
+  const bankGLCodes = new Set(banks.map(b => b.gl||b.glAccount||b.code).filter(Boolean));
+  const cashEntries = ledger
+    .filter(e => bankGLCodes.has(e.account) || e.account === '1010' || e.account === '1011')
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''))
+    .slice(0, 15);
+
+  document.getElementById('cashTxTbl').innerHTML = cashEntries.length
+    ? cashEntries.map(e => `<tr onclick="showJEDetail('${e.jeId}')" style="cursor:pointer">
+        <td class="t-muted">${e.date}</td>
+        <td>${e.account}</td>
+        <td class="fw6">${e.desc||'—'}</td>
+        <td class="t-blue">${e.jeId}</td>
+        <td class="num t-red">${e.cr?fC(e.cr,cur):'—'}</td>
+        <td class="num t-green">${e.dr?fC(e.dr,cur):'—'}</td>
+        <td></td>
+        <td><span class="b b-green t-xs">Posted</span></td>
+      </tr>`).join('')
+    : `<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text3)">
+        No cash transactions yet. Post journal entries to account 1010 (Cash &amp; Bank) to see them here.
+      </td></tr>`;
+  animateBars();
 }
 
 function renderBankAccounts() {
-  showSkeletonKPIs('bankKPIs', 4);
-  setTimeout(() => {
-    const banks = S.get('bankAccounts') || [];
-    const cur = baseCurr();
-    const total = banks.reduce((a,b)=>a+toBase(b.balance,b.currency),0);
-    document.getElementById('bankKPIs').innerHTML = [
-      {l:'Total Balance (Base)', v:fC(total,cur), c:'c-blue'},
-      {l:'Active Accounts',      v:banks.filter(b=>b.status==='Active').length, c:'c-green'},
-      {l:'Currencies',           v:[...new Set(banks.map(b=>b.currency))].length, c:'c-teal'},
-      {l:'Signatories',          v:[...new Set(banks.flatMap(b=>b.signees))].length, c:'c-orange'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+const banks = S.get('bankAccounts') || [];
+const cur = baseCurr();
+const total = banks.reduce((a,b)=>a+toBase(b.balance,b.currency),0);
+document.getElementById('bankKPIs').innerHTML = [
+  {l:'Total Balance (Base)', v:fC(total,cur), c:'c-blue'},
+  {l:'Active Accounts',      v:banks.filter(b=>b.status==='Active').length, c:'c-green'},
+  {l:'Currencies',           v:[...new Set(banks.map(b=>b.currency))].length, c:'c-teal'},
+  {l:'Signatories',          v:[...new Set(banks.flatMap(b=>b.signees))].length, c:'c-orange'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    document.getElementById('bankList').innerHTML = banks.map(b => `
-      <div class="fsec mb10" style="border-left:4px solid var(--blue);padding:12px 16px;border-radius:0 var(--radius) var(--radius) 0">
-        <div class="flex ic gap12 mb8">
-          <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--blue-dk));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${b.bank.charAt(0)}</div>
-          <div style="flex:1">
-            <div class="fw6">${b.name} <span class="b ${b.status==='Active'?'b-green':'b-grey'} ml8">${b.status}</span></div>
-            <div class="t-xs t-muted">${b.bank} · ${b.type} Account</div>
-          </div>
-          <div style="text-align:right">
-            <div class="fw6 t-blue" style="font-size:15px">${fC(b.balance,b.currency)}</div>
-            <div class="t-xs t-muted">IBAN: ${b.iban}</div>
-          </div>
-        </div>
-        <div class="flex ic gap8 t-xs t-muted">
-          <span>Signatories:</span>${b.signees.map(s=>`<span class="b b-blue">${s}</span>`).join('')}
-        </div>
-      </div>`).join('');
-  }, 350);
+document.getElementById('bankList').innerHTML = banks.map(b => `
+  <div class="fsec mb10" style="border-left:4px solid var(--blue);padding:12px 16px;border-radius:0 var(--radius) var(--radius) 0">
+    <div class="flex ic gap12 mb8">
+      <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--blue-dk));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${b.bank.charAt(0)}</div>
+      <div style="flex:1">
+        <div class="fw6">${b.name} <span class="b ${b.status==='Active'?'b-green':'b-grey'} ml8">${b.status}</span></div>
+        <div class="t-xs t-muted">${b.bank} · ${b.type} Account</div>
+      </div>
+      <div style="text-align:right">
+        <div class="fw6 t-blue" style="font-size:15px">${fC(b.balance,b.currency)}</div>
+        <div class="t-xs t-muted">IBAN: ${b.iban}</div>
+      </div>
+    </div>
+    <div class="flex ic gap8 t-xs t-muted">
+      <span>Signatories:</span>${b.signees.map(s=>`<span class="b b-blue">${s}</span>`).join('')}
+    </div>
+  </div>`).join('');
+
 }
 
 // ── BANK RECONCILIATION ──
 function renderBankRcon() {
-  showSkeletonKPIs('reconKPIs', 4);
-  setTimeout(() => {
-    const cur = baseCurr();
-    const stmtItems = [
-      {date:'2025-06-10',desc:'CUSTOMER RECEIPT ARAMCO',   amt:184800, status:'auto'},
-      {date:'2025-06-09',desc:'SUPPLIER PMT AL-NASSER',    amt:-98000, status:'auto'},
-      {date:'2025-06-08',desc:'PAYROLL JUNE 2025',         amt:-31909, status:'auto'},
-      {date:'2025-06-07',desc:'FX WIRE USD',               amt:-46540, status:'manual'},
-      {date:'2025-06-05',desc:'BANK CHARGES',              amt:-840,   status:'unmatched'},
-    ];
-    const glItems = [
-      {date:'2025-06-10',ref:'RC-0042', amt:184800, status:'auto'},
-      {date:'2025-06-09',ref:'PV-0088', amt:-98000, status:'auto'},
-      {date:'2025-06-08',ref:'PAY-JUN', amt:-31909, status:'auto'},
-      {date:'2025-06-07',ref:'WT-0021', amt:-46540, status:'manual'},
-    ];
-    const matched = stmtItems.filter(i=>i.status!=='unmatched').length;
-    const unmatched = stmtItems.filter(i=>i.status==='unmatched').length;
-    const stmtTotal = stmtItems.reduce((a,i)=>a+i.amt,0);
-    const glTotal = glItems.reduce((a,i)=>a+i.amt,0);
+  const cur = baseCurr();
+  const bankAccounts = S.get('bankAccounts') || [];
+  const ledger       = S.get('glLedger')     || [];
+  const journals     = S.get('journals')     || [];
 
-    document.getElementById('reconKPIs').innerHTML = [
-      {l:'Bank Statement Balance', v:fC(284291,cur), c:'c-blue'},
-      {l:'GL Book Balance',        v:fC(284291-840,cur), c:'c-teal'},
-      {l:'Matched Items',          v:matched, c:'c-green'},
-      {l:'Unmatched Items',        v:unmatched, c:unmatched>0?'c-red':'c-green'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+  // Selected bank account
+  const selEl = document.getElementById('reconBankSel');
+  const selCode = selEl?.value || bankAccounts[0]?.code || '';
+  const bankAcc = bankAccounts.find(b => b.code === selCode) || bankAccounts[0] || null;
 
-    const badge = s => s==='auto'?'<span class="match-auto">⚡ Auto</span>':s==='manual'?'<span class="match-manual">✋ Manual</span>':'<span class="match-unmatched">✗ Unmatched</span>';
-    document.getElementById('bankStmtTbl').innerHTML = stmtItems.map(i=>
-      `<tr><td>${i.date}</td><td>${i.desc}</td><td class="num ${i.amt<0?'t-red':'t-green'} fw6">${fC(i.amt,cur)}</td><td>${badge(i.status)}</td></tr>`
-    ).join('');
-    document.getElementById('glCashTbl').innerHTML = glItems.map(i=>
-      `<tr><td>${i.date}</td><td class="t-blue">${i.ref}</td><td class="num ${i.amt<0?'t-red':'t-green'} fw6">${fC(i.amt,cur)}</td><td>${badge(i.status)}</td></tr>`
-    ).join('');
+  // Populate selector
+  if (selEl && selEl.options.length <= 1) {
+    selEl.innerHTML = bankAccounts.length
+      ? bankAccounts.map(b => `<option value="${b.code}">${b.code} — ${b.name}</option>`).join('')
+      : '<option>No bank accounts</option>';
+    if (bankAcc) selEl.value = bankAcc.code;
+  }
 
-    document.getElementById('reconSummary').innerHTML = `
-      <div class="g2c">
-        <div>${[
-          ['Bank Statement Closing Balance', fC(284291,cur)],
-          ['Less: Outstanding Deposits in Transit', fC(0,cur)],
-          ['Less: Outstanding Checks/Payments', fC(0,cur)],
-          ['Add: Unrecorded Bank Credits', fC(0,cur)],
-          ['Adjusted Bank Balance', fC(284291,cur)],
-        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}</div>
-        <div>${[
-          ['GL Book Balance', fC(283451,cur)],
-          ['Add: Bank Charges Not Yet Recorded', fC(840,cur)],
-          ['Less: Interest Not Yet Recorded', fC(0,cur)],
-          ['Adjusted Book Balance', fC(284291,cur)],
-        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}</div>
+  if (!bankAcc) {
+    document.getElementById('reconKPIs').innerHTML = `<div class="alert a-info" style="grid-column:1/-1">No bank accounts found. Add a bank account in Treasury → Bank Accounts first.</div>`;
+    document.getElementById('bankStmtTbl').innerHTML = '';
+    document.getElementById('glCashTbl').innerHTML = '';
+    document.getElementById('reconSummary').innerHTML = '';
+    return;
+  }
+
+  // GL entries for this bank account (by GL account code)
+  const glAccCode = bankAcc.gl || bankAcc.glAccount || '';
+  const glEntries = ledger
+    .filter(e => e.account === glAccCode || e.account === selCode)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // Bank statement items from stored statement (or generate from GL)
+  const stmtItems = (S.get('bankStatements') || [])
+    .filter(s => s.bankCode === selCode)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // Compute running GL balance for this account
+  const glBalance = glEntries.reduce((s,e) => s + (e.dr||0) - (e.cr||0), 0);
+
+  // Auto-match: find GL entries matching statement items by amount+date
+  const matchedGL = new Set();
+  const reconItems = stmtItems.map(stmt => {
+    const match = glEntries.find(gl =>
+      !matchedGL.has(gl.jeId + gl.account) &&
+      Math.abs((gl.dr||0)-(gl.cr||0) - stmt.amt) < 0.01 &&
+      gl.date === stmt.date
+    );
+    if (match) matchedGL.add(match.jeId + match.account);
+    return { ...stmt, glMatch: match || null, status: match ? 'auto' : stmt.status || 'unmatched' };
+  });
+
+  const matched   = reconItems.filter(i => i.status !== 'unmatched').length;
+  const unmatched = reconItems.filter(i => i.status === 'unmatched').length;
+  const stmtBalance = stmtItems.reduce((s,i) => s + (i.amt||0), 0)
+    + (bankAcc.openingBal || 0);
+
+  // KPIs
+  document.getElementById('reconKPIs').innerHTML = [
+    { l:'Bank Statement Balance', v: fC(stmtBalance || bankAcc.balance || 0, cur), c:'c-blue' },
+    { l:'GL Book Balance',        v: fC(glBalance + (bankAcc.openingBal||0), cur),  c:'c-teal' },
+    { l:'Matched Items',          v: String(matched),   c:'c-green' },
+    { l:'Unmatched Items',        v: String(unmatched), c: unmatched > 0 ? 'c-red' : 'c-green' },
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Badge helper
+  const badge = s => s==='auto'
+    ? '<span class="match-auto">⚡ Auto</span>'
+    : s==='manual'
+    ? '<span class="match-manual">✋ Manual</span>'
+    : '<span class="match-unmatched">✗ Unmatched</span>';
+
+  // Bank statement table
+  document.getElementById('bankStmtTbl').innerHTML = reconItems.length
+    ? reconItems.map(i => `<tr>
+        <td>${i.date}</td>
+        <td>${i.desc||i.description||'—'}</td>
+        <td class="num ${(i.amt||0)<0?'t-red':'t-green'} fw6">${fC(i.amt||0,cur)}</td>
+        <td>${badge(i.status)}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text3)">
+        No bank statement items. Import a statement or add items manually.
+      </td></tr>`;
+
+  // GL cash ledger table — real GL entries
+  document.getElementById('glCashTbl').innerHTML = glEntries.length
+    ? glEntries.slice(0,20).map(e => {
+        const net = (e.dr||0) - (e.cr||0);
+        const isMatched = matchedGL.has(e.jeId + e.account);
+        return `<tr onclick="showJEDetail('${e.jeId}')" style="cursor:pointer">
+          <td>${e.date}</td>
+          <td class="t-blue fw6" title="Click to view JE">${e.jeId}</td>
+          <td class="t-muted t-xs">${e.desc||'—'}</td>
+          <td class="num ${net<0?'t-red':'t-green'} fw6">${fC(Math.abs(net),cur)}${net<0?' -':''}</td>
+          <td>${badge(isMatched?'auto':'unmatched')}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text3)">
+        No GL entries found for account <strong>${glAccCode||selCode}</strong>.<br>
+        <span class="t-xs">Post journal entries to this account to see them here.</span>
+      </td></tr>`;
+
+  // Reconciliation summary
+  const adjBankBal = stmtBalance;
+  const adjGLBal   = glBalance + (bankAcc.openingBal||0);
+  const diff       = adjBankBal - adjGLBal;
+  const balanced   = Math.abs(diff) < 0.01;
+
+  document.getElementById('reconSummary').innerHTML = `
+    <div class="g2c">
+      <div>
+        ${[
+          ['Bank Statement Closing Balance',       fC(stmtBalance||0, cur)],
+          ['Less: Outstanding Deposits in Transit', fC(0, cur)],
+          ['Less: Outstanding Checks/Payments',    fC(0, cur)],
+          ['Add: Unrecorded Bank Credits',          fC(0, cur)],
+          ['<strong>Adjusted Bank Balance</strong>', '<strong>'+fC(adjBankBal||0,cur)+'</strong>'],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
       </div>
-      <div class="alert a-ok mt12">✓ Reconciliation Balance: <strong>${fC(0,cur)}</strong> — Accounts are in agreement</div>`;
-  }, 400);
+      <div>
+        ${[
+          ['GL Book Balance',                   fC(adjGLBal||0, cur)],
+          ['Add: Bank Charges Not Yet Recorded', fC(unmatched>0 ? reconItems.filter(i=>i.status==='unmatched').reduce((s,i)=>s+Math.abs(i.amt||0),0) : 0, cur)],
+          ['Less: Interest Not Yet Recorded',    fC(0, cur)],
+          ['<strong>Adjusted Book Balance</strong>', '<strong>'+fC(adjGLBal||0,cur)+'</strong>'],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="alert ${balanced?'a-ok':'a-err'} mt12">
+      ${balanced
+        ? `✓ Reconciliation Balance: <strong>${fC(0,cur)}</strong> — Accounts are in agreement`
+        : `✗ Difference: <strong>${fC(Math.abs(diff),cur)}</strong> — ${diff>0?'Bank exceeds GL':'GL exceeds Bank'} — Investigate unmatched items`
+      }
+    </div>
+    ${glEntries.length === 0 ? `<div class="alert a-warn mt8">
+      ⚠ No GL entries linked to bank account <strong>${bankAcc.name}</strong> (GL: ${glAccCode||'not set'}).
+      Make sure your journal entries use GL account code <strong>${glAccCode||'assigned to this bank'}</strong>.
+    </div>` : ''}`;
 }
 
 function runAutoMatch() {
@@ -4709,7 +5037,410 @@ function runAutoMatch() {
   setTimeout(() => { renderBankRcon(); audioPostSuccess(); toast('Auto-match complete. 4 of 5 items matched.', 'success'); }, 1500);
 }
 function signOffRecon() {
-  appendAuditLog('bankrcon', 'SIGN_OFF', 'RECON-JUN25', {period:'June 2025', balance:284291});
+  appendAuditLog('bankrcon', 'SIGN_OFF', 'RECON-JUN25', {period: new Date().toLocaleString('en-US',{month:'long',year:'numeric'}), balance: (S.get('bankAccounts')||[]).reduce((a,b)=>a+(b.balance||0),0)});
+  audioPostSuccess();
+  toast('Bank reconciliation signed off. Audit record created.', 'success');
+}
+
+// ── CASH FORECAST ──
+function renderCashForecast() {
+  const cur      = baseCurr();
+  const banks    = S.get('bankAccounts') || [];
+  const invoices = S.get('invoices')     || [];
+  const pos      = S.get('pos')          || [];
+  const ledger   = S.get('glLedger')     || [];
+  const horizon  = parseInt(document.getElementById('forecastHorizon')?.value || 90);
+  const weeks    = Math.ceil(horizon / 7);
+
+  // Opening balance = sum of all bank accounts
+  const openingBal = banks.reduce((a,b) => a + toBase(b.balance||0, b.currency||cur), 0);
+
+  // Expected inflows = unpaid sales invoices
+  const expectedInflows = invoices.filter(i => i.status !== 'Paid').reduce((a,i) => a+(i.total||0), 0);
+  // Expected outflows = open POs
+  const expectedOutflows = pos.filter(p => p.status !== 'Closed' && p.status !== 'Received').reduce((a,p) => a+(p.total||0), 0);
+
+  // Weekly distribution
+  let running = openingBal;
+  const rows = [];
+  for (let w = 1; w <= weeks; w++) {
+    const wInflow  = expectedInflows  > 0 ? expectedInflows  / weeks : 0;
+    const wOutflow = expectedOutflows > 0 ? expectedOutflows / weeks : 0;
+    running += wInflow - wOutflow;
+    rows.push({ week:'W'+w, inflow:Math.round(wInflow), outflow:Math.round(wOutflow), net:Math.round(wInflow-wOutflow), balance:Math.round(running) });
+  }
+  const totalIn  = rows.reduce((a,r)=>a+r.inflow,0);
+  const totalOut = rows.reduce((a,r)=>a+r.outflow,0);
+  const minBal   = rows.length ? Math.min(...rows.map(r=>r.balance)) : openingBal;
+
+  document.getElementById('forecastKPIs').innerHTML = [
+    {l:'Opening Balance',      v:fC(openingBal,cur),  c:'c-blue'},
+    {l:`${horizon}D Inflows`,  v:fC(totalIn,cur),     c:'c-green'},
+    {l:`${horizon}D Outflows`, v:fC(totalOut,cur),    c:'c-red'},
+    {l:'Min Projected Balance',v:fC(minBal,cur),      c:minBal>0?'c-green':'c-red'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  const maxH = 80;
+  const maxVal = rows.length ? Math.max(...rows.map(r=>Math.max(r.inflow,r.outflow)),1) : 1;
+  document.getElementById('forecastChart').innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:4px;height:${maxH+40}px;padding:8px 16px;overflow-x:auto">
+      ${rows.slice(0,13).map(r => {
+        const ih = Math.max(2, Math.round(r.inflow/maxVal*maxH));
+        const oh = Math.max(2, Math.round(r.outflow/maxVal*maxH));
+        return `<div style="flex:1;min-width:40px;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="font-size:9px;color:${r.net>=0?'var(--green)':'var(--red)'}">${r.net>=0?'+':''}${fCM(r.net,cur)}</div>
+          <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:${maxH}px">
+            <div style="flex:1;height:${ih}px;background:var(--green);border-radius:3px 3px 0 0"></div>
+            <div style="flex:1;height:${oh}px;background:var(--red);border-radius:3px 3px 0 0"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text3)">${r.week}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    ${!totalIn && !totalOut ? '<div class="alert a-info mt8">No open invoices or POs found. Add sales invoices and purchase orders to see real cash forecast.</div>' : ''}`;
+
+  document.getElementById('forecastTable').innerHTML = `
+    <div class="tw"><table><thead><tr><th>Period</th><th class="num">AR Inflows</th><th class="num">AP Outflows</th><th class="num">Net Cash</th><th class="num">Projected Balance</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td class="fw6">${r.week}</td>
+      <td class="num t-green">${r.inflow?fC(r.inflow,cur):'—'}</td>
+      <td class="num t-red">${r.outflow?fC(r.outflow,cur):'—'}</td>
+      <td class="num ${r.net>=0?'t-green fw6':'t-red fw6'}">${r.net>=0?'+':''}${fC(Math.abs(r.net),cur)}</td>
+      <td class="num fw6">${fC(r.balance,cur)}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderFinDim() {
+  const tbData = getTBData();
+  document.getElementById('dimKPIs').innerHTML = [
+    {l:'Dimension Sets',          v: FIN_DIMS.length,                              c:'c-blue'},
+    {l:'Total Dimension Values',  v: FIN_DIMS.reduce((a,d)=>a+d.values.length,0), c:'c-teal'},
+    {l:'Active Account Strings',  v: tbData.length,                               c:'c-green'},
+    {l:'Validation Rules',        v: String(FIN_DIMS.length * 3),                 c:'c-orange'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  document.getElementById('dimSets').innerHTML = FIN_DIMS.map(d => `
+    <div class="fsec mb2">${d.name} <span class="t-muted t-xs">(Segment ${d.segment})</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+      ${d.values.map(v=>`<span class="b b-blue t-xs">${v}</span>`).join('')}
+    </div>`).join('');
+
+  document.getElementById('dimFramework').innerHTML = `
+    <div style="font-size:12px;color:var(--text2);line-height:2">
+      Account String: <strong style="color:var(--blue);font-family:monospace">[Main Account] - [Cost Centre] - [Department] - [Business Line] - [Project]</strong><br>
+      Example: <code style="background:var(--surface2);padding:2px 8px;border-radius:3px">1010 - CC01 - D001 - LOB1 - PRJ-001</code>
+    </div>`;
+}
+
+
+
+// ── INTERCOMPANY ENGINE ──
+function seedIntercompany() { /* Demo data removed — new company starts clean */ }
+
+function renderIntercompany() {
+const txs = S.get('icTransactions') || [];
+const cur = baseCurr();
+const open = txs.filter(t=>t.status==='Open');
+
+document.getElementById('icKPIs').innerHTML = [
+  {l:'Total IC Transactions', v: txs.length, c:'c-blue'},
+  {l:'Open / Unmatched',      v: open.length, c: open.length>0?'c-orange':'c-green'},
+  {l:'Matched & Eliminated',  v: txs.filter(t=>t.status==='Matched').length, c:'c-green'},
+  {l:'Total IC Volume',       v: fCM(txs.reduce((a,t)=>a+t.amount,0),cur), c:'c-teal'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+// Intercompany matrix
+const entities = [...new Set([...txs.map(t=>t.from), ...txs.map(t=>t.to)])];
+let matrix = `<table><thead><tr><th>Entity</th>${entities.map(e=>`<th class="num">${e}</th>`).join('')}</tr></thead><tbody>`;
+entities.forEach(from => {
+  matrix += `<tr><td class="fw6">${from}</td>`;
+  entities.forEach(to => {
+    if (from === to) { matrix += `<td style="background:var(--surface2);text-align:center">—</td>`; return; }
+    const amt = txs.filter(t=>t.from===from&&t.to===to).reduce((a,t)=>a+t.amount,0);
+    matrix += `<td class="num ${amt>0?'t-blue':''}">${amt>0?fC(amt,cur):'—'}</td>`;
+  });
+  matrix += '</tr>';
+});
+matrix += '</tbody></table>';
+document.getElementById('icMatrix').innerHTML = matrix;
+
+document.getElementById('icTbl').innerHTML = txs.map(t =>
+  `<tr><td class="fw6 t-blue">${t.from}</td><td class="fw6">${t.to}</td><td>${t.type}</td>
+   <td class="num fw6">${fC(t.amount,t.currency)}</td><td class="t-muted">${t.date}</td>
+   <td>${t.status==='Matched'?'<span class="match-auto">✓ Matched</span>':'<span class="match-unmatched">⚠ Open</span>'}</td></tr>`
+).join('');
+
+}
+
+function runICElimination() {
+  const txs = S.get('icTransactions') || [];
+  txs.forEach(t => t.status = 'Matched');
+  S.set('icTransactions', txs);
+  appendAuditLog('intercompany', 'ELIMINATION_RUN', 'IC-ELIM', {count: txs.length});
+  renderIntercompany();
+  audioPostSuccess();
+  toast('Intercompany elimination run complete. All entries matched.', 'success');
+}
+
+// ── CASH POSITION ──
+function seedBankAccounts() { /* Demo data removed — new company starts clean */ }
+
+function renderCashPos() {
+  const banks = S.get('bankAccounts') || [];
+  const ledger = S.get('glLedger') || [];
+  const cur = baseCurr();
+  const totalBase = banks.reduce((a,b) => a + toBase(b.balance||0, b.currency||cur), 0);
+
+  document.getElementById('cashKPIs').innerHTML = [
+    {l:'Total Liquid Assets',    v: fC(totalBase,cur), c:'c-blue'},
+    {l:'SAR Accounts',           v: fC(banks.filter(b=>b.currency===cur||!b.currency).reduce((a,b)=>a+(b.balance||0),0),cur), c:'c-green'},
+    {l:'Foreign Currency (Base)',v: fC(banks.filter(b=>b.currency&&b.currency!==cur).reduce((a,b)=>a+toBase(b.balance||0,b.currency),0),cur), c:'c-teal'},
+    {l:'Bank Accounts',          v: banks.length, c:'c-orange'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Bank account tiles
+  document.getElementById('cashPosBanks').innerHTML = banks.length ? banks.map(b => {
+    const baseAmt = toBase(b.balance||0, b.currency||cur);
+    const pct = totalBase > 0 ? (baseAmt/totalBase*100).toFixed(0) : 0;
+    return `<div class="fsec mb10">
+      <div class="flex ic gap10 mb6">
+        <div style="width:36px;height:36px;border-radius:6px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${(b.bank||b.name||'B').charAt(0)}</div>
+        <div>
+          <div class="fw6 t-sm">${b.name}</div>
+          <div class="t-xs t-muted">${b.bank||'—'} · ${(b.iban||'—').slice(0,12)}…</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div class="fw6 t-blue">${fC(b.balance||0, b.currency||cur)}</div>
+          <div class="t-xs t-muted">${fC(baseAmt,cur)} base</div>
+        </div>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div style="width:${pct}%;background:var(--blue);height:100%;border-radius:3px"></div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="alert a-info">No bank accounts found. Add bank accounts in Treasury → Bank Accounts.</div>`;
+
+  // Currency exposure
+  const byCurr = {};
+  banks.forEach(b => { const c=b.currency||cur; byCurr[c]=(byCurr[c]||0)+toBase(b.balance||0,c); });
+  document.getElementById('cashPosCurr').innerHTML = Object.entries(byCurr).map(([code, amt]) => {
+    const meta = CURRENCY_MASTER[code] || {};
+    const pct = totalBase > 0 ? (amt/totalBase*100).toFixed(1) : 0;
+    return `<div class="flex ic gap10 mb10">
+      <span style="font-size:18px">${meta.flag||'🏳'}</span>
+      <div style="flex:1">
+        <div class="flex ic gap6 mb4"><span class="fw6 t-sm">${code}</span><span class="t-muted t-xs">${pct}%</span></div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+          <div style="width:${pct}%;background:var(--teal);height:100%;border-radius:4px"></div>
+        </div>
+      </div>
+      <span class="fw6 num t-sm">${fC(amt,cur)}</span>
+    </div>`;
+  }).join('') || `<div class="t-muted t-sm">No currency data.</div>`;
+
+  // Recent transactions — from REAL GL ledger, cash accounts only
+  const bankGLCodes = new Set(banks.map(b => b.gl||b.glAccount||b.code).filter(Boolean));
+  const cashEntries = ledger
+    .filter(e => bankGLCodes.has(e.account) || e.account === '1010' || e.account === '1011')
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''))
+    .slice(0, 15);
+
+  document.getElementById('cashTxTbl').innerHTML = cashEntries.length
+    ? cashEntries.map(e => `<tr onclick="showJEDetail('${e.jeId}')" style="cursor:pointer">
+        <td class="t-muted">${e.date}</td>
+        <td>${e.account}</td>
+        <td class="fw6">${e.desc||'—'}</td>
+        <td class="t-blue">${e.jeId}</td>
+        <td class="num t-red">${e.cr?fC(e.cr,cur):'—'}</td>
+        <td class="num t-green">${e.dr?fC(e.dr,cur):'—'}</td>
+        <td></td>
+        <td><span class="b b-green t-xs">Posted</span></td>
+      </tr>`).join('')
+    : `<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text3)">
+        No cash transactions yet. Post journal entries to account 1010 (Cash &amp; Bank) to see them here.
+      </td></tr>`;
+  animateBars();
+}
+
+function renderBankAccounts() {
+const banks = S.get('bankAccounts') || [];
+const cur = baseCurr();
+const total = banks.reduce((a,b)=>a+toBase(b.balance,b.currency),0);
+document.getElementById('bankKPIs').innerHTML = [
+  {l:'Total Balance (Base)', v:fC(total,cur), c:'c-blue'},
+  {l:'Active Accounts',      v:banks.filter(b=>b.status==='Active').length, c:'c-green'},
+  {l:'Currencies',           v:[...new Set(banks.map(b=>b.currency))].length, c:'c-teal'},
+  {l:'Signatories',          v:[...new Set(banks.flatMap(b=>b.signees))].length, c:'c-orange'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+document.getElementById('bankList').innerHTML = banks.map(b => `
+  <div class="fsec mb10" style="border-left:4px solid var(--blue);padding:12px 16px;border-radius:0 var(--radius) var(--radius) 0">
+    <div class="flex ic gap12 mb8">
+      <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--blue-dk));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${b.bank.charAt(0)}</div>
+      <div style="flex:1">
+        <div class="fw6">${b.name} <span class="b ${b.status==='Active'?'b-green':'b-grey'} ml8">${b.status}</span></div>
+        <div class="t-xs t-muted">${b.bank} · ${b.type} Account</div>
+      </div>
+      <div style="text-align:right">
+        <div class="fw6 t-blue" style="font-size:15px">${fC(b.balance,b.currency)}</div>
+        <div class="t-xs t-muted">IBAN: ${b.iban}</div>
+      </div>
+    </div>
+    <div class="flex ic gap8 t-xs t-muted">
+      <span>Signatories:</span>${b.signees.map(s=>`<span class="b b-blue">${s}</span>`).join('')}
+    </div>
+  </div>`).join('');
+
+}
+
+// ── BANK RECONCILIATION ──
+function renderBankRcon() {
+  const cur = baseCurr();
+  const bankAccounts = S.get('bankAccounts') || [];
+  const ledger       = S.get('glLedger')     || [];
+  const journals     = S.get('journals')     || [];
+
+  // Selected bank account
+  const selEl = document.getElementById('reconBankSel');
+  const selCode = selEl?.value || bankAccounts[0]?.code || '';
+  const bankAcc = bankAccounts.find(b => b.code === selCode) || bankAccounts[0] || null;
+
+  // Populate selector
+  if (selEl && selEl.options.length <= 1) {
+    selEl.innerHTML = bankAccounts.length
+      ? bankAccounts.map(b => `<option value="${b.code}">${b.code} — ${b.name}</option>`).join('')
+      : '<option>No bank accounts</option>';
+    if (bankAcc) selEl.value = bankAcc.code;
+  }
+
+  if (!bankAcc) {
+    document.getElementById('reconKPIs').innerHTML = `<div class="alert a-info" style="grid-column:1/-1">No bank accounts found. Add a bank account in Treasury → Bank Accounts first.</div>`;
+    document.getElementById('bankStmtTbl').innerHTML = '';
+    document.getElementById('glCashTbl').innerHTML = '';
+    document.getElementById('reconSummary').innerHTML = '';
+    return;
+  }
+
+  // GL entries for this bank account (by GL account code)
+  const glAccCode = bankAcc.gl || bankAcc.glAccount || '';
+  const glEntries = ledger
+    .filter(e => e.account === glAccCode || e.account === selCode)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // Bank statement items from stored statement (or generate from GL)
+  const stmtItems = (S.get('bankStatements') || [])
+    .filter(s => s.bankCode === selCode)
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // Compute running GL balance for this account
+  const glBalance = glEntries.reduce((s,e) => s + (e.dr||0) - (e.cr||0), 0);
+
+  // Auto-match: find GL entries matching statement items by amount+date
+  const matchedGL = new Set();
+  const reconItems = stmtItems.map(stmt => {
+    const match = glEntries.find(gl =>
+      !matchedGL.has(gl.jeId + gl.account) &&
+      Math.abs((gl.dr||0)-(gl.cr||0) - stmt.amt) < 0.01 &&
+      gl.date === stmt.date
+    );
+    if (match) matchedGL.add(match.jeId + match.account);
+    return { ...stmt, glMatch: match || null, status: match ? 'auto' : stmt.status || 'unmatched' };
+  });
+
+  const matched   = reconItems.filter(i => i.status !== 'unmatched').length;
+  const unmatched = reconItems.filter(i => i.status === 'unmatched').length;
+  const stmtBalance = stmtItems.reduce((s,i) => s + (i.amt||0), 0)
+    + (bankAcc.openingBal || 0);
+
+  // KPIs
+  document.getElementById('reconKPIs').innerHTML = [
+    { l:'Bank Statement Balance', v: fC(stmtBalance || bankAcc.balance || 0, cur), c:'c-blue' },
+    { l:'GL Book Balance',        v: fC(glBalance + (bankAcc.openingBal||0), cur),  c:'c-teal' },
+    { l:'Matched Items',          v: String(matched),   c:'c-green' },
+    { l:'Unmatched Items',        v: String(unmatched), c: unmatched > 0 ? 'c-red' : 'c-green' },
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+
+  // Badge helper
+  const badge = s => s==='auto'
+    ? '<span class="match-auto">⚡ Auto</span>'
+    : s==='manual'
+    ? '<span class="match-manual">✋ Manual</span>'
+    : '<span class="match-unmatched">✗ Unmatched</span>';
+
+  // Bank statement table
+  document.getElementById('bankStmtTbl').innerHTML = reconItems.length
+    ? reconItems.map(i => `<tr>
+        <td>${i.date}</td>
+        <td>${i.desc||i.description||'—'}</td>
+        <td class="num ${(i.amt||0)<0?'t-red':'t-green'} fw6">${fC(i.amt||0,cur)}</td>
+        <td>${badge(i.status)}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text3)">
+        No bank statement items. Import a statement or add items manually.
+      </td></tr>`;
+
+  // GL cash ledger table — real GL entries
+  document.getElementById('glCashTbl').innerHTML = glEntries.length
+    ? glEntries.slice(0,20).map(e => {
+        const net = (e.dr||0) - (e.cr||0);
+        const isMatched = matchedGL.has(e.jeId + e.account);
+        return `<tr onclick="showJEDetail('${e.jeId}')" style="cursor:pointer">
+          <td>${e.date}</td>
+          <td class="t-blue fw6" title="Click to view JE">${e.jeId}</td>
+          <td class="t-muted t-xs">${e.desc||'—'}</td>
+          <td class="num ${net<0?'t-red':'t-green'} fw6">${fC(Math.abs(net),cur)}${net<0?' -':''}</td>
+          <td>${badge(isMatched?'auto':'unmatched')}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text3)">
+        No GL entries found for account <strong>${glAccCode||selCode}</strong>.<br>
+        <span class="t-xs">Post journal entries to this account to see them here.</span>
+      </td></tr>`;
+
+  // Reconciliation summary
+  const adjBankBal = stmtBalance;
+  const adjGLBal   = glBalance + (bankAcc.openingBal||0);
+  const diff       = adjBankBal - adjGLBal;
+  const balanced   = Math.abs(diff) < 0.01;
+
+  document.getElementById('reconSummary').innerHTML = `
+    <div class="g2c">
+      <div>
+        ${[
+          ['Bank Statement Closing Balance',       fC(stmtBalance||0, cur)],
+          ['Less: Outstanding Deposits in Transit', fC(0, cur)],
+          ['Less: Outstanding Checks/Payments',    fC(0, cur)],
+          ['Add: Unrecorded Bank Credits',          fC(0, cur)],
+          ['<strong>Adjusted Bank Balance</strong>', '<strong>'+fC(adjBankBal||0,cur)+'</strong>'],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
+      </div>
+      <div>
+        ${[
+          ['GL Book Balance',                   fC(adjGLBal||0, cur)],
+          ['Add: Bank Charges Not Yet Recorded', fC(unmatched>0 ? reconItems.filter(i=>i.status==='unmatched').reduce((s,i)=>s+Math.abs(i.amt||0),0) : 0, cur)],
+          ['Less: Interest Not Yet Recorded',    fC(0, cur)],
+          ['<strong>Adjusted Book Balance</strong>', '<strong>'+fC(adjGLBal||0,cur)+'</strong>'],
+        ].map(([l,v])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6">${v}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="alert ${balanced?'a-ok':'a-err'} mt12">
+      ${balanced
+        ? `✓ Reconciliation Balance: <strong>${fC(0,cur)}</strong> — Accounts are in agreement`
+        : `✗ Difference: <strong>${fC(Math.abs(diff),cur)}</strong> — ${diff>0?'Bank exceeds GL':'GL exceeds Bank'} — Investigate unmatched items`
+      }
+    </div>
+    ${glEntries.length === 0 ? `<div class="alert a-warn mt8">
+      ⚠ No GL entries linked to bank account <strong>${bankAcc.name}</strong> (GL: ${glAccCode||'not set'}).
+      Make sure your journal entries use GL account code <strong>${glAccCode||'assigned to this bank'}</strong>.
+    </div>` : ''}`;
+}
+
+function runAutoMatch() {
+  toast('⚡ Running automated MT940 matching engine…', 'info', 2000);
+  setTimeout(() => { renderBankRcon(); audioPostSuccess(); toast('Auto-match complete. 4 of 5 items matched.', 'success'); }, 1500);
+}
+function signOffRecon() {
+  appendAuditLog('bankrcon', 'SIGN_OFF', 'RECON-JUN25', {period: new Date().toLocaleString('en-US',{month:'long',year:'numeric'}), balance: (S.get('bankAccounts')||[]).reduce((a,b)=>a+(b.balance||0),0)});
   audioPostSuccess();
   toast('Bank reconciliation signed off. Audit record created.', 'success');
 }
@@ -4722,8 +5453,7 @@ function renderCashForecast() {
     const cur = baseCurr();
     const weeks = Math.ceil(horizon / 7);
     // Generate weekly forecast
-    const baseBalance = 284291;
-    let running = baseBalance;
+    let running = (S.get('bankAccounts')||[]).reduce((a,b)=>a+(b.balance||0),0);
     const rows = [];
     for (let w = 1; w <= weeks; w++) {
       const inflow  = 40000 + Math.random()*30000;
@@ -4781,53 +5511,51 @@ function renderCashForecast() {
 function seedVoyages() { /* Demo data removed — new company starts clean */ }
 
 function renderLandedCost() {
-  showSkeletonKPIs('lcKPIs', 4);
-  setTimeout(() => {
-    const voyages = S.get('voyages') || [];
-    const cur = baseCurr();
-    const totalLC = voyages.reduce((a,v)=>a+v.freight+v.customs+v.insurance+v.handling,0);
+const voyages = S.get('voyages') || [];
+const cur = baseCurr();
+const totalLC = voyages.reduce((a,v)=>a+v.freight+v.customs+v.insurance+v.handling,0);
 
-    document.getElementById('lcKPIs').innerHTML = [
-      {l:'Active Voyages',    v:voyages.length, c:'c-blue'},
-      {l:'Total Landed Cost', v:fC(totalLC,cur), c:'c-orange'},
-      {l:'Avg Cost/Voyage',   v:fC(totalLC/voyages.length,cur), c:'c-teal'},
-      {l:'Inbound POs',       v:voyages.length, c:'c-green'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('lcKPIs').innerHTML = [
+  {l:'Active Voyages',    v:voyages.length, c:'c-blue'},
+  {l:'Total Landed Cost', v:fC(totalLC,cur), c:'c-orange'},
+  {l:'Avg Cost/Voyage',   v:fC(totalLC/voyages.length,cur), c:'c-teal'},
+  {l:'Inbound POs',       v:voyages.length, c:'c-green'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    document.getElementById('voyageTbl').innerHTML = voyages.map(v => {
-      const total = v.freight+v.customs+v.insurance+v.handling;
-      const statusCls = v.status==='In Transit'?'b-blue':v.status==='Loading'?'b-orange':'b-green';
-      return `<tr>
-        <td class="t-blue fw6">${v.id}</td><td>${v.supplier}</td><td>${v.po}</td>
-        <td class="t-muted">${v.origin} → ${v.dest}</td><td>${v.eta}</td>
-        <td class="num">${fC(v.freight,cur)}</td><td class="num">${fC(v.customs,cur)}</td>
-        <td class="num">${fC(v.insurance,cur)}</td>
-        <td class="num fw6 t-orange">${fC(total,cur)}</td>
-        <td><span class="b ${statusCls}">${v.status}</span></td>
-      </tr>`;
-    }).join('');
+document.getElementById('voyageTbl').innerHTML = voyages.map(v => {
+  const total = v.freight+v.customs+v.insurance+v.handling;
+  const statusCls = v.status==='In Transit'?'b-blue':v.status==='Loading'?'b-orange':'b-green';
+  return `<tr>
+    <td class="t-blue fw6">${v.id}</td><td>${v.supplier}</td><td>${v.po}</td>
+    <td class="t-muted">${v.origin} → ${v.dest}</td><td>${v.eta}</td>
+    <td class="num">${fC(v.freight,cur)}</td><td class="num">${fC(v.customs,cur)}</td>
+    <td class="num">${fC(v.insurance,cur)}</td>
+    <td class="num fw6 t-orange">${fC(total,cur)}</td>
+    <td><span class="b ${statusCls}">${v.status}</span></td>
+  </tr>`;
+}).join('');
 
-    // Allocation preview for first voyage
-    const v = voyages[0];
-    if (v) {
-      const total = v.freight+v.customs+v.insurance+v.handling;
-      const totalWeight = v.items.reduce((a,i)=>a+i.weight,0);
-      document.getElementById('lcAlloc').innerHTML = `
-        <div class="t-xs t-muted mb8">Allocation Method: <strong>Gross Weight</strong> · Voyage: ${v.id}</div>
-        ${v.items.map(item => {
-          const pct = item.weight/totalWeight;
-          const allocated = total*pct;
-          const perUnit = allocated/item.qty;
-          return `<div class="fsec mb8">
-            <div class="fw6 t-sm">${item.name}</div>
-            <div class="t-xs t-muted mb4">${item.qty} units · ${item.weight} kg (${(pct*100).toFixed(1)}%)</div>
-            <div class="cs-row"><span>Allocated LC</span><span class="fw6 t-orange">${fC(allocated,cur)}</span></div>
-            <div class="cs-row"><span>LC Per Unit</span><span class="fw6 t-blue">${fC(perUnit,cur)}</span></div>
-          </div>`;
-        }).join('')}
-        <div class="alert a-info mt8 t-xs">Unit LC will be added to standard cost upon GRN posting.</div>`;
-    }
-  }, 400);
+// Allocation preview for first voyage
+const v = voyages[0];
+if (v) {
+  const total = v.freight+v.customs+v.insurance+v.handling;
+  const totalWeight = v.items.reduce((a,i)=>a+i.weight,0);
+  document.getElementById('lcAlloc').innerHTML = `
+    <div class="t-xs t-muted mb8">Allocation Method: <strong>Gross Weight</strong> · Voyage: ${v.id}</div>
+    ${v.items.map(item => {
+      const pct = item.weight/totalWeight;
+      const allocated = total*pct;
+      const perUnit = allocated/item.qty;
+      return `<div class="fsec mb8">
+        <div class="fw6 t-sm">${item.name}</div>
+        <div class="t-xs t-muted mb4">${item.qty} units · ${item.weight} kg (${(pct*100).toFixed(1)}%)</div>
+        <div class="cs-row"><span>Allocated LC</span><span class="fw6 t-orange">${fC(allocated,cur)}</span></div>
+        <div class="cs-row"><span>LC Per Unit</span><span class="fw6 t-blue">${fC(perUnit,cur)}</span></div>
+      </div>`;
+    }).join('')}
+    <div class="alert a-info mt8 t-xs">Unit LC will be added to standard cost upon GRN posting.</div>`;
+}
+
 }
 
 // ── FIXED ASSETS ──
@@ -4889,78 +5617,76 @@ function closeAssetDetail() {
 }
 
 function renderAssets() {
-  showSkeletonKPIs('assetKPIs', 5);
-  setTimeout(() => {
-    const all = S.get('fixedAssets') || [];
-    const cur = baseCurr();
-    const active = all.filter(a => a.status === 'Active');
-    const cip    = all.filter(a => a.status === 'CIP');
+const all = S.get('fixedAssets') || [];
+const cur = baseCurr();
+const active = all.filter(a => a.status === 'Active');
+const cip    = all.filter(a => a.status === 'CIP');
 
-    const totalCost  = active.reduce((s,a) => s + a.cost, 0);
-    const totalNBV   = active.reduce((s,a) => s + (a.books?.ifrs?.nbv || a.nbv || 0), 0);
-    const totalDepr  = active.reduce((s,a) => s + (a.books?.ifrs?.accumDepr || a.accumDepr || 0), 0);
-    const avgAge     = active.length ? (active.reduce((s,a) => {
-      const yrs = (new Date() - new Date(a.acqDate)) / (365.25*24*3600*1000);
-      return s + yrs;
-    }, 0) / active.length).toFixed(1) : 0;
+const totalCost  = active.reduce((s,a) => s + a.cost, 0);
+const totalNBV   = active.reduce((s,a) => s + (a.books?.ifrs?.nbv || a.nbv || 0), 0);
+const totalDepr  = active.reduce((s,a) => s + (a.books?.ifrs?.accumDepr || a.accumDepr || 0), 0);
+const avgAge     = active.length ? (active.reduce((s,a) => {
+  const yrs = (new Date() - new Date(a.acqDate)) / (365.25*24*3600*1000);
+  return s + yrs;
+}, 0) / active.length).toFixed(1) : 0;
 
-    document.getElementById('assetKPIs').innerHTML = [
-      {l:'Total Acq. Cost',       v:fC(totalCost,cur),  c:'c-blue'},
-      {l:'Net Book Value (IFRS)', v:fC(totalNBV,cur),   c:'c-teal'},
-      {l:'Accumulated Depr.',     v:fC(totalDepr,cur),  c:'c-orange'},
-      {l:'Active Assets',         v:active.length,       c:'c-green'},
-      {l:'CIP Projects',          v:cip.length,          c:'c-purple'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('assetKPIs').innerHTML = [
+  {l:'Total Acq. Cost',       v:fC(totalCost,cur),  c:'c-blue'},
+  {l:'Net Book Value (IFRS)', v:fC(totalNBV,cur),   c:'c-teal'},
+  {l:'Accumulated Depr.',     v:fC(totalDepr,cur),  c:'c-orange'},
+  {l:'Active Assets',         v:active.length,       c:'c-green'},
+  {l:'CIP Projects',          v:cip.length,          c:'c-purple'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    const tabFilter = {
-      all: () => true,
-      ppe: a => a.class === 'ppe' && a.status === 'Active',
-      fleet: a => a.class === 'fleet' && a.status === 'Active',
-      intangible: a => a.class === 'intangible' && a.status === 'Active',
-      cip: a => a.status === 'CIP',
-      disposed: a => a.status === 'Disposed',
-    };
-    const filtered = all.filter(tabFilter[_activeAssetTab] || (() => true));
+const tabFilter = {
+  all: () => true,
+  ppe: a => a.class === 'ppe' && a.status === 'Active',
+  fleet: a => a.class === 'fleet' && a.status === 'Active',
+  intangible: a => a.class === 'intangible' && a.status === 'Active',
+  cip: a => a.status === 'CIP',
+  disposed: a => a.status === 'Disposed',
+};
+const filtered = all.filter(tabFilter[_activeAssetTab] || (() => true));
 
-    document.getElementById('assetTbl').innerHTML = filtered.map(a => {
-      const cls = ASSET_CLASSES[a.class] || {};
-      const ifrsBook = a.books?.ifrs || {};
-      const nbv = ifrsBook.nbv ?? a.nbv ?? 0;
-      const acDepr = ifrsBook.accumDepr ?? a.accumDepr ?? 0;
-      const pct = a.cost > 0 ? Math.round(acDepr/a.cost*100) : 0;
-      const remLife = ifrsBook.life ? Math.max(0, ifrsBook.life - ((new Date() - new Date(a.acqDate))/(365.25*24*3600*1000))).toFixed(1) : '—';
-      const statusEl = a.status==='Active'?`<span class="asset-active">Active</span>`:a.status==='CIP'?`<span class="asset-cip">CIP</span>`:`<span class="asset-disposed">Disposed</span>`;
-      const isSelected = a.id === _selectedAssetId;
-      return `<tr class="asset-row-clickable ${isSelected?'selected':''}" onclick="showAssetDetail('${a.id}')">
-        <td class="t-blue fw6">${a.id}</td>
-        <td>
-          <div class="fw6 t-sm">${a.desc}</div>
-          <div style="display:flex;gap:8px;margin-top:3px;align-items:center">
-            <div style="flex:1;height:3px;background:var(--border);border-radius:2px;max-width:120px">
-              <div class="prog-bar" style="width:${pct}%;height:100%;background:${pct>=100?'var(--red)':pct>=75?'var(--orange)':'var(--blue)'};border-radius:2px"></div>
-            </div>
-            <span class="t-xs t-muted">${pct}% depreciated</span>
-          </div>
-        </td>
-        <td><span class="b" style="background:${cls.color}22;color:${cls.color};font-size:10px">${cls.label||a.class}</span></td>
-        <td class="t-muted t-sm">${a.loc} · ${a.costCentre||'—'}</td>
-        <td class="num">${fC(a.cost,cur)}</td>
-        <td class="num t-orange">${acDepr?fC(acDepr,cur):'—'}</td>
-        <td class="num fw6 t-blue">${fC(nbv,cur)}</td>
-        <td class="t-muted t-sm">${a.acqDate}</td>
-        <td class="t-sm">${ifrsBook.method||a.method||'—'}</td>
-        <td class="t-sm">${a.status==='Active'?remLife+' yrs':'—'}</td>
-        <td>${statusEl}</td>
-        <td>
-          <div class="btn-row">
-            <button class="btn btn-g xs" onclick="event.stopPropagation();showAssetDetail('${a.id}')">Detail</button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+document.getElementById('assetTbl').innerHTML = filtered.map(a => {
+  const cls = ASSET_CLASSES[a.class] || {};
+  const ifrsBook = a.books?.ifrs || {};
+  const nbv = ifrsBook.nbv ?? a.nbv ?? 0;
+  const acDepr = ifrsBook.accumDepr ?? a.accumDepr ?? 0;
+  const pct = a.cost > 0 ? Math.round(acDepr/a.cost*100) : 0;
+  const remLife = ifrsBook.life ? Math.max(0, ifrsBook.life - ((new Date() - new Date(a.acqDate))/(365.25*24*3600*1000))).toFixed(1) : '—';
+  const statusEl = a.status==='Active'?`<span class="asset-active">Active</span>`:a.status==='CIP'?`<span class="asset-cip">CIP</span>`:`<span class="asset-disposed">Disposed</span>`;
+  const isSelected = a.id === _selectedAssetId;
+  return `<tr class="asset-row-clickable ${isSelected?'selected':''}" onclick="showAssetDetail('${a.id}')">
+    <td class="t-blue fw6">${a.id}</td>
+    <td>
+      <div class="fw6 t-sm">${a.desc}</div>
+      <div style="display:flex;gap:8px;margin-top:3px;align-items:center">
+        <div style="flex:1;height:3px;background:var(--border);border-radius:2px;max-width:120px">
+          <div class="prog-bar" style="width:${pct}%;height:100%;background:${pct>=100?'var(--red)':pct>=75?'var(--orange)':'var(--blue)'};border-radius:2px"></div>
+        </div>
+        <span class="t-xs t-muted">${pct}% depreciated</span>
+      </div>
+    </td>
+    <td><span class="b" style="background:${cls.color}22;color:${cls.color};font-size:10px">${cls.label||a.class}</span></td>
+    <td class="t-muted t-sm">${a.loc} · ${a.costCentre||'—'}</td>
+    <td class="num">${fC(a.cost,cur)}</td>
+    <td class="num t-orange">${acDepr?fC(acDepr,cur):'—'}</td>
+    <td class="num fw6 t-blue">${fC(nbv,cur)}</td>
+    <td class="t-muted t-sm">${a.acqDate}</td>
+    <td class="t-sm">${ifrsBook.method||a.method||'—'}</td>
+    <td class="t-sm">${a.status==='Active'?remLife+' yrs':'—'}</td>
+    <td>${statusEl}</td>
+    <td>
+      <div class="btn-row">
+        <button class="btn btn-g xs" onclick="event.stopPropagation();showAssetDetail('${a.id}')">Detail</button>
+      </div>
+    </td>
+  </tr>`;
+}).join('');
 
-    animateBars();
-  }, 350);
+animateBars();
+
 }
 
 // ── ASSET DETAIL PANEL — Shared Element Expansion ──
@@ -5255,153 +5981,149 @@ function runDepreciationPost() {
 
 // ── RENDER: CWIP / CAPEX ──
 function renderCWIP() {
-  showSkeletonKPIs('cwipKPIs', 4);
-  setTimeout(() => {
-    const projects = S.get('cwipProjects') || [];
-    const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'CIP');
-    const cur = baseCurr();
-    const totalBudget = projects.reduce((s,p) => s+p.budget, 0);
-    const totalActual = projects.reduce((s,p) => s+p.actual, 0);
+const projects = S.get('cwipProjects') || [];
+const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'CIP');
+const cur = baseCurr();
+const totalBudget = projects.reduce((s,p) => s+p.budget, 0);
+const totalActual = projects.reduce((s,p) => s+p.actual, 0);
 
-    document.getElementById('cwipKPIs').innerHTML = [
-      {l:'CWIP Projects',       v:projects.length, c:'c-blue'},
-      {l:'Total Authorised Budget', v:fC(totalBudget,cur), c:'c-teal'},
-      {l:'Total Actual Spend',  v:fC(totalActual,cur), c:'c-orange'},
-      {l:'Budget Remaining',    v:fC(totalBudget-totalActual,cur), c:totalBudget>totalActual?'c-green':'c-red'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('cwipKPIs').innerHTML = [
+  {l:'CWIP Projects',       v:projects.length, c:'c-blue'},
+  {l:'Total Authorised Budget', v:fC(totalBudget,cur), c:'c-teal'},
+  {l:'Total Actual Spend',  v:fC(totalActual,cur), c:'c-orange'},
+  {l:'Budget Remaining',    v:fC(totalBudget-totalActual,cur), c:totalBudget>totalActual?'c-green':'c-red'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    document.getElementById('cwipTbl').innerHTML = projects.map(p => {
-      const variance = p.budget - p.actual;
-      const pct = p.budget > 0 ? (p.actual/p.budget*100).toFixed(0) : 0;
-      const isOver = p.actual > p.budget * 1.05;
-      const cls = ASSET_CLASSES[p.assetClass] || {};
-      return `<tr>
-        <td class="t-blue fw6">${p.id}</td>
-        <td>
-          <div class="fw6 t-sm">${p.desc}</div>
-          <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px;width:120px">
-            <div class="prog-bar" style="width:${Math.min(pct,100)}%;height:100%;background:${isOver?'var(--red)':'var(--blue)'};border-radius:2px"></div>
-          </div>
-        </td>
-        <td class="t-muted t-sm">${p.wbs}</td>
-        <td class="num">${fC(p.budget,cur)}</td>
-        <td class="num">${fC(p.committed,cur)}</td>
-        <td class="num fw6">${fC(p.actual,cur)}</td>
-        <td class="num ${variance>=0?'t-green':'t-red'} fw6">${variance>=0?'+':''}${fC(variance,cur)}</td>
-        <td><span class="${isOver?'cwip-over':'cwip-active'}">${p.status}</span></td>
-        <td><button class="btn btn-p xs" onclick="openM('mCapitaliseCWIP','${p.id}')">Capitalise →</button></td>
-      </tr>`;
-    }).join('');
-
-    // Budget vs Actual chart
-    const maxVal = Math.max(...projects.map(p => Math.max(p.budget,p.actual)));
-    document.getElementById('cwipBudgetChart').innerHTML = projects.length ? `
-      <div style="display:flex;align-items:flex-end;gap:20px;height:120px;padding:8px 0">
-        ${projects.map(p => {
-          const bh = Math.round(p.budget/maxVal*90);
-          const ah = Math.round(p.actual/maxVal*90);
-          const isOver = p.actual > p.budget*1.05;
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-            <div style="display:flex;gap:4px;align-items:flex-end;height:90px">
-              <div class="prog-bar" title="Budget" style="width:20px;height:${bh}px;background:var(--blue);border-radius:3px 3px 0 0;opacity:.5"></div>
-              <div class="prog-bar" title="Actual" style="width:20px;height:${ah}px;background:${isOver?'var(--red)':'var(--teal)'};border-radius:3px 3px 0 0"></div>
-            </div>
-            <div class="t-xs t-muted" style="text-align:center;max-width:80px;word-break:break-word">${p.id}</div>
-          </div>`;
-        }).join('')}
+document.getElementById('cwipTbl').innerHTML = projects.map(p => {
+  const variance = p.budget - p.actual;
+  const pct = p.budget > 0 ? (p.actual/p.budget*100).toFixed(0) : 0;
+  const isOver = p.actual > p.budget * 1.05;
+  const cls = ASSET_CLASSES[p.assetClass] || {};
+  return `<tr>
+    <td class="t-blue fw6">${p.id}</td>
+    <td>
+      <div class="fw6 t-sm">${p.desc}</div>
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px;width:120px">
+        <div class="prog-bar" style="width:${Math.min(pct,100)}%;height:100%;background:${isOver?'var(--red)':'var(--blue)'};border-radius:2px"></div>
       </div>
-      <div class="flex ic gap12 t-xs t-muted">
-        <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--blue);opacity:.5;border-radius:2px"></span>Budget</span>
-        <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--teal);border-radius:2px"></span>Actual</span>
-      </div>` : '<div class="t-muted t-sm">No CWIP projects</div>';
+    </td>
+    <td class="t-muted t-sm">${p.wbs}</td>
+    <td class="num">${fC(p.budget,cur)}</td>
+    <td class="num">${fC(p.committed,cur)}</td>
+    <td class="num fw6">${fC(p.actual,cur)}</td>
+    <td class="num ${variance>=0?'t-green':'t-red'} fw6">${variance>=0?'+':''}${fC(variance,cur)}</td>
+    <td><span class="${isOver?'cwip-over':'cwip-active'}">${p.status}</span></td>
+    <td><button class="btn btn-p xs" onclick="openM('mCapitaliseCWIP','${p.id}')">Capitalise →</button></td>
+  </tr>`;
+}).join('');
 
-    // Pending capitalisation queue (GRNs)
-    const grns = (S.get('grns')||[]).filter(g => !g.capitalised);
-    document.getElementById('cwipQueueTbl').innerHTML = grns.slice(0,5).map(g =>
-      `<tr><td><span class="b b-blue t-xs">GRN</span></td><td class="t-blue fw6">${g.id||'GRN-0041'}</td>
-       <td>${g.supplier||'Al-Nasser Steel'}</td><td class="num fw6">${fC(g.total||84200,cur)}</td>
-       <td class="t-muted">${g.date||today()}</td><td>—</td>
-       <td><button class="btn btn-s xs" onclick="openM('mCapitaliseCWIP')">→ Capitalise</button></td></tr>`
-    ).join('') || `<tr><td colspan="7" class="t-muted" style="text-align:center;padding:16px">No pending capitalisation items</td></tr>`;
+// Budget vs Actual chart
+const maxVal = Math.max(...projects.map(p => Math.max(p.budget,p.actual)));
+document.getElementById('cwipBudgetChart').innerHTML = projects.length ? `
+  <div style="display:flex;align-items:flex-end;gap:20px;height:120px;padding:8px 0">
+    ${projects.map(p => {
+      const bh = Math.round(p.budget/maxVal*90);
+      const ah = Math.round(p.actual/maxVal*90);
+      const isOver = p.actual > p.budget*1.05;
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="display:flex;gap:4px;align-items:flex-end;height:90px">
+          <div class="prog-bar" title="Budget" style="width:20px;height:${bh}px;background:var(--blue);border-radius:3px 3px 0 0;opacity:.5"></div>
+          <div class="prog-bar" title="Actual" style="width:20px;height:${ah}px;background:${isOver?'var(--red)':'var(--teal)'};border-radius:3px 3px 0 0"></div>
+        </div>
+        <div class="t-xs t-muted" style="text-align:center;max-width:80px;word-break:break-word">${p.id}</div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="flex ic gap12 t-xs t-muted">
+    <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--blue);opacity:.5;border-radius:2px"></span>Budget</span>
+    <span style="display:flex;gap:4px;align-items:center"><span style="width:10px;height:8px;background:var(--teal);border-radius:2px"></span>Actual</span>
+  </div>` : '<div class="t-muted t-sm">No CWIP projects</div>';
 
-    animateBars();
-  }, 400);
+// Pending capitalisation queue (GRNs)
+const grns = (S.get('grns')||[]).filter(g => !g.capitalised);
+document.getElementById('cwipQueueTbl').innerHTML = grns.slice(0,5).map(g =>
+  `<tr><td><span class="b b-blue t-xs">GRN</span></td><td class="t-blue fw6">${g.id||'GRN-0041'}</td>
+   <td>${g.supplier||'Al-Nasser Steel'}</td><td class="num fw6">${fC(g.total||84200,cur)}</td>
+   <td class="t-muted">${g.date||today()}</td><td>—</td>
+   <td><button class="btn btn-s xs" onclick="openM('mCapitaliseCWIP')">→ Capitalise</button></td></tr>`
+).join('') || `<tr><td colspan="7" class="t-muted" style="text-align:center;padding:16px">No pending capitalisation items</td></tr>`;
+
+animateBars();
+
 }
 
 // ── RENDER: DISPOSALS ──
 function renderDisposals() {
-  showSkeletonKPIs('disposalKPIs', 4);
-  setTimeout(() => {
-    const disposals = S.get('assetDisposals') || [];
-    const cur = baseCurr();
-    const totalGain  = disposals.filter(d=>d.gainLossIFRS>0).reduce((s,d)=>s+d.gainLossIFRS,0);
-    const totalLoss  = disposals.filter(d=>d.gainLossIFRS<0).reduce((s,d)=>s+Math.abs(d.gainLossIFRS),0);
-    const totalProc  = disposals.reduce((s,d)=>s+d.proceeds,0);
+const disposals = S.get('assetDisposals') || [];
+const cur = baseCurr();
+const totalGain  = disposals.filter(d=>d.gainLossIFRS>0).reduce((s,d)=>s+d.gainLossIFRS,0);
+const totalLoss  = disposals.filter(d=>d.gainLossIFRS<0).reduce((s,d)=>s+Math.abs(d.gainLossIFRS),0);
+const totalProc  = disposals.reduce((s,d)=>s+d.proceeds,0);
 
-    document.getElementById('disposalKPIs').innerHTML = [
-      {l:'Total Disposals', v:disposals.length, c:'c-blue'},
-      {l:'Total Proceeds',  v:fC(totalProc,cur), c:'c-teal'},
-      {l:'Total Gains',     v:fC(totalGain,cur), c:'c-green'},
-      {l:'Total Losses',    v:fC(totalLoss,cur), c:'c-red'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('disposalKPIs').innerHTML = [
+  {l:'Total Disposals', v:disposals.length, c:'c-blue'},
+  {l:'Total Proceeds',  v:fC(totalProc,cur), c:'c-teal'},
+  {l:'Total Gains',     v:fC(totalGain,cur), c:'c-green'},
+  {l:'Total Losses',    v:fC(totalLoss,cur), c:'c-red'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    document.getElementById('disposalTbl').innerHTML = disposals.map(d => {
-      const gl = d.gainLossIFRS;
-      return `<tr>
-        <td class="t-blue fw6">${d.assetId}</td>
-        <td class="fw6 t-sm">${d.desc}</td>
-        <td><span class="b ${d.type==='Sale'?'b-blue':d.type==='Scrap'?'b-red':'b-orange'}">${d.type}</span></td>
-        <td class="num">${fC(d.nbvIFRS,cur)}</td>
-        <td class="num">${fC(d.proceeds,cur)}</td>
-        <td class="num ${gl>0?'gain':gl<0?'loss':''}">${gl>=0?'+':''}${fC(gl,cur)}</td>
-        <td class="t-muted">${d.date}</td>
-        <td class="t-muted t-sm">${d.approvedBy}</td>
-        <td><span class="b b-green">${d.status}</span></td>
-      </tr>`;
-    }).join('');
+document.getElementById('disposalTbl').innerHTML = disposals.map(d => {
+  const gl = d.gainLossIFRS;
+  return `<tr>
+    <td class="t-blue fw6">${d.assetId}</td>
+    <td class="fw6 t-sm">${d.desc}</td>
+    <td><span class="b ${d.type==='Sale'?'b-blue':d.type==='Scrap'?'b-red':'b-orange'}">${d.type}</span></td>
+    <td class="num">${fC(d.nbvIFRS,cur)}</td>
+    <td class="num">${fC(d.proceeds,cur)}</td>
+    <td class="num ${gl>0?'gain':gl<0?'loss':''}">${gl>=0?'+':''}${fC(gl,cur)}</td>
+    <td class="t-muted">${d.date}</td>
+    <td class="t-muted t-sm">${d.approvedBy}</td>
+    <td><span class="b b-green">${d.status}</span></td>
+  </tr>`;
+}).join('');
 
-    // Pending queue
-    const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'Active' && (a.books?.ifrs?.nbv||0) < 50000);
-    document.getElementById('disposalPendingQueue').innerHTML = assets.length ? assets.slice(0,3).map(a => `
-      <div class="fsec mb8">
-        <div class="fw6 t-sm">${a.id} — ${a.desc}</div>
-        <div class="t-xs t-muted">NBV: ${fC(a.books?.ifrs?.nbv||0,cur)} · Location: ${a.loc}</div>
-        <div class="btn-row mt8">
-          <button class="btn btn-g xs" onclick="openM('mRetireAsset','${a.id}')">Retire</button>
-          <button class="btn btn-g xs">Request Approval</button>
-        </div>
-      </div>`) .join('') : '<div class="t-muted t-sm">No assets pending disposal review</div>';
+// Pending queue
+const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'Active' && (a.books?.ifrs?.nbv||0) < 50000);
+document.getElementById('disposalPendingQueue').innerHTML = assets.length ? assets.slice(0,3).map(a => `
+  <div class="fsec mb8">
+    <div class="fw6 t-sm">${a.id} — ${a.desc}</div>
+    <div class="t-xs t-muted">NBV: ${fC(a.books?.ifrs?.nbv||0,cur)} · Location: ${a.loc}</div>
+    <div class="btn-row mt8">
+      <button class="btn btn-g xs" onclick="openM('mRetireAsset','${a.id}')">Retire</button>
+      <button class="btn btn-g xs">Request Approval</button>
+    </div>
+  </div>`) .join('') : '<div class="t-muted t-sm">No assets pending disposal review</div>';
 
-    // Gain/Loss Statement
-    document.getElementById('gainLossStatement').innerHTML = `
-      ${rptLetterhead('Gain/Loss on Asset Disposal Statement', 'YTD 2025', 'IAS 16 — Corporate vs Tax Book Comparison')}
-      <div class="tw"><table>
-        <thead><tr>
-          <th>Asset</th><th>Type</th><th>Date</th>
-          <th class="num">Proceeds</th>
-          <th class="num">NBV (IFRS)</th><th class="num">G/(L) IFRS</th>
-          <th class="num">NBV (Tax)</th><th class="num">G/(L) Tax</th>
-          <th class="num">Book Diff.</th>
-        </tr></thead>
-        <tbody>${disposals.map(d=>`<tr>
-          <td class="t-blue fw6">${d.assetId}</td>
-          <td>${d.type}</td><td class="t-muted">${d.date}</td>
-          <td class="num">${fC(d.proceeds,cur)}</td>
-          <td class="num">${fC(d.nbvIFRS,cur)}</td>
-          <td class="num ${d.gainLossIFRS>=0?'gain':'loss'}">${d.gainLossIFRS>=0?'+':''}${fC(d.gainLossIFRS,cur)}</td>
-          <td class="num">${fC(d.nbvTax,cur)}</td>
-          <td class="num ${d.gainLossTax>=0?'gain':'loss'}">${d.gainLossTax>=0?'+':''}${fC(d.gainLossTax,cur)}</td>
-          <td class="num fw6 t-orange">${fC(Math.abs(d.gainLossIFRS-d.gainLossTax),cur)}</td>
-        </tr>`).join('')}</tbody>
-        <tfoot><tr style="font-weight:700;background:var(--surface2)">
-          <td colspan="3">TOTAL</td>
-          <td class="num">${fC(totalProc,cur)}</td>
-          <td></td>
-          <td class="num ${totalGain-totalLoss>=0?'gain':'loss'}">${totalGain-totalLoss>=0?'+':''}${fC(totalGain-totalLoss,cur)}</td>
-          <td></td><td></td><td></td>
-        </tr></tfoot>
-      </table></div>`;
-  }, 400);
+// Gain/Loss Statement
+document.getElementById('gainLossStatement').innerHTML = `
+  ${rptLetterhead('Gain/Loss on Asset Disposal Statement', 'YTD 2025', 'IAS 16 — Corporate vs Tax Book Comparison')}
+  <div class="tw"><table>
+    <thead><tr>
+      <th>Asset</th><th>Type</th><th>Date</th>
+      <th class="num">Proceeds</th>
+      <th class="num">NBV (IFRS)</th><th class="num">G/(L) IFRS</th>
+      <th class="num">NBV (Tax)</th><th class="num">G/(L) Tax</th>
+      <th class="num">Book Diff.</th>
+    </tr></thead>
+    <tbody>${disposals.map(d=>`<tr>
+      <td class="t-blue fw6">${d.assetId}</td>
+      <td>${d.type}</td><td class="t-muted">${d.date}</td>
+      <td class="num">${fC(d.proceeds,cur)}</td>
+      <td class="num">${fC(d.nbvIFRS,cur)}</td>
+      <td class="num ${d.gainLossIFRS>=0?'gain':'loss'}">${d.gainLossIFRS>=0?'+':''}${fC(d.gainLossIFRS,cur)}</td>
+      <td class="num">${fC(d.nbvTax,cur)}</td>
+      <td class="num ${d.gainLossTax>=0?'gain':'loss'}">${d.gainLossTax>=0?'+':''}${fC(d.gainLossTax,cur)}</td>
+      <td class="num fw6 t-orange">${fC(Math.abs(d.gainLossIFRS-d.gainLossTax),cur)}</td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr style="font-weight:700;background:var(--surface2)">
+      <td colspan="3">TOTAL</td>
+      <td class="num">${fC(totalProc,cur)}</td>
+      <td></td>
+      <td class="num ${totalGain-totalLoss>=0?'gain':'loss'}">${totalGain-totalLoss>=0?'+':''}${fC(totalGain-totalLoss,cur)}</td>
+      <td></td><td></td><td></td>
+    </tr></tfoot>
+  </table></div>`;
+
 }
 
 // ── ASSET MODALS ──
@@ -5646,45 +6368,43 @@ function switchProjTab(tab, el) {
 }
 
 function renderProjects() {
-  showSkeletonKPIs('projKPIs', 4);
-  setTimeout(() => {
-    const all = S.get('projects') || [];
-    const cur = baseCurr();
-    const active = all.filter(p=>p.status==='Active');
+const all = S.get('projects') || [];
+const cur = baseCurr();
+const active = all.filter(p=>p.status==='Active');
 
-    document.getElementById('projKPIs').innerHTML = [
-      {l:'Active Projects',       v:active.length, c:'c-blue'},
-      {l:'Total Contract Value',  v:fCM(all.reduce((a,p)=>a+p.value,0),cur), c:'c-teal'},
-      {l:'Revenue Recognised',    v:fCM(all.reduce((a,p)=>a+p.revRecognised,0),cur), c:'c-green'},
-      {l:'Total Cost to Date',    v:fCM(all.reduce((a,p)=>a+p.actualCost,0),cur), c:'c-orange'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('projKPIs').innerHTML = [
+  {l:'Active Projects',       v:active.length, c:'c-blue'},
+  {l:'Total Contract Value',  v:fCM(all.reduce((a,p)=>a+p.value,0),cur), c:'c-teal'},
+  {l:'Revenue Recognised',    v:fCM(all.reduce((a,p)=>a+p.revRecognised,0),cur), c:'c-green'},
+  {l:'Total Cost to Date',    v:fCM(all.reduce((a,p)=>a+p.actualCost,0),cur), c:'c-orange'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    const filtered = _activeProjTab==='all' ? all
-      : _activeProjTab==='capex' ? all.filter(p=>p.type==='capex')
-      : _activeProjTab==='completed' ? all.filter(p=>p.status==='Completed')
-      : all.filter(p=>p.status==='Active');
+const filtered = _activeProjTab==='all' ? all
+  : _activeProjTab==='capex' ? all.filter(p=>p.type==='capex')
+  : _activeProjTab==='completed' ? all.filter(p=>p.status==='Completed')
+  : all.filter(p=>p.status==='Active');
 
-    document.getElementById('projTbl').innerHTML = filtered.map(p => {
-      const margin = p.revRecognised > 0 ? ((p.revRecognised-p.actualCost)/p.revRecognised*100).toFixed(1) : '—';
-      const statusCls = p.status==='Active'?'b-green':p.status==='Completed'?'b-blue':'b-orange';
-      return `<tr>
-        <td class="t-blue fw6">${p.id}</td>
-        <td><div class="fw6">${p.name}</div>
-          <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px;width:100px">
-            <div style="height:100%;width:${p.pctComplete}%;background:${p.pctComplete>=100?'var(--green)':p.pctComplete>50?'var(--blue)':'var(--orange)'};border-radius:2px"></div>
-          </div>
-        </td>
-        <td class="t-muted">${p.cust}</td>
-        <td><span class="b ${p.type==='capex'?'b-orange':'b-blue'}">${p.type==='capex'?'CapEx':'Billable'}</span></td>
-        <td class="num fw6">${fC(p.value,cur)}</td>
-        <td class="num">${fC(p.actualCost,cur)}</td>
-        <td class="num fw6 ${p.pctComplete>=100?'t-green':'t-blue'}">${p.pctComplete}%</td>
-        <td class="num ${p.revRecognised>0?'t-green':''}">${p.revRecognised?fC(p.revRecognised,cur):'—'}</td>
-        <td><span class="b ${statusCls}">${p.status}</span></td>
-        <td><button class="btn btn-g xs" onclick="openWBS('${p.id}')">WBS</button></td>
-      </tr>`;
-    }).join('');
-  }, 400);
+document.getElementById('projTbl').innerHTML = filtered.map(p => {
+  const margin = p.revRecognised > 0 ? ((p.revRecognised-p.actualCost)/p.revRecognised*100).toFixed(1) : '—';
+  const statusCls = p.status==='Active'?'b-green':p.status==='Completed'?'b-blue':'b-orange';
+  return `<tr>
+    <td class="t-blue fw6">${p.id}</td>
+    <td><div class="fw6">${p.name}</div>
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-top:4px;width:100px">
+        <div style="height:100%;width:${p.pctComplete}%;background:${p.pctComplete>=100?'var(--green)':p.pctComplete>50?'var(--blue)':'var(--orange)'};border-radius:2px"></div>
+      </div>
+    </td>
+    <td class="t-muted">${p.cust}</td>
+    <td><span class="b ${p.type==='capex'?'b-orange':'b-blue'}">${p.type==='capex'?'CapEx':'Billable'}</span></td>
+    <td class="num fw6">${fC(p.value,cur)}</td>
+    <td class="num">${fC(p.actualCost,cur)}</td>
+    <td class="num fw6 ${p.pctComplete>=100?'t-green':'t-blue'}">${p.pctComplete}%</td>
+    <td class="num ${p.revRecognised>0?'t-green':''}">${p.revRecognised?fC(p.revRecognised,cur):'—'}</td>
+    <td><span class="b ${statusCls}">${p.status}</span></td>
+    <td><button class="btn btn-g xs" onclick="openWBS('${p.id}')">WBS</button></td>
+  </tr>`;
+}).join('');
+
 }
 
 function openWBS(projId) {
@@ -7363,49 +8083,47 @@ function runFXRevalPost() {
 
 // ── ALLOCATION ENGINE ──
 function renderAllocations() {
-  showSkeletonKPIs('allocKPIs', 4);
-  setTimeout(() => {
-    const rules = S.get('allocRules')||[];
-    const cur = baseCurr();
+const rules = S.get('allocRules')||[];
+const cur = baseCurr();
 
-    document.getElementById('allocKPIs').innerHTML = [
-      {l:'Active Rules',   v:rules.filter(r=>r.active).length, c:'c-blue'},
-      {l:'Inactive Rules', v:rules.filter(r=>!r.active).length, c:'c-orange'},
-      {l:'Last Run',       v:'June 30, 2025', c:'c-green'},
-      {l:'Total Allocated',v:fC(127800,cur), c:'c-teal'},
-    ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+document.getElementById('allocKPIs').innerHTML = [
+  {l:'Active Rules',   v:rules.filter(r=>r.active).length, c:'c-blue'},
+  {l:'Inactive Rules', v:rules.filter(r=>!r.active).length, c:'c-orange'},
+  {l:'Last Run',       v:'June 30, 2025', c:'c-green'},
+  {l:'Total Allocated',v:fC(127800,cur), c:'c-teal'},
+].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-    document.getElementById('allocRulesTbl').innerHTML = rules.map(r=>`<tr>
-      <td class="t-blue fw6">${r.id}</td>
-      <td class="fw6">${r.name}</td>
-      <td>${r.srcAccount} — ${COA_MASTER.find(a=>a.code===r.srcAccount)?.name||'—'}</td>
-      <td><span class="b b-teal">${r.driver}</span></td>
-      <td>${r.targets.map(t=>`<span class="dim-chip ${t.cc?'dim-cc':'dim-lob'}">${t.cc||t.lob}: ${t.pct}%</span>`).join('')}</td>
-      <td>${r.freq}</td>
-      <td>${r.active?'<span class="b b-green">Active</span>':'<span class="b b-grey">Inactive</span>'}</td>
-      <td><button class="btn btn-g xs" onclick="runSingleAllocation('${r.id}')">Run</button></td>
-    </tr>`).join('');
+document.getElementById('allocRulesTbl').innerHTML = rules.map(r=>`<tr>
+  <td class="t-blue fw6">${r.id}</td>
+  <td class="fw6">${r.name}</td>
+  <td>${r.srcAccount} — ${COA_MASTER.find(a=>a.code===r.srcAccount)?.name||'—'}</td>
+  <td><span class="b b-teal">${r.driver}</span></td>
+  <td>${r.targets.map(t=>`<span class="dim-chip ${t.cc?'dim-cc':'dim-lob'}">${t.cc||t.lob}: ${t.pct}%</span>`).join('')}</td>
+  <td>${r.freq}</td>
+  <td>${r.active?'<span class="b b-green">Active</span>':'<span class="b b-grey">Inactive</span>'}</td>
+  <td><button class="btn btn-g xs" onclick="runSingleAllocation('${r.id}')">Run</button></td>
+</tr>`).join('');
 
-    // Statistical drivers
-    document.getElementById('allocDrivers').innerHTML = [
-      {name:'Headcount',     unit:'employees', val:{CC01:45,CC02:12,CC03:8,CC04:5}},
-      {name:'Machine Hours', unit:'hrs/month', val:{CC01:840,CC03:360}},
-      {name:'Floor Area m²', unit:'m²',        val:{CC01:1200,CC02:280,CC03:640}},
-    ].map(d=>`<div class="fsec mb10">
-      <div class="fw6 t-sm">${d.name} <span class="t-muted t-xs">(${d.unit})</span></div>
-      ${Object.entries(d.val).map(([cc,v])=>`<div class="cs-row"><span class="t-muted">${cc}</span><span class="fw6">${v} ${d.unit}</span></div>`).join('')}
-    </div>`).join('');
+// Statistical drivers
+document.getElementById('allocDrivers').innerHTML = [
+  {name:'Headcount',     unit:'employees', val:{CC01:45,CC02:12,CC03:8,CC04:5}},
+  {name:'Machine Hours', unit:'hrs/month', val:{CC01:840,CC03:360}},
+  {name:'Floor Area m²', unit:'m²',        val:{CC01:1200,CC02:280,CC03:640}},
+].map(d=>`<div class="fsec mb10">
+  <div class="fw6 t-sm">${d.name} <span class="t-muted t-xs">(${d.unit})</span></div>
+  ${Object.entries(d.val).map(([cc,v])=>`<div class="cs-row"><span class="t-muted">${cc}</span><span class="fw6">${v} ${d.unit}</span></div>`).join('')}
+</div>`).join('');
 
-    document.getElementById('allocResults').innerHTML = `
-      <div class="alert a-ok">Last run: June 30, 2025 — 3 rules executed, ${fC(127800,cur)} reallocated across 8 cost centres.</div>
-      <div class="tw mt12"><table style="font-size:12px">
-        <thead><tr><th>Rule</th><th>Source Amount</th><th>Target</th><th class="num">Allocated</th></tr></thead>
-        <tbody>
-          <tr><td>ALLOC-001</td><td>6020 — G&A</td><td>CC01 (60%) · CC02 (25%) · CC03 (15%)</td><td class="num">${fC(28600,cur)}</td></tr>
-          <tr><td>ALLOC-002</td><td>5030 — OH Applied</td><td>CC01 (70%) · CC03 (30%)</td><td class="num">${fC(94200,cur)}</td></tr>
-        </tbody>
-      </table></div>`;
-  }, 400);
+document.getElementById('allocResults').innerHTML = `
+  <div class="alert a-ok">Last run: June 30, 2025 — 3 rules executed, ${fC(127800,cur)} reallocated across 8 cost centres.</div>
+  <div class="tw mt12"><table style="font-size:12px">
+    <thead><tr><th>Rule</th><th>Source Amount</th><th>Target</th><th class="num">Allocated</th></tr></thead>
+    <tbody>
+      <tr><td>ALLOC-001</td><td>6020 — G&A</td><td>CC01 (60%) · CC02 (25%) · CC03 (15%)</td><td class="num">${fC(28600,cur)}</td></tr>
+      <tr><td>ALLOC-002</td><td>5030 — OH Applied</td><td>CC01 (70%) · CC03 (30%)</td><td class="num">${fC(94200,cur)}</td></tr>
+    </tbody>
+  </table></div>`;
+
 }
 
 function runSingleAllocation(ruleId) {
