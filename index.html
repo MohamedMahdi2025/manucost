@@ -919,57 +919,96 @@ textarea.fc{resize:vertical;min-height:68px}
 
 <!-- ════ GENERAL LEDGER — Account Analyzer ════ -->
 <div class="page" id="page-ledger">
-  <div class="page-hdr">
-    <div><h1>General Ledger</h1><p>Account balance analyzer · Dimension drill-down · Multi-book</p></div>
-    <div class="btn-row">
-      <select class="fc" id="lgAccSel" onchange="renderGL()" style="width:220px"></select>
-      <select class="fc" id="lgBook" onchange="renderGL()" style="width:150px">
+  <!-- GL Page Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="font-size:28px;font-weight:700;color:var(--text1);letter-spacing:-0.02em;margin-bottom:4px">General Ledger</h1>
+      <p style="color:var(--text2);font-size:13px">Review and manage company-wide journal entries and transaction history.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select class="fc" id="lgAccSel" onchange="renderGL()" style="width:220px;height:36px"></select>
+      <select class="fc" id="lgBook" onchange="renderGL()" style="width:150px;height:36px">
         <option value="ifrs">IFRS Ledger</option>
         <option value="tax">Tax Ledger</option>
         <option value="mgmt">Management Ledger</option>
       </select>
-      <input class="fc" type="date" id="lgDateFrom" value="2025-01-01" style="width:130px">
-      <input class="fc" type="date" id="lgDateTo" value="2025-06-30" style="width:130px">
-      <button class="btn btn-p sm" onclick="renderGL()">Apply</button>
-      <button class="btn btn-g sm" onclick="exportReport('gl')">↓ Export</button>
+      <input class="fc" type="date" id="lgDateFrom" value="2025-01-01" style="width:130px;height:36px">
+      <input class="fc" type="date" id="lgDateTo" value="2025-06-30" style="width:130px;height:36px">
+      <button class="btn btn-s" onclick="renderGL()" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>⚡</span>Apply</button>
+      <button class="btn btn-g" onclick="exportReport('gl')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>↓</span>Export</button>
+      <button class="btn btn-p" onclick="nav('journal')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>+</span>New Entry</button>
     </div>
   </div>
+
+  <!-- KPI Cards -->
   <div class="kpi-grid g4 mb16" id="glKPIs"></div>
-  <div class="g2c mb16">
-    <div class="card" style="grid-column:1/-1">
-      <div class="card-hdr">
-        <span class="card-title" id="glTitle">General Ledger</span>
-        <div class="flex ic gap8">
-          <span class="b b-blue" id="glBookBadge">IFRS</span>
-          <span class="b b-teal" id="glPeriodBadge">Jun 2025</span>
-        </div>
+
+  <!-- Main Table Card -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface2)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:15px;font-weight:700;color:var(--text1)" id="glTitle">General Ledger</span>
+        <span class="b b-blue" id="glBookBadge">IFRS</span>
+        <span class="b b-teal" id="glPeriodBadge">Jun 2025</span>
       </div>
-      <!-- Balance velocity chart -->
-      <div id="glVelocityChart" style="padding:12px 16px;border-bottom:1px solid var(--border)"></div>
-      <div class="tw"><table>
-        <thead><tr>
-          <th>Date</th><th>JE #</th><th>Description</th><th>Source</th>
-          <th>Dimensions</th><th class="num">Debit</th><th class="num">Credit</th>
-          <th class="num">Running Balance</th><th></th>
-        </tr></thead>
+      <div id="glVelocityChart" style="font-size:12px;color:var(--text3)"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+            <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap">Date</th>
+            <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">JE #</th>
+            <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Description</th>
+            <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Source</th>
+            <th style="padding:9px 16px;text-align:left;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Dimensions</th>
+            <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Debit</th>
+            <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Credit</th>
+            <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Running Balance</th>
+            <th style="padding:9px 16px;text-align:center;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Status</th>
+            <th style="padding:9px 16px;text-align:right;font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">Actions</th>
+          </tr>
+        </thead>
         <tbody id="glTbl"></tbody>
         <tfoot id="glFoot"></tfoot>
-      </table></div>
+      </table>
+    </div>
+    <div style="padding:10px 16px;background:var(--surface2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:12px;color:var(--text3)" id="glRowCount">—</div>
+      <div style="font-size:12px;color:var(--text3)" id="glBalanceNote">—</div>
     </div>
   </div>
-  <!-- Dimension Pivot Explorer -->
-  <div class="card">
-    <div class="card-hdr"><span class="card-title">🔀 Dimension Pivot Explorer</span><span class="b b-purple">Live analytics</span></div>
-    <div class="card-body">
-      <div class="flex ic gap10 mb12 flex-wrap">
-        <div class="fg" style="flex:0 0 160px"><label class="fl">Row Dimension</label>
-          <select class="fc" id="pivotRow" onchange="renderPivot()"><option value="account">Account</option><option value="costCentre">Cost Centre</option><option value="dept">Department</option><option value="lob">Business Line</option></select></div>
-        <div class="fg" style="flex:0 0 160px"><label class="fl">Column Dimension</label>
-          <select class="fc" id="pivotCol" onchange="renderPivot()"><option value="month">Month</option><option value="costCentre">Cost Centre</option><option value="dept">Department</option></select></div>
-        <div class="fg" style="flex:0 0 140px"><label class="fl">Measure</label>
-          <select class="fc" id="pivotMeasure" onchange="renderPivot()"><option value="net">Net Amount</option><option value="dr">Debits</option><option value="cr">Credits</option></select></div>
+
+  <!-- Bottom Row: Movement + Pivot -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;display:flex;align-items:center;gap:24px">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:4px">Account Movement Analysis</div>
+        <div id="glMovementNote" style="font-size:12px;color:var(--text3);margin-bottom:10px">—</div>
+        <div style="width:100%;background:var(--surface2);border-radius:99px;height:6px;overflow:hidden">
+          <div id="glMovementFill" style="height:100%;background:var(--blue);border-radius:99px;width:0%;transition:width .5s"></div>
+        </div>
       </div>
-      <div id="pivotTable" class="tw"></div>
+      <div id="glDonut" style="width:80px;height:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);text-align:center"></div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:700;color:var(--text1)">Dimension Pivot</span>
+        <span class="b b-purple" style="font-size:10px">Live</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <select class="fc" id="pivotRow" onchange="renderPivot()" style="flex:1;height:30px;font-size:11px">
+          <option value="account">Account</option><option value="costCentre">Cost Centre</option>
+          <option value="dept">Dept</option><option value="lob">Business Line</option>
+        </select>
+        <select class="fc" id="pivotCol" onchange="renderPivot()" style="flex:1;height:30px;font-size:11px">
+          <option value="month">Month</option><option value="costCentre">CC</option>
+        </select>
+        <select class="fc" id="pivotMeasure" onchange="renderPivot()" style="flex:1;height:30px;font-size:11px">
+          <option value="net">Net</option><option value="dr">DR</option><option value="cr">CR</option>
+        </select>
+      </div>
+      <div id="pivotTbl" style="font-size:11px;overflow:auto;max-height:100px"></div>
     </div>
   </div>
 </div>
@@ -6200,83 +6239,123 @@ function buildGLSel() {
 
 function renderGL() {
   const accCode = document.getElementById('lgAccSel')?.value || '1010';
-  const book = document.getElementById('lgBook')?.value || 'ifrs';
+  const book    = document.getElementById('lgBook')?.value    || 'ifrs';
   const dateFrom = document.getElementById('lgDateFrom')?.value || '2025-01-01';
-  const dateTo = document.getElementById('lgDateTo')?.value || '2025-06-30';
+  const dateTo   = document.getElementById('lgDateTo')?.value   || '2025-06-30';
   const cur = baseCurr();
-  const bookDef = GL_BOOKS[book]||GL_BOOKS.ifrs;
-  const acc = COA_MASTER.find(a=>a.code===accCode)||{};
+  const bookDef = GL_BOOKS[book] || GL_BOOKS.ifrs;
 
-  // Get transactions for this account
-  const ledger = S.get('glLedger')||[];
-  const acTxns = ledger.filter(e=>e.account===accCode&&e.book===book&&e.date>=dateFrom&&e.date<=dateTo);
+  // Account info (from COA_MASTER + custom accounts)
+  const allAccounts = [...(COA_MASTER||[]), ...(S.get('customAccounts')||[]).map(a=>({code:a.c,name:a.n,category:a.cat,type:'detail'}))];
+  const acc = allAccounts.find(a=>a.code===accCode) || {};
 
-  // Opening balance from hardcoded data
-  // Opening balances derived from tbRows (single source of truth)
+  // Transactions
+  const ledger  = S.get('glLedger') || [];
+  const acTxns  = ledger.filter(e => e.account===accCode && e.book===book && e.date>=dateFrom && e.date<=dateTo);
+
+  // Opening balance
   const openBals = {};
   getTBData().forEach(r => { openBals[r.c] = (r.dr||0) - (r.cr||0); });
   const openBal = openBals[accCode] || 0;
 
   let running = openBal;
   const rows = [
-    { date:dateFrom, jeId:'—', desc:'Opening Balance', src:'—', dims:{}, dr:openBal>0?openBal:0, cr:openBal<0?Math.abs(openBal):0, bal:openBal, isOpening:true },
-    ...acTxns.map(e => { running += (e.dr||0) - (e.cr||0); return {...e, bal:running}; })
+    { date:dateFrom, jeId:'OB', desc:'Opening Balance', src:'—', dims:{}, dr:openBal>0?openBal:0, cr:openBal<0?Math.abs(openBal):0, bal:openBal, isOpening:true },
+    ...acTxns.map(e => { running += (e.dr||0)-(e.cr||0); return {...e, bal:running}; })
   ];
 
-  const totDr = acTxns.reduce((s,e)=>s+(e.dr||0),0);
-  const totCr = acTxns.reduce((s,e)=>s+(e.cr||0),0);
+  const totDr      = acTxns.reduce((s,e)=>s+(e.dr||0),0);
+  const totCr      = acTxns.reduce((s,e)=>s+(e.cr||0),0);
   const closingBal = openBal + totDr - totCr;
+  const movement   = totDr + totCr;
+  const drPct      = movement > 0 ? Math.round(totDr/movement*100) : 0;
 
-  document.getElementById('glTitle').textContent = `${accCode} — ${acc.name||'Account'}`;
-  document.getElementById('glBookBadge').textContent = bookDef.label;
-  document.getElementById('glBookBadge').style.background = bookDef.color+'22';
-  document.getElementById('glBookBadge').style.color = bookDef.color;
+  // Header
+  const setText = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  setText('glTitle', accCode + ' — ' + (acc.name||'Account'));
+  const badge = document.getElementById('glBookBadge');
+  if (badge) { badge.textContent = bookDef.label; badge.style.background=bookDef.color+'22'; badge.style.color=bookDef.color; }
+  setText('glVelocityChart', `${acTxns.length} transaction${acTxns.length!==1?'s':''} · Net: ${fC(totDr-totCr,cur)}`);
 
+  // KPI cards
   document.getElementById('glKPIs').innerHTML = [
-    {l:'Opening Balance', v:fC(Math.abs(openBal),cur), c:'c-blue'},
-    {l:'Period Debits',   v:fC(totDr,cur), c:'c-green'},
-    {l:'Period Credits',  v:fC(totCr,cur), c:'c-red'},
-    {l:'Closing Balance', v:fC(Math.abs(closingBal),cur), c:closingBal>=0?'c-teal':'c-orange'},
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
+    { l:'Opening Balance',  v: fC(Math.abs(openBal),cur),     sub: openBal>=0?'Debit balance':'Credit balance', c:'c-blue' },
+    { l:'Period Debits',    v: fC(totDr,cur),                  sub: acTxns.filter(e=>e.dr>0).length+' debit entries', c:'c-green' },
+    { l:'Period Credits',   v: fC(totCr,cur),                  sub: acTxns.filter(e=>e.cr>0).length+' credit entries', c:'c-red' },
+    { l:'Closing Balance',  v: fC(Math.abs(closingBal),cur),  sub: closingBal>=0?'Debit balance':'Credit balance', c: closingBal>=0?'c-teal':'c-orange' },
+  ].map(k=>`<div class="kpi ${k.c}">
+    <div class="kpi-lbl">${k.l}</div>
+    <div class="kpi-val">${k.v}</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px">${k.sub}</div>
+  </div>`).join('');
 
-  // Velocity chart
-  const maxVal = Math.max(totDr, totCr, 1);
-  const drH = Math.round(totDr/maxVal*60);
-  const crH = Math.round(totCr/maxVal*60);
-  document.getElementById('glVelocityChart').innerHTML = `
-    <div class="flex ic gap12">
-      <div class="t-xs t-muted fw6" style="width:80px">Balance Velocity</div>
-      <div style="display:flex;gap:4px;align-items:flex-end;height:70px">
-        <div style="width:20px;height:${drH}px;background:var(--green);border-radius:2px 2px 0 0" title="Debits"></div>
-        <div style="width:20px;height:${crH}px;background:var(--red);border-radius:2px 2px 0 0" title="Credits"></div>
-      </div>
-      <div class="t-xs t-muted">Dr: ${fC(totDr,cur)} · Cr: ${fC(totCr,cur)} · Net: ${fC(totDr-totCr,cur)}</div>
-      <div class="t-xs t-muted" style="margin-left:auto">Normal balance: <strong>${acc.normal||'Dr'}</strong> · Category: <strong>${acc.category||'—'}</strong></div>
-    </div>`;
+  // Movement bar
+  const fillEl = document.getElementById('glMovementFill');
+  if (fillEl) fillEl.style.width = drPct + '%';
+  setText('glMovementNote', `${acc.category||'Account'} · Normal balance: ${acc.normal||'Dr'} · Dr ${drPct}% / Cr ${100-drPct}%`);
 
+  // Mini donut in corner
+  const donut = document.getElementById('glDonut');
+  if (donut && movement > 0) {
+    const r=28, circ=2*Math.PI*r;
+    const drArc = circ * (drPct/100);
+    donut.innerHTML = `<svg width="80" height="80" viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--green)" stroke-width="10"
+        stroke-dasharray="${drArc} ${circ}" stroke-dashoffset="${circ*0.25}" stroke-linecap="round"/>
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--red)" stroke-width="10"
+        stroke-dasharray="${circ-drArc} ${circ}" stroke-dashoffset="${circ*0.25-drArc}" stroke-linecap="round"/>
+      <text x="40" y="36" text-anchor="middle" font-size="10" fill="var(--text2)" font-family="Calibri">${drPct}%</text>
+      <text x="40" y="48" text-anchor="middle" font-size="9" fill="var(--text3)" font-family="Calibri">DR</text>
+    </svg>`;
+  } else if (donut) {
+    donut.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:11px">No data</div>';
+  }
+
+  // Table rows
   document.getElementById('glTbl').innerHTML = rows.map(r => {
     const dimChips = Object.entries(r.dims||{}).map(([k,v])=>`<span class="dim-chip dim-${k}">${v}</span>`).join('');
-    return `<tr ${r.isOpening?'style="background:var(--surface2);font-style:italic"':''}>
-      <td class="t-muted t-sm">${r.date}</td>
-      <td class="t-blue fw6">${r.jeId}</td>
-      <td>${r.desc}${r.hash?` <span class="hash-badge">${r.hash.slice(0,8)}</span>`:''}</td>
-      <td>${r.src}</td>
-      <td>${dimChips||'—'}</td>
-      <td class="num t-green">${r.dr?fC(r.dr,cur):'—'}</td>
-      <td class="num t-red">${r.cr?fC(r.cr,cur):'—'}</td>
-      <td class="num fw6">${fC(Math.abs(r.bal||0),cur)} <span class="t-xs t-muted">${(r.bal||0)>=0?'Dr':'Cr'}</span></td>
-      <td>${r.jeId!=='—'?`<button class="btn btn-g xs" onclick="showJEDetail('${r.jeId}')">→</button>`:''}</td>
+    const isOB = r.isOpening;
+    const statusBadge = isOB
+      ? `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;background:#EBF3FB;color:#0078D4">OPENING</span>`
+      : `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;background:#DFF6DD;color:#107C10">POSTED</span>`;
+    const balDir = (r.bal||0) >= 0 ? 'Dr' : 'Cr';
+    const balColor = (r.bal||0) >= 0 ? 'var(--blue)' : 'var(--red)';
+    return `<tr style="${isOB?'background:var(--surface2);font-style:italic;':''}" onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='${isOB?'var(--surface2)':''}'" >
+      <td style="padding:10px 16px;font-family:monospace;font-size:12px;color:var(--text2);white-space:nowrap;border-bottom:1px solid var(--border)">${r.date}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)"><span style="color:var(--blue);font-weight:700;font-size:12px">${r.jeId}</span></td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-weight:600;font-size:13px;color:var(--text1)">${r.desc}</div>
+        ${r.hash?`<div style="font-family:monospace;font-size:10px;color:var(--text3)">${r.hash.slice(0,12)}…</div>`:''}
+      </td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);color:var(--text2);font-size:12px">${r.src||'—'}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)">${dimChips||'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;font-size:13px;color:var(--green);font-weight:600">${r.dr?fC(r.dr,cur):'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);text-align:right;font-family:monospace;font-size:13px;color:var(--red);font-weight:600">${r.cr?fC(r.cr,cur):'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);text-align:right">
+        <span style="font-family:monospace;font-size:13px;font-weight:700;color:${balColor}">${fC(Math.abs(r.bal||0),cur)}</span>
+        <span style="font-size:10px;color:${balColor};margin-left:4px">${balDir}</span>
+      </td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);text-align:center">${statusBadge}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);text-align:right">
+        ${r.jeId!=='OB'&&r.jeId!=='—'?`<button onclick="showJEDetail('${r.jeId}')" style="border:1px solid var(--border2);background:var(--surface);padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text1);transition:.15s" onmouseover="this.style.background='var(--blue)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface)';this.style.color='var(--text1)'">Detail →</button>`:''}
+      </td>
     </tr>`;
   }).join('');
 
+  // Footer totals row
   document.getElementById('glFoot').innerHTML = `
-    <tr style="font-weight:700;background:var(--blue-xlt)">
-      <td colspan="5">PERIOD TOTALS · ${bookDef.label}</td>
-      <td class="num t-green">${fC(totDr,cur)}</td>
-      <td class="num t-red">${fC(totCr,cur)}</td>
-      <td class="num t-blue">${fC(Math.abs(closingBal),cur)}</td>
-      <td></td>
+    <tr style="font-weight:700;background:var(--blue-xlt);border-top:2px solid var(--blue-lt)">
+      <td colspan="5" style="padding:10px 16px;font-size:12px;color:var(--text2)">PERIOD TOTALS · ${bookDef.label} · ${dateFrom} → ${dateTo}</td>
+      <td style="padding:10px 16px;text-align:right;font-family:monospace;color:var(--green)">${fC(totDr,cur)}</td>
+      <td style="padding:10px 16px;text-align:right;font-family:monospace;color:var(--red)">${fC(totCr,cur)}</td>
+      <td style="padding:10px 16px;text-align:right;font-family:monospace;font-weight:700;color:var(--blue)">${fC(Math.abs(closingBal),cur)} <span style="font-size:10px">${closingBal>=0?'Dr':'Cr'}</span></td>
+      <td colspan="2"></td>
     </tr>`;
+
+  // Pagination info
+  setText('glRowCount', `Showing ${rows.length} transaction${rows.length!==1?'s':''} (${acTxns.length} period entries + opening balance)`);
+  setText('glBalanceNote', `Account: ${acc.category||'—'} · Normal: ${acc.normal||'Dr'} · Period net: ${fC(totDr-totCr,cur)}`);
 
   renderPivot();
 }
