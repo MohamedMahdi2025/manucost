@@ -317,7 +317,8 @@ textarea.fc{resize:vertical;min-height:68px}
 .wh-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:box-shadow .15s}
 .wh-card{transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}.wh-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.12);transform:translateY(-3px)}
 /* ── LOGIN SCREEN ── */
-.login-ov{position:fixed;inset:0;background:var(--bg);z-index:3000;display:flex;align-items:center;justify-content:center}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.login-ov { display:none }
 .login-card{background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.15);width:400px;overflow:hidden}
 .login-header{background:var(--blue);padding:28px 32px 24px;text-align:center}
 .login-logo{width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px}
@@ -652,45 +653,139 @@ textarea.fc{resize:vertical;min-height:68px}
 </nav>
 
 <!-- ═══ LOGIN SCREEN ═══ -->
-<div class="login-ov" id="loginOv" style="display:none">
-  <div class="login-card">
-    <div class="login-header">
-      <div class="login-logo" id="loginLogoLetter">M</div>
-      <div class="login-title" id="loginCompanyTitle">ManuCost ERP</div>
-      <div class="login-sub" id="loginCompanyName">Manufacturing Management System</div>
-    </div>
-    <div class="login-body">
-      <div class="fr mb12">
-        <div class="fg">
-          <label class="fl req">Username</label>
-          <input class="fc" id="loginUser" placeholder="Enter your username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
-        </div>
-      </div>
-      <div class="fr mb16">
-        <div class="fg">
-          <label class="fl req">Password</label>
-          <div style="position:relative">
-            <input class="fc" id="loginPass" type="password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:36px">
-            <button onclick="togglePw()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--text3);font-size:13px" id="pwToggle">👁</button>
+<div class="login-ov" id="loginOv" style="display:none;position:fixed;inset:0;z-index:3000;display:none">
+  <div style="display:flex;min-height:100vh;font-family:Calibri,Inter,sans-serif">
+
+    <!-- Left: Form -->
+    <div style="width:100%;max-width:480px;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:32px 40px;z-index:10">
+      <div style="max-width:380px;width:100%;margin:0 auto">
+
+        <!-- Logo -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px">
+          <div style="width:36px;height:36px;background:#0f172a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700" id="loginLogoLetter">M</div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#0f172a;line-height:1" id="loginCompanyTitle">ManuCost ERP</div>
+            <div style="font-size:11px;color:#64748b;letter-spacing:.04em" id="loginCompanyName">Manufacturing ERP System</div>
           </div>
         </div>
-      </div>
-      <button class="btn btn-p w100" onclick="doLogin()" id="loginBtn" style="padding:10px;font-size:14px;font-weight:600">Sign In →</button>
 
-      <div id="loginHint" style="display:none;margin-top:10px;padding:10px 12px;background:var(--yellow-lt);border-radius:var(--radius);font-size:12px;color:var(--orange);border:1px solid #F0C060">
-        💡 Default: <strong>admin</strong> / <strong>Admin@1234</strong>
+        <!-- Header -->
+        <div style="margin-bottom:28px">
+          <h2 style="font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;margin-bottom:4px">Sign In</h2>
+          <p style="font-size:13px;color:#64748b">Enter your credentials to access your secure workspace.</p>
+        </div>
+
+        <!-- Form -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <!-- Username -->
+          <div>
+            <label style="display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Username</label>
+            <input id="loginUser" type="text" placeholder="Enter your username" autocomplete="username"
+              onkeydown="if(event.key==='Enter')doLogin()"
+              style="width:100%;padding:10px 14px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;transition:.15s"
+              onfocus="this.style.borderColor='#0078D4';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(0,120,212,.12)'"
+              onblur="this.style.borderColor='#E2E8F0';this.style.background='#F1F5F9';this.style.boxShadow='none'">
+          </div>
+
+          <!-- Password -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <label style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b">Password</label>
+            </div>
+            <div style="position:relative">
+              <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"
+                onkeydown="if(event.key==='Enter')doLogin()"
+                style="width:100%;padding:10px 40px 10px 14px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;transition:.15s"
+                onfocus="this.style.borderColor='#0078D4';this.style.background='#fff';this.style.boxShadow='0 0 0 3px rgba(0,120,212,.12)'"
+                onblur="this.style.borderColor='#E2E8F0';this.style.background='#F1F5F9';this.style.boxShadow='none'">
+              <button onclick="togglePw()" id="pwToggle"
+                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0">👁</button>
+            </div>
+          </div>
+
+          <!-- Sign In Button -->
+          <button id="loginBtn" onclick="doLogin()"
+            style="width:100%;padding:11px 16px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;margin-top:4px"
+            onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='#0f172a'">
+            Sign In <span style="font-size:16px">→</span>
+          </button>
+
+          <!-- Hint (shown on failed login) -->
+          <div id="loginHint" style="display:none;padding:10px 14px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;font-size:12px;color:#92400E">
+            💡 Default credentials: <strong>admin</strong> / <strong>Admin@1234</strong>
+          </div>
+
+        </div>
+
+        <!-- Divider -->
+        <div style="display:flex;align-items:center;gap:12px;margin:24px 0">
+          <div style="flex:1;height:1px;background:#E2E8F0"></div>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8">Enterprise Access</span>
+          <div style="flex:1;height:1px;background:#E2E8F0"></div>
+        </div>
+
+        <!-- SSO Button -->
+        <button style="width:100%;padding:10px 16px;border:1px solid #E2E8F0;background:#fff;border-radius:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s"
+          onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
+          🏢 Sign in with SSO
+        </button>
+
+        <!-- Footer -->
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid #E2E8F0">
+          <div style="display:flex;align-items:center;gap:6px;color:#64748b;margin-bottom:10px">
+            <span style="font-size:13px">🔒</span>
+            <span style="font-size:12px">256-bit AES encryption · Data secured</span>
+          </div>
+          <div id="loginDebug" style="font-size:10px;color:#94a3b8"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right: Hero -->
+    <div style="flex:1;background:#0f172a;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
+      <!-- Dot grid pattern -->
+      <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 2px 2px, rgba(255,255,255,.06) 1px, transparent 0);background-size:24px 24px"></div>
+      <!-- Blue glow -->
+      <div style="position:absolute;top:20%;left:30%;width:400px;height:400px;background:rgba(0,120,212,.15);border-radius:50%;filter:blur(80px)"></div>
+
+      <div style="position:relative;z-index:2;text-align:center;padding:40px;max-width:480px">
+
+        <!-- System status pill -->
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:99px;margin-bottom:32px">
+          <span style="width:6px;height:6px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite"></span>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8)">System Secure & Operational</span>
+        </div>
+
+        <!-- ERP Logo icon -->
+        <div style="font-size:56px;margin-bottom:16px">🏭</div>
+
+        <!-- Title -->
+        <h1 style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-0.02em;margin-bottom:12px">ManuCost ERP</h1>
+        <p style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:32px">
+          Monitor global performance, secure assets, and drive enterprise growth from a single source of truth.
+        </p>
+
+        <!-- Mini KPI cards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          ${['GL Modules','Security Tier','Uptime'].map((l,i)=>
+            `<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:left">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px">${l}</div>
+              <div style="font-size:18px;font-weight:700;color:#fff">${['55+','Level 4','99.9%'][i]}</div>
+            </div>`).join('')}
+        </div>
+
       </div>
 
+      <!-- Version footer -->
+      <div style="position:absolute;bottom:16px;right:20px;font-size:11px;color:rgba(255,255,255,.3)">
+        © 2025 ManuCost ERP · v2.1.0
+      </div>
     </div>
-    <div class="login-footer">ManuCost ERP · Secured · <span id="loginYear">2025</span></div>
-    <div id="loginDebug" style="font-size:10px;color:#aaa;text-align:center;margin-top:4px;padding:0 8px"></div>
-    <div id="privateModeWarn" style="display:none;margin-top:8px;padding:10px 12px;background:#FFF4CE;border:1px solid #F0C060;border-radius:6px;font-size:11px;color:#8a6000;text-align:center">
-      ⚠️ <strong>Private/Incognito mode detected.</strong><br>
-      Data cannot be saved between sessions. Please open this link in a <strong>normal browser tab</strong>.
-    </div>
+
   </div>
 </div>
-
 <!-- USER DROPDOWN -->
 <div class="user-dd" id="userDropdown">
   <div class="ud-hdr">
@@ -2431,21 +2526,19 @@ function doLogin() {
 }
 
 function showLogin() {
-  // Hide everything else first
   const wizEl = document.getElementById('wizOv');
   if (wizEl) wizEl.style.display = 'none';
   document.getElementById('app').style.display = 'none';
-  document.getElementById('loginOv').style.display = 'flex';
+  const lo = document.getElementById('loginOv');
+  if (lo) lo.style.display = 'flex';
   const co = S.get('company') || {};
-  const titleEl = document.getElementById('loginCompanyTitle');
-  if (titleEl && co.name) titleEl.textContent = co.name;
-  const subEl = document.getElementById('loginCompanyName');
-  if (subEl && co.name) subEl.textContent = co.name + ' — ERP System';
+  const setText = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  setText('loginCompanyTitle', co.name || 'ManuCost ERP');
+  setText('loginCompanyName', (co.industry || 'Manufacturing') + ' ERP System');
+  const letter = (co.name||'M')[0].toUpperCase();
+  setText('loginLogoLetter', letter);
   const dbg = document.getElementById('loginDebug');
-  if (dbg) {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('mce_')).length;
-    dbg.textContent = 'Storage: ' + keys + ' keys · ' + (co.name || 'no company') + (co._wizardComplete ? ' ✓' : '');
-  }
+  if (dbg) { const keys=Object.keys(localStorage).filter(k=>k.startsWith('mce_')).length; dbg.textContent='Storage: '+keys+' keys · '+(co.name||'no company'); }
   localStorage.setItem('mce_last_boot', String(Date.now()));
   setTimeout(() => { const el = document.getElementById('loginUser'); if (el) el.focus(); }, 100);
 }
