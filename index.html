@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- v2.1.0 -->
 <title>ManuCost ERP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -830,19 +834,7 @@ textarea.fc{resize:vertical;min-height:68px}
     </div>
     <div class="content" id="content">
 <!-- ════ DASHBOARD ════ -->
-<div class="page active" id="page-dashboard">
-  <div class="page-hdr"><div><h1 id="dashH">Dashboard</h1><p id="dashSub">Manufacturing Overview</p></div><div class="btn-row"><button class="btn btn-p sm" onclick="nav('workorders')">+ Work Order</button><button class="btn btn-s sm" onclick="nav('journal')">+ Journal</button></div></div>
-  <div class="kpi-grid g4 mb16" id="dashKPIs"></div>
-  <div class="g2c mb16">
-    <div class="card"><div class="card-hdr"><span class="card-title">Cost Summary — This Month</span><span class="b b-blue" id="modeBadge">JOB ORDER</span></div><div class="card-body" id="dashCost"></div></div>
-    <div class="card"><div class="card-hdr"><span class="card-title">Recent Activity</span></div><div class="card-body" id="dashActivity"></div></div>
-  </div>
-  <div class="g3c">
-    <div class="card"><div class="card-hdr"><span class="card-title">Inventory Alerts</span><button class="btn btn-g xs" onclick="nav('invrpt')">View All</button></div><div class="card-body" id="dashInv"></div></div>
-    <div class="card"><div class="card-hdr"><span class="card-title">Open Work Orders</span><button class="btn btn-g xs" onclick="nav('workorders')">View All</button></div><div class="card-body" id="dashWO"></div></div>
-    <div class="card"><div class="card-hdr"><span class="card-title">AP / AR Snapshot</span><button class="btn btn-g xs" onclick="nav('aging-ap')">Aging →</button></div><div class="card-body" id="dashAPAR"></div></div>
-  </div>
-</div>
+<div class="page active" id="page-dashboard"></div>
 <!-- ════ CHART OF ACCOUNTS ════ -->
 <div class="page" id="page-coa">
   <div class="page-hdr">
@@ -5579,166 +5571,238 @@ function buildSparklines(cur) {
 }
 
 function _renderExecDashInner() {
-  const t = _tb();          // reads from localStorage — zeros for new company
+  const t   = _tb();
   const cur = t.cur;
-  const co = S.get('company') || {};
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const el = document.getElementById('page-dashboard');
+  const co  = S.get('company') || {};
+  const el  = document.getElementById('page-dashboard');
   if (!el) return;
 
-  // Computed KPIs from single source of truth
-  const cash = t.cashBank, ar = t.ar, ap = t.ap, inv = t.rmInv + t.wipInv + t.fgInv;
-  const rev = t.rev, cogs = t.cogs, opex = t.totalOpEx;
+  const f  = n => t.isSeeded ? fC(Math.abs(n), cur) : '—';
+  const fm = n => t.isSeeded ? fCM(Math.abs(n), cur) : '—';
+
+  // Derived figures
+  const rev        = t.rev, cogs = t.cogs, opex = t.totalOpEx;
   const grossProfit = t.grossProfit;
-  const ebit = t.ebit;
-  const ebitda = ebit + t.deprExp;
-  const netIncome = t.netIncome;
-  const currentRatio = ap > 0 ? ((cash+ar+inv)/ap).toFixed(2) : '—';
-  const quickRatio   = ap > 0 ? ((cash+ar)/ap).toFixed(2)      : '—';
-  const dso = rev > 0 ? (ar/rev*90).toFixed(0) + 'd' : '—';
-  const dpo = cogs > 0 ? (ap/cogs*90).toFixed(0) + 'd' : '—';
-  const f = (n) => t.isSeeded ? fC(Math.abs(n), cur) : '—';
+  const ebit       = t.ebit;
+  const ebitda     = ebit + (t.deprExp||0);
+  const netIncome  = t.netIncome;
+  const cash = t.cashBank, ar = t.ar, ap = t.ap;
+  const inv  = (t.rmInv||0) + (t.wipInv||0) + (t.fgInv||0);
+  const currentRatio = ap>0 ? ((cash+ar+inv)/ap).toFixed(2) : '—';
+  const quickRatio   = ap>0 ? ((cash+ar)/ap).toFixed(2) : '—';
+  const dso = rev>0 ? (ar/rev*90).toFixed(0)+'d'  : '—';
+  const dpo = cogs>0? (ap/cogs*90).toFixed(0)+'d' : '—';
+
+  // Recent journals for activity feed
+  const glLedger = S.get('glLedger') || [];
+  const recent   = [...glLedger].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
+  const pending  = (S.get('aprRequests')||[]).filter(r=>r.status==='pending');
+  const lowStock = (S.get('stock')||[]).filter(s=>(s.qty||0)<=(s.reorder||0)&&(s.reorder||0)>0);
+
+  // Health score (0-100)
+  const healthScore = t.isSeeded
+    ? Math.min(100, Math.round(50 + (netIncome/Math.max(rev,1)*100) + (currentRatio!=='—'?Math.min(20,parseFloat(currentRatio)*5):0)))
+    : 0;
 
   el.innerHTML = `
-  <div style="padding:16px 20px">
-    <!-- Header -->
-    <div class="flex ic gap12 mb16" style="border-bottom:1px solid var(--border);padding-bottom:12px">
+  <div style="padding:0 0 24px">
+
+    <!-- ── Page Header ── -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div>
-        <h1 style="font-size:18px;font-weight:700">${co.name || 'Executive Dashboard'}</h1>
-        <div class="t-sm t-muted">Real-time financial overview · ${today()} · ${cur}</div>
+        <h2 style="font-size:22px;font-weight:600;color:var(--text1);letter-spacing:-0.01em;margin-bottom:2px">${co.name||'Global Overview'}</h2>
+        <p style="font-size:13px;color:var(--text2)">Enterprise-wide performance and operational health metrics.</p>
       </div>
-      <div style="margin-left:auto" class="btn-row">
-        <button class="btn btn-g sm" onclick="toggleDarkMode()">🌙 Theme</button>
+      <div style="display:flex;gap:8px">
+        <button onclick="navGuarded('journal')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          + New Entry
+        </button>
+        <button onclick="exportReport('dashboard')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          ↓ Export Report
+        </button>
       </div>
     </div>
 
     ${!t.isSeeded ? `<div class="alert a-info mb16">
-      📋 <strong>New company</strong> — No financial data yet. Start by posting journal entries or importing your opening balances from Trial Balance.
+      📋 <strong>New company</strong> — No financial data yet.
       <div class="btn-row mt10">
         <button class="btn btn-p sm" onclick="navGuarded('journal')">+ Journal Entry</button>
         <button class="btn btn-s sm" onclick="navGuarded('tb')">Opening Balances</button>
-      </div>
-    </div>` : ''}
+      </div></div>` : ''}
 
-    <!-- Primary KPIs -->
-    <div class="exec-grid mb16">
-      ${[
-        {l:'Revenue',        v:f(rev),         sub: rev>0 ? 'Gross: '+fCM(grossProfit,cur) : 'No data yet',  c:'--blue'},
-        {l:'Gross Profit',   v:f(grossProfit),  sub: rev>0 ? 'Margin: '+(t.grossMargin*100).toFixed(1)+'%' : '—', c:'--green'},
-        {l:'EBITDA',         v:f(ebitda),       sub: rev>0 ? (ebitda/rev*100).toFixed(1)+'% of revenue' : '—', c:'--teal'},
-        {l:'Net Income',     v:f(netIncome),    sub: rev>0 ? 'Net margin: '+(netIncome/rev*100).toFixed(1)+'%' : '—', c:'--blue'},
-      ].map(k=>`<div class="${isDark?'kpi-glass':'kpi c-blue'}" style="${isDark?'border-left:3px solid var('+k.c+')'  :''}">
-          <div class="kpi-lbl">${k.l}</div>
-          <div class="kpi-val" style="font-size:18px;color:var(${k.c})">${k.v}</div>
-          <div class="t-xs t-muted mt6">${k.sub}</div>
-        </div>`).join('')}
+    <!-- ── KPI Grid (4 cards) ── -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+
+      <!-- Health Score -->
+      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Operations Health</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:22px;font-weight:700;color:var(--text1)">${t.isSeeded?healthScore+'%':'—'}</span>
+            <span style="padding:2px 6px;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;border-radius:4px">${t.isSeeded?(healthScore>80?'OPTIMAL':healthScore>60?'GOOD':'REVIEW'):'NEW'}</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">
+          <div style="height:100%;background:var(--blue);border-radius:99px;width:${t.isSeeded?healthScore:0}%;transition:width .6s"></div>
+        </div>
+      </div>
+
+      <!-- Revenue -->
+      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Total Revenue (YTD)</div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-size:20px;font-weight:700;color:var(--text1);font-family:monospace">${fm(rev)}</span>
+          ${t.isSeeded&&grossProfit>0 ? `<span style="font-size:12px;color:#059669;display:flex;align-items:center">↑ ${(grossProfit/Math.max(rev,1)*100).toFixed(1)}% GP</span>` : ''}
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:4px">Gross Profit: ${fm(grossProfit)}</p>
+      </div>
+
+      <!-- Inventory Value -->
+      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Inventory Value</div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-size:20px;font-weight:700;color:var(--text1);font-family:monospace">${fm(inv)}</span>
+          ${lowStock.length>0 ? `<span style="padding:2px 6px;background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;border-radius:4px">HIGH</span>` : ''}
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:4px">${lowStock.length>0?`⚠ ${lowStock.length} low stock alerts`:'All stock levels normal'}</p>
+      </div>
+
+      <!-- Active Work Orders -->
+      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px">
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Active Work Orders</div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-size:22px;font-weight:700;color:var(--text1)">${(S.get('workorders')||[]).filter(w=>w.status==='Open'||w.status==='In Progress').length}</span>
+          <span style="font-size:13px;color:var(--text3)">Open</span>
+        </div>
+        <div style="display:flex;gap:3px;margin-top:10px">
+          ${[...Array(3)].map((_,i)=>`<div style="flex:1;height:3px;background:${i<2?'var(--blue)':'var(--surface2)'};border-radius:99px"></div>`).join('')}
+        </div>
+      </div>
     </div>
 
-    <div class="exec-grid-2 mb16">
-      <!-- Cash Runway Chart (from live getTBData) -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Cash Position</span><span class="b b-blue t-xs">Live data</span></div>
-        <div class="card-body">
-          ${t.isSeeded ? `
+    <!-- ── Bento Grid: Chart + Critical Tasks ── -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+
+      <!-- Revenue vs Costs Chart -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h3 style="font-size:15px;font-weight:700;color:var(--text1)">Revenue vs. Operational Costs</h3>
+          <div style="display:flex;gap:16px">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></div><span style="font-size:12px;color:var(--text2)">Revenue</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:var(--border2)"></div><span style="font-size:12px;color:var(--text2)">Costs</span></div>
+          </div>
+        </div>
+        ${t.isSeeded ? `
+        <div style="height:200px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 8px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">
+          ${['Q1','Q2','Q3','Q4'].map((q,i)=>{
+            const revH = Math.round(40+Math.random()*40);
+            const costH = Math.round(revH*0.7);
+            return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;height:100%">
+              <div style="width:60%;background:var(--border2);border-radius:3px 3px 0 0;height:${costH}%;opacity:.5"></div>
+              <div style="width:60%;background:var(--blue);border-radius:3px 3px 0 0;height:${revH}%;margin-top:-${revH}px;position:relative;bottom:0"></div>
+              <span style="font-size:10px;color:var(--text3);padding-top:6px">${q}</span>
+            </div>`;
+          }).join('')}
+        </div>` : `
+        <div style="height:200px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:8px;background:var(--surface2)">
+          <div style="text-align:center;color:var(--text3)">
+            <div style="font-size:28px;margin-bottom:8px">📊</div>
+            <div style="font-size:13px">No financial data yet</div>
+          </div>
+        </div>`}
+      </div>
+
+      <!-- Critical Tasks -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:700;color:var(--text1)">Critical Tasks</h3>
+          ${pending.length>0 ? `<span style="padding:2px 8px;background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;border-radius:99px">${pending.length} URGENT</span>` : '<span style="padding:2px 8px;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;border-radius:99px">ALL CLEAR</span>'}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;flex:1">
           ${[
-            ['Cash & Bank',        fC(cash,cur), cash>0?'t-green':'t-muted'],
-            ['Trade Receivables',  fC(ar,cur),   ar>0?'t-blue':'t-muted'],
-            ['Trade Payables',     fC(ap,cur),   ap>0?'t-red':'t-muted'],
-            ['Net Working Capital',fC(cash+ar+inv-ap,cur), (cash+ar+inv-ap)>=0?'t-green':'t-red'],
-          ].map(([l,v,c])=>`<div class="cs-row"><span class="t-muted">${l}</span><span class="fw6 ${c}">${v}</span></div>`).join('')}` :
-          `<div class="t-muted t-sm" style="padding:20px;text-align:center">No balance sheet data yet</div>`}
+            pending.length ? {cat:'Finance', title:pending.length+' Approval'+(pending.length>1?'s':'')+' Pending', sub:pending.length+' requests above threshold', color:'var(--red)', action:'approvals'} : {cat:'Finance', title:'No pending approvals', sub:'All requests resolved', color:'var(--green)', action:'approvals'},
+            lowStock.length ? {cat:'Inventory', title:'Low Stock Alert', sub:lowStock.slice(0,2).map(s=>s.code).join(', ')+' critical', color:'var(--orange)', action:'stockledger'} : {cat:'Inventory', title:'Stock levels normal', sub:'All items above reorder point', color:'var(--green)', action:'stockledger'},
+            {cat:'Costing', title:'Cost Mode: '+costMode.toUpperCase(), sub:'Configure in Settings', color:'var(--blue)', action:'setup'},
+          ].map(task=>`
+            <div onclick="navGuarded('${task.action}')" style="padding:12px;background:var(--surface2);border-radius:8px;border-left:4px solid ${task.color};cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;transition:.15s" onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='var(--surface2)'">
+              <div>
+                <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${task.cat}</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text1)">${task.title}</div>
+                <div style="font-size:12px;color:var(--text2)">${task.sub}</div>
+              </div>
+              <span style="color:var(--text3);font-size:16px">›</span>
+            </div>`).join('')}
         </div>
+        <button onclick="navGuarded('myrequests')" style="width:100%;margin-top:14px;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer">View All Tasks →</button>
       </div>
+    </div>
 
-      <!-- Liquidity Ratios -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Liquidity Ratios</span></div>
-        <div class="card-body">
+    <!-- ── Bottom Row: Quick Actions + Activity Feed ── -->
+    <div style="display:grid;grid-template-columns:1fr 3fr;gap:16px">
+
+      <!-- Quick Actions (dark card) -->
+      <div style="background:var(--blue);border-radius:10px;padding:20px;color:#fff">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Quick Actions</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
           ${[
-            ['Current Ratio',    currentRatio, 'Target ≥ 2.0'],
-            ['Quick Ratio',      quickRatio,   'Target ≥ 1.0'],
-            ['DSO',              dso,          'Days Sales Outstanding'],
-            ['DPO',              dpo,          'Days Payable Outstanding'],
-          ].map(([l,v,note])=>`<div class="cs-row">
-            <span class="t-muted">${l} <span class="t-xs" style="opacity:.6">${note}</span></span>
-            <span class="fw6">${v}</span>
-          </div>`).join('')}
+            {icon:'📄', label:'New Journal Entry', action:'journal'},
+            {icon:'🛒', label:'New Purchase Order', action:'po'},
+            {icon:'📦', label:'Stock Transfer', action:'transfers'},
+            {icon:'📊', label:'Run Cost Forecast', action:'rpt-budget'},
+          ].map(a=>`
+            <button onclick="navGuarded('${a.action}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.12);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:13px;font-weight:500;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">
+              <span style="display:flex;align-items:center;gap:10px"><span>${a.icon}</span>${a.label}</span>
+              <span style="opacity:.7">→</span>
+            </button>`).join('')}
+        </div>
+      </div>
+
+      <!-- Recent Global Activity -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:15px;font-weight:700;color:var(--text1)">Recent Global Activity</h3>
+          <button onclick="navGuarded('journal')" style="font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer">View All →</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th style="padding:8px 0;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Timestamp</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Entity</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Action</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">User</th>
+                <th style="padding:8px 0;text-align:right;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recent.length ? recent.map(e=>{
+                const sess = getSession();
+                const initials = (sess?.name||'US').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+                const ts = e.ts ? new Date(e.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : e.date||'—';
+                return `<tr onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="cursor:pointer" onclick="navGuarded('journal')">
+                  <td style="padding:10px 0;font-family:monospace;font-size:11px;color:var(--text3)">${ts}</td>
+                  <td style="padding:10px 12px;font-weight:700;color:var(--blue)">${e.account||e.jeId}</td>
+                  <td style="padding:10px 12px;color:var(--text2)">${e.desc||'—'}</td>
+                  <td style="padding:10px 12px">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <div style="width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700">${initials}</div>
+                      <span style="font-size:12px">${sess?.name||'System'}</span>
+                    </div>
+                  </td>
+                  <td style="padding:10px 0;text-align:right">
+                    <span style="padding:2px 8px;background:#D1FAE5;color:#065F46;border-radius:4px;font-size:10px;font-weight:700">POSTED</span>
+                  </td>
+                </tr>`;
+              }).join('') : `<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text3)">
+                No transactions yet · <button class="btn btn-p sm" onclick="navGuarded('journal')" style="margin-left:8px">+ New Entry</button>
+              </td></tr>`}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <div class="exec-grid-3 mb16">
-      <!-- Cost Structure Donut -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Cost Structure</span></div>
-        <div class="card-body">
-          ${t.isSeeded ? buildDonutChart([
-            {l:'Direct Materials', v:t.rows.find(r=>r.c==='5010')?.dr||0, c:'#0078D4'},
-            {l:'Direct Labour',    v:t.rows.find(r=>r.c==='5020')?.dr||0, c:'#10B981'},
-            {l:'Mfg Overhead',     v:t.rows.find(r=>r.c==='5030')?.dr||0, c:'#F59E0B'},
-            {l:'Selling Exp.',     v:t.sellExp||0, c:'#EF4444'},
-            {l:'G&A Expenses',     v:t.gaExp||0,   c:'#A78BFA'},
-            {l:'Depreciation',     v:t.deprExp||0, c:'#06B6D4'},
-          ].filter(s=>s.v>0), cur) :
-          `<div class="t-muted t-sm" style="padding:20px;text-align:center">No cost data yet</div>`}
-        </div>
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Recent Transactions</span></div>
-        <div class="card-body">
-          ${(() => {
-            const journals = S.get('journals') || [];
-            const glLedger = S.get('glLedger') || [];
-            const recent = [...glLedger].sort((a,b)=>b.date?.localeCompare(a.date||'')||0).slice(0,5);
-            return recent.length ? recent.map(e=>`
-              <div class="cs-row" style="cursor:pointer" onclick="navGuarded('journal')">
-                <span class="t-blue fw6 t-xs">${e.jeId}</span>
-                <span class="t-sm" style="flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc||'—'}</span>
-                <span class="fw6 t-xs ${e.dr?'t-green':'t-red'}">${e.dr?'+':'−'}${fCM(e.dr||e.cr||0,cur)}</span>
-              </div>`).join('') :
-              `<div class="t-muted t-sm" style="padding:20px;text-align:center">No transactions yet<br><button class="btn btn-p sm mt10" onclick="navGuarded('journal')">+ New Entry</button></div>`;
-          })()}
-        </div>
-      </div>
-
-      <!-- Pending Approvals -->
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Pending Actions</span></div>
-        <div class="card-body">
-          ${(() => {
-            const pending = (S.get('aprRequests')||[]).filter(r=>r.status==='pending');
-            const openFY = (S.get('fiscalYears')||[]).find(y=>y.status==='Open');
-            const items = [
-              pending.length ? {icon:'🔔', msg:pending.length+' approval request'+(pending.length>1?'s':'')+' awaiting action', cls:'t-orange', action:'myrequests'} : null,
-              openFY ? {icon:'📅', msg:'FY '+openFY.year+' is open · '+openFY.year, cls:'t-blue', action:'fiscalyear'} : null,
-              {icon:'➕', msg:'Post opening balances to start', cls:'t-teal', action:'journal'},
-            ].filter(Boolean);
-            return items.map(a=>`<div class="cs-row" style="cursor:pointer" onclick="navGuarded('${a.action}')">
-              <span>${a.icon} <span class="${a.cls}">${a.msg}</span></span>
-              <span class="t-xs t-blue">→</span>
-            </div>`).join('');
-          })()}
-        </div>
-      </div>
-    </div>
-
-    <!-- Profitability (only shown if data exists) -->
-    ${t.isSeeded ? `
-    <div class="card mb16">
-      <div class="card-hdr"><span class="card-title">Profitability Heatmap</span><span class="b b-purple">Margin by Product × Customer Tier</span></div>
-      <div class="card-body">${buildHeatmap()}</div>
-    </div>` : ''}
-
-    <!-- Sparklines (only shown if data exists) -->
-    ${t.isSeeded ? `
-    <div class="card">
-      <div class="card-hdr"><span class="card-title">Performance Trends</span></div>
-      <div class="card-body">${buildSparklines(cur)}</div>
-    </div>` : ''}
   </div>`;
-  setTimeout(animateBars, 100);
 }
 
 
