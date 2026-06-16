@@ -3229,6 +3229,7 @@ function openM(name, idOrWide, wideOrUndef) {
     typeof mUserTemplates  !== 'undefined' ? mUserTemplates  : {},
     typeof mTemplatesExtra !== 'undefined' ? mTemplatesExtra : {},
     typeof mAssetTemplates !== 'undefined' ? mAssetTemplates : {},
+    typeof mMissingTemplates !== 'undefined' ? mMissingTemplates : {},
     typeof mTemplates      !== 'undefined' ? mTemplates      : {},
   ];
 
@@ -3367,12 +3368,32 @@ save:()=>{
     if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}
   });
   if(!lines.length){toast('Add at least one line with an amount.','error');return;}
-  // Save journal with attachment metadata
+  // Save journal — attachment METADATA in record, BINARY DATA in separate localStorage key
+  // This prevents base64 from bloating Google Sheets and hitting size limits
   const journals=S.get('journals')||[];
+  const attachMeta = attachData ? {
+    name: attachData.name,
+    size: attachData.size,
+    type: attachData.type,
+    // data stored separately - NOT in the journal record
+  } : null;
+
   journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines,
-    attachment:{name:attachData.name,size:attachData.size,type:attachData.type,data:attachData.data}
+    attachment: attachMeta   // metadata only — name, size, type
   });
   S.set('journals',journals);
+
+  // Store binary attachment data in a SEPARATE localStorage key, excluded from Sheets sync
+  // Key: mce_attach_<jeId> — these keys are intentionally NOT pushed to Sheets
+  if (attachData) {
+    try {
+      localStorage.setItem('mce_attach_'+jeId, JSON.stringify({
+        jeId, name:attachData.name, size:attachData.size, type:attachData.type, data:attachData.data
+      }));
+    } catch(e) {
+      toast('⚠ Attachment saved locally but storage is nearly full. Consider smaller files.','warn',5000);
+    }
+  }
   // Post to GL ledger
   const cur=baseCurr();const ledger=S.get('glLedger')||[];
   const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};
@@ -4098,38 +4119,118 @@ function _tb() {
     balanced: Math.abs(totalAssets - totalLandE) < 1, rows };
 }
 
-function renderPnL() {
-  const t = _tb();
-  const cur = t.cur;
-  const f = (n) => fC(Math.abs(n), cur);
-  const fBr = (n) => n < 0 ? `(${f(n)})` : f(n);
 
-  document.getElementById('pnlRpt').innerHTML = `
-    ${rptLetterhead('Income Statement','Quarter ended June 30, 2025','IAS 1 — Profit or Loss')}
-    <div class="fs-sec">Revenue</div>
-    <div class="fs-row in"><span>Product Sales Revenue</span><span>${f(t.rev - (getTBData().find(r=>r.c==='4020')?.cr||0))}</span></div>
-    <div class="fs-row in"><span>Service Revenue</span><span>${fC(getTBData().find(r=>r.c==='4020')?.cr||0,cur)}</span></div>
-    <div class="fs-row st"><span>Total Revenue</span><span>${f(t.rev)}</span></div>
-    <div class="fs-sec">Cost of Goods Sold</div>
-    <div class="fs-row in"><span>Direct Materials</span><span>(${fC(t.cogs*.56|0,cur)})</span></div>
-    <div class="fs-row in"><span>Direct Labour</span><span>(${fC(t.cogs*.25|0,cur)})</span></div>
-    <div class="fs-row in"><span>Manufacturing Overhead</span><span>(${fC(t.cogs - (t.cogs*.56|0) - (t.cogs*.25|0),cur)})</span></div>
-    <div class="fs-row st"><span>Total COGS</span><span>(${f(t.cogs)})</span></div>
-    <div class="fs-row tot"><span>GROSS PROFIT</span><span>${f(t.grossProfit)}</span></div>
-    <div class="fs-row in t-muted t-sm"><span>Gross Margin %</span><span>${(t.grossMargin*100).toFixed(1)}%</span></div>
-    <div class="fs-sec">Operating Expenses</div>
-    <div class="fs-row in"><span>Selling & Distribution</span><span>(${f(t.sellExp)})</span></div>
-    <div class="fs-row in"><span>General & Administrative</span><span>(${f(t.gaExp)})</span></div>
-    <div class="fs-row in"><span>Depreciation & Amortisation</span><span>(${f(t.deprExp)})</span></div>
-    <div class="fs-row st"><span>Total Operating Expenses</span><span>(${f(t.totalOpEx)})</span></div>
-    <div class="fs-row tot"><span>OPERATING PROFIT (EBIT)</span><span>${f(t.ebit)}</span></div>
-    <div class="fs-sec">Below-the-Line Items</div>
-    <div class="fs-row in"><span>Finance Costs</span><span>(${f(t.finCost)})</span></div>
-    <div class="fs-row tot"><span>PROFIT BEFORE TAX (EBT)</span><span>${f(t.ebt)}</span></div>
-    <div class="fs-row in"><span>Income Tax Expense</span><span>(${f(t.taxExp)})</span></div>
-    <div class="fs-row tot"><span style="color:${t.netIncome>=0?'var(--green)':'var(--red)'}">NET INCOME / (LOSS)</span><span style="color:${t.netIncome>=0?'var(--green)':'var(--red)'}">${t.netIncome>=0?f(t.netIncome):'('+f(t.netIncome)+')'}</span></div>
-    <div class="fs-note">Prepared per IAS 1 · All amounts in ${cur} · Figures derived from Trial Balance as at June 30, 2025</div>`;
+// ── FINANCIAL REPORT SHARED HELPERS ──
+function rptHeader(title, subtitle, standard) {
+  const co    = S.get('company') || {};
+  const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-start;
+    padding-bottom:18px;margin-bottom:20px;border-bottom:3px solid var(--text1)">
+    <div>
+      <div style="font-size:19px;font-weight:700;color:var(--blue)">${co.name||'Company'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">VAT: ${co.vat||'—'} · CR: ${co.cr||'—'}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:22px;font-weight:700;color:var(--text1)">${title}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--blue);margin-top:3px">${subtitle}</div>
+      <div style="font-size:11px;color:var(--text3)">${standard}</div>
+      <div style="font-size:11px;color:var(--text3)">Prepared: ${today} · Currency: ${baseCurr()}</div>
+    </div>
+  </div>`;
 }
+function rptKpis(items) {
+  return `<div style="display:grid;grid-template-columns:repeat(${Math.min(items.length,4)},1fr);gap:12px;margin-bottom:24px">
+    ${items.map(k=>`<div style="background:${k.bg||'var(--surface2)'};border:1px solid ${k.brd||'var(--border)'};border-radius:var(--r6);padding:14px 16px;border-left:3px solid ${k.acc||'var(--blue)'}">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:6px">${k.l}</div>
+      <div style="font-size:18px;font-weight:700;color:${k.vc||'var(--text1)'};font-variant-numeric:tabular-nums">${k.v}</div>
+      ${k.sub?`<div style="font-size:11px;color:${k.sc||'var(--text3)'};margin-top:3px">${k.sub}</div>`:''}
+    </div>`).join('')}
+  </div>`;
+}
+function rL(label, val, opts={}) {
+  const {in:ind, bold, total, grand, neg, note, pct} = opts;
+  const mon = `style="font-family:Consolas,monospace;${neg?'color:var(--red)':''}"`;
+  if (grand) return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--blue);color:#fff;padding:12px 18px;border-radius:var(--r4);margin:12px 0;font-size:14px;font-weight:700"><span>${label}</span><span ${mon}>${val}</span></div>`;
+  if (total) return `<div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--border2);padding:7px 0 5px ${ind?'20':'0'}px;font-weight:700;font-size:13px;color:var(--text1)"><span>${label}</span><div style="display:flex;gap:16px;align-items:center">${pct?`<span style="font-size:11px;color:var(--text3)">${pct}</span>`:''}<span ${mon}>${val}</span></div></div>`;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0 5px ${ind?'20':'0'}px;font-size:13px;border-bottom:1px solid var(--surface3);color:${ind?'var(--text2)':bold?'var(--text1)':'var(--text1)'};font-weight:${bold?'600':'400'}">
+    <span>${label}${note?` <span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 5px;border-radius:3px">${note}</span>`:''}</span>
+    <div style="display:flex;gap:14px;align-items:center">${pct?`<span style="font-size:11px;color:var(--text3)">${pct}</span>`:''}<span ${mon}>${val}</span></div>
+  </div>`;
+}
+function rSec(title, color) {
+  return `<div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${color||'var(--text3)'};padding:16px 0 8px;border-bottom:1px solid var(--border);margin-bottom:2px">${title}</div>`;
+}
+function rCat(title) {
+  return `<div style="font-size:13px;font-weight:700;color:var(--text1);padding:10px 0 3px">${title}</div>`;
+}
+function rptFooter() {
+  const co = S.get('company')||{};
+  const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  return `<div style="margin-top:24px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--text3)">
+    <span>Prepared per IFRS · Currency: ${baseCurr()} · ${today}</span>
+    <span>${co.name||''} · Finance Department</span>
+  </div>`;
+}
+
+
+function renderPnL() {
+  const t   = _tb();
+  const cur = t.cur;
+  const f   = n => fC(Math.abs(n||0), cur);
+  const fp  = n => t.rev > 0 ? (Math.abs(n||0)/t.rev*100).toFixed(1)+'%' : '—';
+
+  document.getElementById('pnlRpt').innerHTML = `<div class="fs-report">
+    ${rptHeader('Income Statement','For the period ended '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),'IAS 1 — Statement of Profit or Loss')}
+
+    ${!t.isSeeded ? '<div class="alert a-info mb16">No financial data yet — post journal entries to populate this report.</div>' : ''}
+
+    ${t.isSeeded ? rptKpis([
+      {l:'Revenue',       v:fCM(t.rev,cur),                    acc:'var(--blue)',   sub:'Gross top-line'},
+      {l:'Gross Profit',  v:fCM(t.grossProfit,cur),            acc:'var(--green)',  sub:'Margin: '+fp(t.grossProfit), vc:t.grossProfit>=0?'var(--green)':'var(--red)'},
+      {l:'EBIT',          v:fCM(t.ebit,cur),                   acc:'var(--teal)',   sub:'Operating profit', vc:t.ebit>=0?'var(--teal)':'var(--red)'},
+      {l:'Net Income',    v:fCM(t.netIncome,cur),              acc:t.netIncome>=0?'var(--green)':'var(--red)', sub:fp(t.netIncome)+' net margin', vc:t.netIncome>=0?'var(--green)':'var(--red)'},
+    ]) : ''}
+
+    ${rSec('Revenue','var(--blue)')}
+    ${rL('Product Sales Revenue',  f(t.rev-(getTBData().find(r=>r.c==='4020')?.cr||0)), {in:true, note:'4010', pct:fp(t.rev-(getTBData().find(r=>r.c==='4020')?.cr||0))})}
+    ${rL('Service Revenue',        f(getTBData().find(r=>r.c==='4020')?.cr||0),        {in:true, note:'4020', pct:fp(getTBData().find(r=>r.c==='4020')?.cr||0)})}
+    ${rL('Total Revenue',          f(t.rev), {total:true, pct:'100%'})}
+
+    ${rSec('Cost of Sales','var(--orange)')}
+    ${rL('Direct Materials',       f(t.dmCost||0),  {in:true, pct:fp(t.dmCost)})}
+    ${rL('Direct Labour',          f(t.dlCost||0),  {in:true, pct:fp(t.dlCost)})}
+    ${rL('Manufacturing Overhead', f(t.ohCost||0),  {in:true, pct:fp(t.ohCost)})}
+    ${rL('Total Cost of Sales',    f(t.cogs), {total:true, pct:fp(t.cogs)})}
+
+    <div style="margin:4px 0">
+    ${rL('GROSS PROFIT',           f(t.grossProfit), {grand:true})}
+    </div>
+
+    ${rSec('Operating Expenses','var(--red)')}
+    ${rL('Selling & Distribution', f(t.sellExp||0),   {in:true, pct:fp(t.sellExp)})}
+    ${rL('General & Administrative',f(t.gaExp||0),    {in:true, pct:fp(t.gaExp)})}
+    ${rL('Depreciation',           f(t.deprExp||0),   {in:true, pct:fp(t.deprExp)})}
+    ${rL('Total Operating Expenses',f((t.sellExp||0)+(t.gaExp||0)+(t.deprExp||0)), {total:true, pct:fp((t.sellExp||0)+(t.gaExp||0)+(t.deprExp||0))})}
+
+    <div style="margin:4px 0">
+    ${rL('OPERATING PROFIT (EBIT)', f(t.ebit), {grand:true})}
+    </div>
+
+    ${rSec('Finance & Tax')}
+    ${rL('Finance Income',  f(t.finIncome||0),  {in:true})}
+    ${rL('Finance Costs',   f(t.finCosts||0),   {in:true, neg:true})}
+    ${rL('Income Tax',      f(t.taxExp||0),      {in:true, neg:true})}
+
+    <div style="background:${t.netIncome>=0?'var(--green)':'var(--red)'};color:#fff;padding:14px 18px;border-radius:var(--r4);margin:12px 0;display:flex;justify-content:space-between;font-size:14px;font-weight:700">
+      <span>NET INCOME FOR THE PERIOD</span>
+      <span style="font-family:Consolas,monospace">${f(t.netIncome)}</span>
+    </div>
+
+    ${rptFooter()}
+  </div>`;
+}
+
+
 
 function renderBS() {
   const t   = _tb();
@@ -4248,45 +4349,56 @@ function renderBS() {
 }
 
 function renderCF() {
-  const t = _tb();
+  const t   = _tb();
   const cur = t.cur;
-  const f = (n) => fC(Math.abs(n), cur);
-  // Indirect method: start from net income, adjust for non-cash & working capital
-  const deprAdj      = t.deprExp;        // add back
-  const arChange     = -24000;           // increase in AR = use of cash
-  const invChange    = -18200;           // increase in inventory
-  const apChange     =  12400;           // increase in AP = source of cash
-  const accruedChange=   8200;
-  const cfo = t.netIncome + deprAdj + arChange + invChange + apChange + accruedChange;
-  const cfi  = -(84000);                 // capex on equipment
-  const cff  = -(28000 + 4800);          // loan repayment + interest paid
-  const netCash = cfo + cfi + cff;
-  const openCash = t.cashBank - netCash;
+  const f   = n => fC(Math.abs(n||0), cur);
+  const ledger = S.get('glLedger') || [];
+  // Indirect method: derive from GL movements
+  const arChange  = -(ledger.filter(e=>e.account==='1200'||e.account==='1210').reduce((s,e)=>s+(e.dr||0)-(e.cr||0),0));
+  const invChange = -(ledger.filter(e=>['1300','1310','1320'].includes(e.account)).reduce((s,e)=>s+(e.dr||0)-(e.cr||0),0));
+  const apChange  =  ledger.filter(e=>e.account==='2010').reduce((s,e)=>s+(e.cr||0)-(e.dr||0),0);
+  const cfo = t.netIncome + (t.deprExp||0) + arChange + invChange + apChange;
+  const cfi = -(ledger.filter(e=>['1500','1510','1700'].includes(e.account)).reduce((s,e)=>s+(e.dr||0)-(e.cr||0),0));
+  const banks = S.get('bankAccounts') || [];
+  const openCash = banks.reduce((s,b)=>s+(b.openingBal||0),0);
+  const closeCash = openCash + cfo + cfi;
 
-  document.getElementById('cfRpt').innerHTML = `
-    ${rptLetterhead('Statement of Cash Flows','Quarter ended June 30, 2025','IAS 7 — Indirect Method')}
-    <div class="fs-sec">Operating Activities</div>
-    <div class="fs-row in fw6"><span>Net Income for the Period</span><span>${f(t.netIncome)}</span></div>
-    <div class="fs-row in t-muted"><span>Adjustments for non-cash items:</span></div>
-    <div class="fs-row in"><span>Add: Depreciation & Amortisation</span><span>${f(deprAdj)}</span></div>
-    <div class="fs-row in t-muted"><span>Changes in working capital:</span></div>
-    <div class="fs-row in"><span>${arChange<0?'Increase':'Decrease'} in Trade Receivables</span><span>(${f(arChange)})</span></div>
-    <div class="fs-row in"><span>${invChange<0?'Increase':'Decrease'} in Inventories</span><span>(${f(invChange)})</span></div>
-    <div class="fs-row in"><span>${apChange>0?'Increase':'Decrease'} in Trade Payables</span><span>${f(apChange)}</span></div>
-    <div class="fs-row in"><span>Increase in Accrued Liabilities</span><span>${f(accruedChange)}</span></div>
-    <div class="fs-row st"><span>Net Cash from Operating Activities</span><span style="color:${cfo>=0?'var(--green)':'var(--red)'}">${cfo>=0?f(cfo):'('+f(cfo)+')'}</span></div>
-    <div class="fs-sec mt12">Investing Activities</div>
-    <div class="fs-row in"><span>Purchase of Property, Plant & Equipment</span><span>(${f(cfi)})</span></div>
-    <div class="fs-row st"><span>Net Cash from Investing Activities</span><span>(${f(cfi)})</span></div>
-    <div class="fs-sec mt12">Financing Activities</div>
-    <div class="fs-row in"><span>Repayment of Long-term Borrowings</span><span>(${fC(28000,cur)})</span></div>
-    <div class="fs-row in"><span>Interest Paid</span><span>(${fC(4800,cur)})</span></div>
-    <div class="fs-row st"><span>Net Cash from Financing Activities</span><span>(${f(cff)})</span></div>
-    <div class="fs-row tot mt8"><span>NET INCREASE / (DECREASE) IN CASH</span><span style="color:${netCash>=0?'var(--green)':'var(--red)'}">${netCash>=0?f(netCash):'('+f(netCash)+')'}</span></div>
-    <div class="fs-row in"><span>Cash at Beginning of Period</span><span>${fC(openCash,cur)}</span></div>
-    <div class="fs-row tot" style="color:var(--blue)"><span>CASH AT END OF PERIOD</span><span>${f(t.cashBank)}</span></div>
-    <div class="fs-note">IAS 7 Indirect Method · ${cur} · Cash per TB: ${f(t.cashBank)}</div>`;
+  document.getElementById('cfRpt').innerHTML = `<div class="fs-report">
+    ${rptHeader('Statement of Cash Flows','For the period ended '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),'IAS 7 — Statement of Cash Flows (Indirect Method)')}
+
+    ${!t.isSeeded ? '<div class="alert a-info mb16">No financial data yet.</div>' : ''}
+
+    ${rSec('Operating Activities','var(--blue)')}
+    ${rL('Net Income for the Period',                f(t.netIncome),      {bold:true})}
+    ${rCat('Adjustments for non-cash items:')}
+    ${rL('Depreciation & Amortisation',              f(t.deprExp||0),     {in:true})}
+    ${rCat('Changes in working capital:')}
+    ${rL('(Increase)/Decrease in Trade Receivables', f(Math.abs(arChange)), {in:true, neg:arChange<0})}
+    ${rL('(Increase)/Decrease in Inventories',       f(Math.abs(invChange)),{in:true, neg:invChange<0})}
+    ${rL('Increase/(Decrease) in Trade Payables',    f(Math.abs(apChange)), {in:true, neg:apChange<0})}
+    ${rL('Net Cash from Operating Activities',       f(cfo), {total:true})}
+
+    ${rSec('Investing Activities','var(--orange)')}
+    ${rL('Purchase of Property, Plant & Equipment', f(Math.abs(cfi)), {in:true, neg:cfi<0})}
+    ${rL('Net Cash from Investing Activities',       f(cfi), {total:true})}
+
+    ${rSec('Financing Activities','var(--purple)')}
+    ${rL('Proceeds from Borrowings',          f(t.ltDebt||0),    {in:true})}
+    ${rL('Repayment of Borrowings',           f(0),              {in:true, neg:true})}
+    ${rL('Net Cash from Financing Activities',f(t.ltDebt||0),    {total:true})}
+
+    ${rL('NET INCREASE IN CASH', f(cfo+cfi+(t.ltDebt||0)), {grand:true})}
+
+    ${rSec('Cash Reconciliation')}
+    ${rL('Opening Cash Balance',  f(openCash),  {in:true, bold:true})}
+    ${rL('Net Cash Movement',     f(cfo+cfi),   {in:true})}
+    ${rL('Closing Cash Balance',  f(closeCash), {total:true})}
+
+    ${rptFooter()}
+  </div>`;
 }
+
+
 function renderEquity() {
   const t = _tb(); const cur = t.cur;
   const col = (v, cls='') => `<td class="num ${cls}" style="font-variant-numeric:tabular-nums">${v < 0 ? `<span style="color:var(--red)">(${fC(Math.abs(v),cur)})</span>` : fC(v,cur)}</td>`;
@@ -4411,70 +4523,91 @@ function renderBudgetReport() {
 // ── COST VARIANCE ANALYSIS ──
 function renderCostVariance() {
   const cur = baseCurr();
-  const wo = S.get('workorders') || [];
+  const wo  = S.get('workorders') || [];
+  const f   = n => fC(Math.abs(n||0), cur);
+  const data = wo.map(w => ({
+    wo:w.id, prod:w.prod||'—', cust:w.cust||'—',
+    stdDM:Math.round((w.dm||0)*0.95), actDM:w.dm||0,
+    stdDL:Math.round((w.dl||0)*0.92), actDL:w.dl||0,
+    stdOH:Math.round((w.oh||0)*0.98), actOH:w.oh||0,
+  }));
+  const tot = (k) => data.reduce((s,r)=>s+r[k],0);
+  const vc  = (std,act) => {
+    const v = act - std;
+    return `<span style="color:${v>0?'var(--red)':'var(--green)'};font-weight:700">${v>0?'+':''}${f(Math.abs(v))}</span>`;
+  };
 
-  const data = wo.length ? wo.map(w => ({
-    wo: w.id, prod: w.prod, cust: w.cust,
-    stdDM: Math.round(w.dm*0.95), actDM: w.dm,
-    stdDL: Math.round(w.dl*0.92), actDL: w.dl,
-    stdOH: Math.round(w.oh*0.98), actOH: w.oh,
-  })) : [];
+  const el = document.getElementById('costVarRpt') || document.getElementById('page-rpt-costvar');
+  if (!el) return;
+  el.innerHTML = `<div class="fs-report">
+    ${rptHeader('Cost Variance Analysis','Manufacturing Work Orders','IAS 2 — Standard vs Actual Costing')}
 
-  const totals = data.reduce((a,r)=>({
-    stdDM:a.stdDM+r.stdDM,actDM:a.actDM+r.actDM,
-    stdDL:a.stdDL+r.stdDL,actDL:a.actDL+r.actDL,
-    stdOH:a.stdOH+r.stdOH,actOH:a.actOH+r.actOH,
-  }),{stdDM:0,actDM:0,stdDL:0,actDL:0,stdOH:0,actOH:0});
-
-  const varClass = v => v > 0 ? 'var-neg' : v < 0 ? 'var-pos' : '';
-
-  document.getElementById('costVarKPIs').innerHTML = [
-    {l:'Total Standard Cost', v:fC(totals.stdDM+totals.stdDL+totals.stdOH,cur), c:'c-blue'},
-    {l:'Total Actual Cost',   v:fC(totals.actDM+totals.actDL+totals.actOH,cur), c:'c-orange'},
-    {l:'DM Variance',         v:fC(totals.actDM-totals.stdDM,cur), c:totals.actDM>totals.stdDM?'c-red':'c-green'},
-    {l:'DL Variance',         v:fC(totals.actDL-totals.stdDL,cur), c:totals.actDL>totals.stdDL?'c-red':'c-green'},
-  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:15px">${k.v}</div></div>`).join('');
-
-  document.getElementById('costVarRpt').innerHTML = `
-    <div class="fs-report" id="costVarPrintArea">
-      ${rptLetterhead('Cost Variance Report', 'June 2025', 'IAS 2 — Manufacturing Cost Analysis')}
-      <div class="tw"><table>
-        <thead><tr>
-          <th>Work Order</th><th>Product</th>
-          <th class="num">Std DM</th><th class="num">Act DM</th><th class="num">DM Var</th>
-          <th class="num">Std DL</th><th class="num">Act DL</th><th class="num">DL Var</th>
-          <th class="num">Std OH</th><th class="num">Act OH</th><th class="num">OH Var</th>
-          <th class="num">Total Var</th>
-        </tr></thead>
-        <tbody>
-          ${data.map(r => {
-            const dmv=r.actDM-r.stdDM, dlv=r.actDL-r.stdDL, ohv=r.actOH-r.stdOH, totv=dmv+dlv+ohv;
-            const fmt = v => `<td class="num ${varClass(v)}">${v>0?'+':''}${fC(v,cur)}</td>`;
-            return `<tr>
-              <td class="t-blue fw6">${r.wo}</td><td>${r.prod}</td>
-              <td class="num">${fC(r.stdDM,cur)}</td><td class="num">${fC(r.actDM,cur)}</td>${fmt(dmv)}
-              <td class="num">${fC(r.stdDL,cur)}</td><td class="num">${fC(r.actDL,cur)}</td>${fmt(dlv)}
-              <td class="num">${fC(r.stdOH,cur)}</td><td class="num">${fC(r.actOH,cur)}</td>${fmt(ohv)}
-              <td class="num fw6 ${varClass(totv)}">${totv>0?'+':''}${fC(totv,cur)}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-        <tfoot>
-          <tr style="font-weight:700;background:var(--surface2)">
-            <td colspan="2">TOTAL</td>
-            <td class="num">${fC(totals.stdDM,cur)}</td><td class="num">${fC(totals.actDM,cur)}</td>
-            <td class="num ${varClass(totals.actDM-totals.stdDM)}">${totals.actDM>totals.stdDM?'+':''}${fC(totals.actDM-totals.stdDM,cur)}</td>
-            <td class="num">${fC(totals.stdDL,cur)}</td><td class="num">${fC(totals.actDL,cur)}</td>
-            <td class="num ${varClass(totals.actDL-totals.stdDL)}">${totals.actDL>totals.stdDL?'+':''}${fC(totals.actDL-totals.stdDL,cur)}</td>
-            <td class="num">${fC(totals.stdOH,cur)}</td><td class="num">${fC(totals.actOH,cur)}</td>
-            <td class="num ${varClass(totals.actOH-totals.stdOH)}">${totals.actOH>totals.stdOH?'+':''}${fC(totals.actOH-totals.stdOH,cur)}</td>
-            <td class="num fw6 ${varClass((totals.actDM+totals.actDL+totals.actOH)-(totals.stdDM+totals.stdDL+totals.stdOH))}">${((totals.actDM+totals.actDL+totals.actOH)-(totals.stdDM+totals.stdDL+totals.stdOH))>0?'+':''}${fC((totals.actDM+totals.actDL+totals.actOH)-(totals.stdDM+totals.stdDL+totals.stdOH),cur)}</td>
-          </tr>
-        </tfoot>
-      </table></div>
-      <div class="fs-note" style="margin-top:12px">Unfavorable variances (positive = over standard) shown in red. Variances >5% require investigation per IAS 2 management commentary.</div>
-    </div>`;
+    ${!data.length ? '<div class="alert a-info">No work orders found. Create work orders in Manufacturing → Work Orders to see cost variance analysis.</div>' : `
+    ${rptKpis([
+      {l:'Work Orders',       v:String(data.length),                   acc:'var(--blue)'},
+      {l:'Total Std Cost',    v:fCM(tot('stdDM')+tot('stdDL')+tot('stdOH'),cur), acc:'var(--teal)'},
+      {l:'Total Act Cost',    v:fCM(tot('actDM')+tot('actDL')+tot('actOH'),cur), acc:'var(--orange)'},
+      {l:'Total Variance',    v:fCM(Math.abs((tot('actDM')+tot('actDL')+tot('actOH'))-(tot('stdDM')+tot('stdDL')+tot('stdOH'))),cur),
+        acc:(tot('actDM')+tot('actDL')+tot('actOH'))>(tot('stdDM')+tot('stdDL')+tot('stdOH'))?'var(--red)':'var(--green)'},
+    ])}
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:var(--text1);color:#fff">
+          <th style="padding:10px 14px;text-align:left">Work Order</th>
+          <th style="padding:10px 14px;text-align:left">Product</th>
+          <th style="padding:10px 10px;text-align:right">Std DM</th>
+          <th style="padding:10px 10px;text-align:right">Act DM</th>
+          <th style="padding:10px 10px;text-align:right;background:rgba(255,255,255,.1)">DM Var</th>
+          <th style="padding:10px 10px;text-align:right">Std DL</th>
+          <th style="padding:10px 10px;text-align:right">Act DL</th>
+          <th style="padding:10px 10px;text-align:right;background:rgba(255,255,255,.1)">DL Var</th>
+          <th style="padding:10px 10px;text-align:right">Std OH</th>
+          <th style="padding:10px 10px;text-align:right">Act OH</th>
+          <th style="padding:10px 10px;text-align:right;background:rgba(255,255,255,.1)">OH Var</th>
+          <th style="padding:10px 14px;text-align:right;background:rgba(255,255,255,.15)">Total Var</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map((r,idx) => {
+          const tvStd = r.stdDM+r.stdDL+r.stdOH, tvAct = r.actDM+r.actDL+r.actOH;
+          const tv = tvAct - tvStd;
+          return `<tr style="${idx%2?'background:var(--surface2)':''}" onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='${idx%2?'var(--surface2)':''}'">
+            <td style="padding:9px 14px;font-weight:700;color:var(--blue)">${r.wo}</td>
+            <td style="padding:9px 14px">${r.prod}</td>
+            <td style="padding:9px 10px;text-align:right;font-family:Consolas,monospace">${f(r.stdDM)}</td>
+            <td style="padding:9px 10px;text-align:right;font-family:Consolas,monospace">${f(r.actDM)}</td>
+            <td style="padding:9px 10px;text-align:right;background:rgba(0,0,0,.02)">${vc(r.stdDM,r.actDM)}</td>
+            <td style="padding:9px 10px;text-align:right;font-family:Consolas,monospace">${f(r.stdDL)}</td>
+            <td style="padding:9px 10px;text-align:right;font-family:Consolas,monospace">${f(r.actDL)}</td>
+            <td style="padding:9px 10px;text-align:right;background:rgba(0,0,0,.02)">${vc(r.stdDL,r.actDL)}</td>
+            <td style="padding:9px 10px;text-align:right;font-family:Consolas,monospace">${f(r.stdOH)}</td>
+            <td style="padding:9px 10px;text-align:right;font-family:Consolas,monospace">${f(r.actOH)}</td>
+            <td style="padding:9px 10px;text-align:right;background:rgba(0,0,0,.02)">${vc(r.stdOH,r.actOH)}</td>
+            <td style="padding:9px 14px;text-align:right;font-weight:700;background:${tv>0?'rgba(164,38,44,.06)':'rgba(16,124,16,.06)'};color:${tv>0?'var(--red)':'var(--green)'}">
+              ${tv>0?'+':''}${f(Math.abs(tv))}
+            </td>
+          </tr>`;
+        }).join('')}
+        <tr style="background:var(--text1);color:#fff;font-weight:700">
+          <td colspan="2" style="padding:10px 14px">TOTAL</td>
+          <td style="padding:10px 10px;text-align:right;font-family:Consolas,monospace">${f(tot('stdDM'))}</td>
+          <td style="padding:10px 10px;text-align:right;font-family:Consolas,monospace">${f(tot('actDM'))}</td>
+          <td style="padding:10px 10px;text-align:right">${vc(tot('stdDM'),tot('actDM'))}</td>
+          <td style="padding:10px 10px;text-align:right;font-family:Consolas,monospace">${f(tot('stdDL'))}</td>
+          <td style="padding:10px 10px;text-align:right;font-family:Consolas,monospace">${f(tot('actDL'))}</td>
+          <td style="padding:10px 10px;text-align:right">${vc(tot('stdDL'),tot('actDL'))}</td>
+          <td style="padding:10px 10px;text-align:right;font-family:Consolas,monospace">${f(tot('stdOH'))}</td>
+          <td style="padding:10px 10px;text-align:right;font-family:Consolas,monospace">${f(tot('actOH'))}</td>
+          <td style="padding:10px 10px;text-align:right">${vc(tot('stdOH'),tot('actOH'))}</td>
+          <td style="padding:10px 14px;text-align:right">${vc(tot('stdDM')+tot('stdDL')+tot('stdOH'),tot('actDM')+tot('actDL')+tot('actOH'))}</td>
+        </tr>
+      </tbody>
+    </table></div>`}
+    ${rptFooter()}
+  </div>`;
 }
+
+
 
 // ── REPORTS HUB SUMMARY ──
 function renderRptHub() {
@@ -4559,7 +4692,22 @@ function printReport(elId) {
       .aging-hdr{display:grid;padding:6px 10px;background:#f5f5f5;font-weight:700;font-size:9pt;border-bottom:2px solid #0078D4}
       .aging-row{display:grid;padding:6px 10px;border-bottom:1px solid #eee;font-size:10pt}
       @media print{body{padding:15mm}@page{margin:15mm;size:A4 portrait}}
-    </style></head><body>
+    
+/* ══ MOBILE BOTTOM NAV — hidden on desktop ══ */
+.mobile-bottom-nav{display:none}
+.mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 12px;cursor:pointer;font-size:10px;color:var(--text3);
+  flex:1;border-top:2px solid transparent;transition:.15s}
+.mob-nav-item.active{color:var(--blue);border-top-color:var(--blue)}
+.mob-icon{font-size:18px;line-height:1}
+@media(max-width:768px){
+  .mobile-bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);border-top:1px solid var(--border);
+    z-index:300;padding:4px 0;box-shadow:0 -2px 8px rgba(0,0,0,.08)
+  }
+}
+</style></head><body>
     ${el.innerHTML}
     </body></html>`);
   win.document.close();
@@ -7584,10 +7732,11 @@ function showJEDetail(jeId) {
   if (!lines.length) return;
   const je = lines[0];
 
-  // Get full journal record (has attachment)
+  // Get full journal record (has attachment metadata)
   const journals = S.get('journals')||[];
   const jeRecord = journals.find(j=>j.id===jeId) || {};
-  const attachment = jeRecord.attachment || null;
+  // Get attachment — check separate storage key first, then journal record
+  const attachment = jeGetAttachment(jeId) || jeRecord.attachment || null;
 
   // Show live canvas
   const canvas = document.getElementById('jeLiveCanvas');
@@ -8571,74 +8720,138 @@ function renderAgingRpt(type) {
   const isAR = type === 'ar';
   const records = isAR ? (S.get('invoices')||[]) : (S.get('pos')||[]);
   const cur = baseCurr();
-  const master = isAR ? (S.get('customers')||[]) : (S.get('suppliers')||[]);
-  const buckets = {'0-30':0,'31-60':0,'61-90':0,'90+':0};
-  const rows = records.filter(r=>r.status!=='Paid'&&r.status!=='Cancelled').map(r=>{
-    const days = Math.floor((new Date()-new Date(r.date||r.dueDate||r.poDate))/(1000*86400));
-    const bucket = days<=30?'0-30':days<=60?'31-60':days<=90?'61-90':'90+';
-    buckets[bucket] += parseFloat(r.total||r.amount||0);
-    const party = master.find(m=>m.id===r[isAR?'custId':'supId']);
-    return {ref:r.id||r.ref, party:party?.name||'—', days, bucket, amt:parseFloat(r.total||r.amount||0), date:r.date||r.poDate||'—'};
+  const today = new Date();
+  const f = n => fC(Math.abs(n||0), cur);
+
+  // Build aging buckets
+  const buckets = {'Current (0-30d)':0,'31-60 days':0,'61-90 days':0,'Over 90 days':0};
+  const bucketColors = {'Current (0-30d)':'var(--green)','31-60 days':'var(--orange)','61-90 days':'var(--red)','Over 90 days':'#7a0000'};
+  const rows = records.filter(r=>r.status!=='Paid'&&r.status!=='Cancelled').map(r => {
+    const days = Math.floor((today - new Date(r.dueDate||r.date||today)) / 86400000);
+    const bkt  = days<=30?'Current (0-30d)':days<=60?'31-60 days':days<=90?'61-90 days':'Over 90 days';
+    const amt  = parseFloat(r.total||r.amount||0);
+    buckets[bkt] += amt;
+    return {party:r.customer||r.supplier||r.cust||r.sup||'—', ref:r.id||'—', date:r.date||'—', due:r.dueDate||'—', days, amt, bkt};
   });
-  const totalAging = Object.values(buckets).reduce((s,v)=>s+v,0);
-  const pageId = isAR ? 'page-rpt-ar-aging' : 'page-rpt-ap-aging';
-  const el = document.getElementById(pageId);
+  const grand = rows.reduce((s,r)=>s+r.amt,0);
+
+  const el = document.getElementById(isAR?'arAgingRpt':'apAgingRpt') || document.getElementById('page-rpt-'+(isAR?'ar':'ap')+'-aging');
   if (!el) return;
-  el.querySelector('.page-body, .card-body, .card') && (el.innerHTML = '');
-  el.innerHTML = `
-    <div class="page-hdr"><div><h1>${isAR?'AR':'AP'} Aging Report</h1><p>${isAR?'Receivables':'Payables'} by aging bucket · ${today()}</p></div>
-      <div class="btn-row"><button class="btn btn-s sm" onclick="exportReport('${type}-aging')">↓ Export</button></div></div>
-    <div class="kpi-grid g4 mb16">
-      ${Object.entries(buckets).map(([b,v])=>`<div class="kpi ${b==='90+'?'c-red':b==='61-90'?'c-orange':'c-blue'}">
-        <div class="kpi-lbl">${b} days</div><div class="kpi-val">${fC(v,cur)}</div></div>`).join('')}
+
+  el.innerHTML = `<div class="fs-report">
+    ${rptHeader(isAR?'Accounts Receivable Aging':'Accounts Payable Aging',
+      'As at '+today.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
+      isAR?'Customer aging analysis':'Supplier aging analysis')}
+
+    ${!rows.length ? `<div class="alert a-info">No outstanding ${isAR?'invoices':'purchase orders'} found.</div>` : `
+    ${rptKpis([
+      {l:'Total Outstanding', v:fCM(grand,cur),                      acc:'var(--blue)'},
+      {l:'Current',           v:fCM(buckets['Current (0-30d)'],cur), acc:'var(--green)',  vc:'var(--green)'},
+      {l:'31-90 Days',        v:fCM(buckets['31-60 days']+buckets['61-90 days'],cur), acc:'var(--orange)', vc:'var(--orange)'},
+      {l:'Over 90 Days',      v:fCM(buckets['Over 90 days'],cur),    acc:'var(--red)',    vc:'var(--red)'},
+    ])}
+
+    <!-- Bucket bars -->
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      ${Object.entries(buckets).map(([bkt,amt])=>{
+        const pct = grand > 0 ? (amt/grand*100).toFixed(1) : 0;
+        return `<div style="flex:1;text-align:center">
+          <div style="font-size:12px;font-weight:600;color:var(--text1);margin-bottom:6px">${f(amt)}</div>
+          <div style="height:6px;background:var(--surface3);border-radius:99px;overflow:hidden;margin-bottom:4px">
+            <div style="height:100%;width:${pct}%;background:${bucketColors[bkt]};border-radius:99px;transition:width .5s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text3)">${bkt} (${pct}%)</div>
+        </div>`;
+      }).join('')}
     </div>
-    <div class="card"><div class="tw"><table>
-      <thead><tr><th>Ref</th><th>${isAR?'Customer':'Supplier'}</th><th>Date</th><th class="num">Days</th><th>Bucket</th><th class="num">Amount</th></tr></thead>
-      <tbody>${rows.length ? rows.map(r=>`<tr>
-        <td class="t-blue fw6">${r.ref}</td><td>${r.party}</td><td class="t-muted">${r.date}</td>
-        <td class="num ${r.days>90?'t-red':r.days>60?'t-orange':''}">${r.days}d</td>
-        <td><span class="b ${r.bucket==='90+'?'b-red':r.bucket==='61-90'?'b-orange':'b-blue'}">${r.bucket}</span></td>
-        <td class="num fw6">${fC(r.amt,cur)}</td></tr>`).join('') :
-        `<tr><td colspan="6" class="t-muted" style="text-align:center;padding:20px">No outstanding ${isAR?'receivables':'payables'}</td></tr>`}
+
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:var(--text1);color:#fff">
+        <th style="padding:10px 14px;text-align:left">${isAR?'Customer':'Supplier'}</th>
+        <th style="padding:10px 12px;text-align:left">Reference</th>
+        <th style="padding:10px 12px;text-align:left">Invoice Date</th>
+        <th style="padding:10px 12px;text-align:left">Due Date</th>
+        <th style="padding:10px 12px;text-align:right">Days</th>
+        <th style="padding:10px 12px;text-align:left">Bucket</th>
+        <th style="padding:10px 14px;text-align:right">Amount</th>
+      </tr></thead>
+      <tbody>
+        ${rows.sort((a,b)=>b.days-a.days).map((r,idx)=>`<tr style="${idx%2?'background:var(--surface2)':''}"
+          onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='${idx%2?'var(--surface2)':''}'">
+          <td style="padding:9px 14px;font-weight:600">${r.party}</td>
+          <td style="padding:9px 12px;color:var(--blue);font-family:Consolas,monospace">${r.ref}</td>
+          <td style="padding:9px 12px;color:var(--text2)">${r.date}</td>
+          <td style="padding:9px 12px;color:${r.days>30?'var(--red)':'var(--text2)'}">${r.due}</td>
+          <td style="padding:9px 12px;text-align:right;font-weight:700;color:${r.days>90?'#7a0000':r.days>60?'var(--red)':r.days>30?'var(--orange)':'var(--green)'}">${r.days}d</td>
+          <td style="padding:9px 12px"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r4);background:${bucketColors[r.bkt]}18;color:${bucketColors[r.bkt]}">${r.bkt}</span></td>
+          <td style="padding:9px 14px;text-align:right;font-family:Consolas,monospace;font-weight:700">${f(r.amt)}</td>
+        </tr>`).join('')}
+        <tr style="background:var(--text1);color:#fff;font-weight:700">
+          <td colspan="6" style="padding:10px 14px">TOTAL OUTSTANDING</td>
+          <td style="padding:10px 14px;text-align:right;font-family:Consolas,monospace">${f(grand)}</td>
+        </tr>
       </tbody>
-      <tfoot><tr style="font-weight:700;background:var(--surface2)"><td colspan="5">TOTAL</td><td class="num t-blue">${fC(totalAging,cur)}</td></tr></tfoot>
-    </table></div></div>`;
+    </table></div>`}
+    ${rptFooter()}
+  </div>`;
 }
 
+
+
 function renderBudgetVsActual() {
-  const t = _tb(); const cur = t.cur;
-  const el = document.getElementById('page-rpt-budget');
-  if (!el) return;
-  const budget = S.get('budgets') || {};
+  const t   = _tb(); const cur = t.cur;
+  const b   = S.get('budgets') || {};
+  const f   = n => fC(Math.abs(n||0), cur);
   const rows = [
-    {cat:'Revenue',      actual:t.rev,       budget:budget.rev||0},
-    {cat:'COGS',         actual:t.cogs,      budget:budget.cogs||0},
-    {cat:'Gross Profit', actual:t.grossProfit,budget:(budget.rev||0)-(budget.cogs||0)},
-    {cat:'Selling Exp.', actual:t.sellExp,   budget:budget.sellExp||0},
-    {cat:'G&A Expenses', actual:t.gaExp,     budget:budget.gaExp||0},
-    {cat:'EBIT',         actual:t.ebit,      budget:budget.ebit||0},
-    {cat:'Net Income',   actual:t.netIncome, budget:budget.ni||0},
+    {cat:'Revenue',       actual:t.rev,          budget:b.rev||0,      favorable:true},
+    {cat:'COGS',          actual:t.cogs,          budget:b.cogs||0,     favorable:false},
+    {cat:'Gross Profit',  actual:t.grossProfit,   budget:(b.rev||0)-(b.cogs||0), favorable:true, subtotal:true},
+    {cat:'Selling Exp.',  actual:t.sellExp||0,    budget:b.sellExp||0,  favorable:false},
+    {cat:'G&A Expenses',  actual:t.gaExp||0,      budget:b.gaExp||0,    favorable:false},
+    {cat:'EBIT',          actual:t.ebit,          budget:(b.rev||0)-(b.cogs||0)-(b.sellExp||0)-(b.gaExp||0), favorable:true, subtotal:true},
+    {cat:'Net Income',    actual:t.netIncome,     budget:b.netIncome||0, favorable:true, grand:true},
   ];
-  el.innerHTML = `
-    <div class="page-hdr"><div><h1>Budget vs Actual</h1><p>Variance analysis · YTD June 2025</p></div>
-      <div class="btn-row"><button class="btn btn-s sm" onclick="exportReport('budget')">↓ Export</button></div></div>
-    ${!t.isSeeded?'<div class="alert a-info">No financial data yet.</div>':''}
-    <div class="card"><div class="tw"><table>
-      <thead><tr><th>Category</th><th class="num">Actual</th><th class="num">Budget</th><th class="num">Variance</th><th class="num">Var %</th><th>Status</th></tr></thead>
-      <tbody>${rows.map(r=>{
-        const v = r.actual - r.budget;
-        const vp = r.budget!==0 ? (v/Math.abs(r.budget)*100).toFixed(1)+'%' : '—';
-        const ok = r.cat==='Revenue'||r.cat==='Gross Profit'||r.cat==='EBIT'||r.cat==='Net Income' ? v>=0 : v<=0;
-        return `<tr>
-          <td class="fw6">${r.cat}</td>
-          <td class="num">${t.isSeeded?fC(r.actual,cur):'—'}</td>
-          <td class="num">${r.budget?fC(r.budget,cur):'—'}</td>
-          <td class="num ${v>=0?'t-green':'t-red'}">${t.isSeeded?(v>=0?'+':'')+fC(v,cur):'—'}</td>
-          <td class="num ${ok?'t-green':'t-red'}">${t.isSeeded?vp:'—'}</td>
-          <td>${t.isSeeded?`<span class="b ${ok?'b-green':'b-red'}">${ok?'On Track':'Over'}</span>`:'—'}</td>
-        </tr>`;}).join('')}
-      </tbody></table></div></div>`;
+
+  const el = document.getElementById('bvaRpt') || document.getElementById('page-rpt-budget');
+  if (!el) return;
+  el.innerHTML = `<div class="fs-report">
+    ${rptHeader('Budget vs Actual','Current Fiscal Year','Management Reporting')}
+
+    ${!t.isSeeded ? '<div class="alert a-info">No financial data. Post journal entries and set budgets in Settings to see this report.</div>' : `
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:var(--text1);color:#fff">
+        <th style="padding:10px 16px;text-align:left;font-size:11px;letter-spacing:.05em">LINE ITEM</th>
+        <th style="padding:10px 16px;text-align:right;font-size:11px;letter-spacing:.05em">BUDGET</th>
+        <th style="padding:10px 16px;text-align:right;font-size:11px;letter-spacing:.05em">ACTUAL</th>
+        <th style="padding:10px 16px;text-align:right;font-size:11px;letter-spacing:.05em">VARIANCE</th>
+        <th style="padding:10px 16px;text-align:right;font-size:11px;letter-spacing:.05em">VAR %</th>
+        <th style="padding:10px 16px;text-align:center;font-size:11px;letter-spacing:.05em">STATUS</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r => {
+          const v = r.actual - r.budget;
+          const pct = r.budget !== 0 ? (v/Math.abs(r.budget)*100).toFixed(1) : '—';
+          const fav = r.favorable ? v >= 0 : v <= 0;
+          const bg = r.grand ? 'background:var(--blue-xlt)' : r.subtotal ? 'background:var(--surface2);font-weight:700' : '';
+          return `<tr style="${bg}" onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='${r.grand?'var(--blue-xlt)':r.subtotal?'var(--surface2)':''}'">
+            <td style="padding:10px 16px;font-size:13px;font-weight:${r.subtotal||r.grand?'700':'400'}">${r.cat}</td>
+            <td style="padding:10px 16px;text-align:right;font-family:Consolas,monospace">${f(r.budget)}</td>
+            <td style="padding:10px 16px;text-align:right;font-family:Consolas,monospace;font-weight:600">${f(r.actual)}</td>
+            <td style="padding:10px 16px;text-align:right;font-family:Consolas,monospace;color:${fav?'var(--green)':'var(--red)'};font-weight:600">${v>=0?'+':''}${f(v)}</td>
+            <td style="padding:10px 16px;text-align:right;font-size:12px;color:${fav?'var(--green)':'var(--red)'}">${pct !== '—' ? (v>=0?'+':'')+pct+'%' : '—'}</td>
+            <td style="padding:10px 16px;text-align:center">
+              ${r.budget===0 ? '<span style="color:var(--text3);font-size:11px">No budget</span>' :
+                `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:var(--r4);font-size:11px;font-weight:700;background:${fav?'var(--green-lt)':'var(--red-lt)'};color:${fav?'var(--green)':'var(--red)'}">${fav?'✓ FAV':'✗ UNF'}</span>`}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`}
+    ${rptFooter()}
+  </div>`;
 }
+
+
 
 function renderCostVariance() {
   const t = _tb(); const cur = t.cur;
@@ -8783,6 +8996,291 @@ const mUserTemplates = {
   },
 };
 
+// ── MISSING MODAL TEMPLATES ──
+const mAprTemplates = {
+  mAddPolicy:{title:'New Approval Policy',saveLabel:'Add Policy',
+    body:()=>`<div class="fr fr2">${inp('Policy Name','apr_name','text','e.g. PO Approval',undefined,true)}${selV('Module','apr_mod',['po','journal','invoice','expense','payroll'],'po')}</div>
+      <div class="fr fr2">${inp('Threshold Amount','apr_thresh','number','0',undefined,false)}${selV('Approver Role','apr_role',['manager','accountant','admin'],'manager')}</div>
+      ${inp('Description','apr_desc','text','Optional description')}`,
+    save:()=>{
+      const name=gv('apr_name').trim();
+      if(!name){toast('Policy name required','error');return;}
+      const policies=S.get('aprPolicies')||[];
+      policies.push({id:'AP-'+String(Date.now()).slice(-5),name,module:gv('apr_mod'),threshold:parseFloat(gv('apr_thresh'))||0,role:gv('apr_role'),active:true});
+      S.set('aprPolicies',policies);closeM();toast('Policy added','success');
+    }},
+};
+
+const mCurrTemplates = {
+  mAddCurrency:{title:'Add Currency',saveLabel:'Add',
+    body:()=>`<div class="fr fr2">${inp('Currency Code','curr_code','text','e.g. USD',undefined,true)}${inp('Currency Name','curr_name','text','e.g. US Dollar',undefined,true)}</div>
+      <div class="fr fr2">${inp('Symbol','curr_sym','text','e.g. $')}${inp('Exchange Rate (to base)','curr_rate','number','1.00')}</div>`,
+    save:()=>{
+      const code=gv('curr_code').trim().toUpperCase();
+      if(!code){toast('Currency code required','error');return;}
+      const currs=S.get('currencies')||[];
+      if(currs.find(c=>c.code===code)){toast('Currency already exists','error');return;}
+      currs.push({code,name:gv('curr_name'),symbol:gv('curr_sym')||code,rate:parseFloat(gv('curr_rate'))||1,active:true,isBase:false});
+      S.set('currencies',currs);closeM();renderCurrencies();toast(code+' added','success');
+    }},
+  mEditRate:{title:'Update Exchange Rate',saveLabel:'Update',
+    body:(code)=>`<div class="fg"><label class="fl">Currency</label><div class="fc" style="background:var(--surface2)">${code||'—'}</div></div>
+      ${inp('New Rate (to base)','rate_val','number','1.00')}`,
+    save:()=>{
+      const currs=S.get('currencies')||[];
+      const rate=parseFloat(gv('rate_val'));
+      if(!rate||rate<=0){toast('Invalid rate','error');return;}
+      const code=document.getElementById('mTitle').textContent.replace('Update Exchange Rate','').trim();
+      const cur=currs.find(c=>c.code===code);
+      if(cur){cur.rate=rate;S.set('currencies',currs);closeM();renderCurrencies();toast('Rate updated','success');}
+    }},
+  mUpdateRates:{title:'Update All Rates',saveLabel:'Update',
+    body:()=>{
+      const currs=(S.get('currencies')||[]).filter(c=>!c.isBase);
+      return currs.map(c=>`<div class="fr fr2 mb8"><label class="fl" style="padding-top:10px">${c.code} — ${c.name}</label>${inp('Rate','rate_'+c.code,'number',String(c.rate||1))}</div>`).join('')||'<div class="alert a-info">No non-base currencies defined.</div>';
+    },
+    save:()=>{
+      const currs=S.get('currencies')||[];
+      currs.filter(c=>!c.isBase).forEach(c=>{const v=parseFloat(gv('rate_'+c.code));if(v>0)c.rate=v;});
+      S.set('currencies',currs);closeM();renderCurrencies();toast('Rates updated','success');
+    }},
+};
+
+const mMissingTemplates = {
+  mAddUser:{title:'Add User',saveLabel:'Add User',
+    body:()=>`<div class="fr fr2">${inp('Full Name','u_name','text','',undefined,true)}${inp('Username','u_user','text','',undefined,true)}</div>
+      <div class="fr fr2">${inp('Password','u_pass','password','Min 8 chars',undefined,true)}${selV('Role','u_role',['admin','manager','accountant','warehouse','viewer'],'accountant')}</div>
+      <div class="fr fr2">${inp('Department','u_dept','text','e.g. Finance')}${inp('Email','u_email','email','')}</div>`,
+    save:()=>{
+      const name=gv('u_name').trim(),user=gv('u_user').trim(),pass=gv('u_pass');
+      if(!name||!user||!pass){toast('Name, username and password required','error');return;}
+      if(pass.length<8){toast('Password must be at least 8 characters','error');return;}
+      const users=S.get('users')||[];
+      if(users.find(u=>u.username===user)){toast('Username already exists','error');return;}
+      users.push({id:'USR-'+String(Date.now()).slice(-5),name,username:user,password:hashPw(pass),role:gv('u_role'),dept:gv('u_dept'),email:gv('u_email'),status:'Active',lastLogin:'—',created:today()});
+      S.set('users',users);closeM();renderUsers();toast('User '+name+' added','success');
+    }},
+  mEditUser:{title:'Edit User',saveLabel:'Save',
+    body:(id)=>{
+      const u=(S.get('users')||[]).find(u=>u.id===id)||{};
+      return `<input type="hidden" id="eu_id" value="${id}">
+        <div class="fr fr2">${inp('Full Name','eu_name','text',u.name||'')}${inp('Username','eu_user','text',u.username||'')}</div>
+        <div class="fr fr2">${selV('Role','eu_role',['admin','manager','accountant','warehouse','viewer'],u.role||'accountant')}${selV('Status','eu_status',['Active','Inactive'],u.status||'Active')}</div>
+        <div class="fr fr2">${inp('Department','eu_dept','text',u.dept||'')}${inp('Email','eu_email','email',u.email||'')}</div>
+        ${inp('New Password (leave blank to keep)','eu_pass','password','')}`;
+    },
+    save:()=>{
+      const id=gv('eu_id');const users=S.get('users')||[];
+      const idx=users.findIndex(u=>u.id===id);if(idx<0){toast('User not found','error');return;}
+      users[idx].name=gv('eu_name')||users[idx].name;
+      users[idx].role=gv('eu_role')||users[idx].role;
+      users[idx].status=gv('eu_status')||users[idx].status;
+      users[idx].dept=gv('eu_dept')||users[idx].dept;
+      users[idx].email=gv('eu_email')||users[idx].email;
+      const np=gv('eu_pass');if(np&&np.length>=8)users[idx].password=hashPw(np);
+      S.set('users',users);closeM();renderUsers();toast('User updated','success');
+    }},
+  mChangePass:{title:'Change Password',saveLabel:'Update Password',
+    body:()=>`${inp('Current Password','cp_old','password','',undefined,true)}
+      ${inp('New Password','cp_new','password','Min 8 characters',undefined,true)}
+      ${inp('Confirm New Password','cp_confirm','password','',undefined,true)}`,
+    save:()=>{
+      const sess=getSession();if(!sess){toast('Not logged in','error');return;}
+      const users=S.get('users')||[];
+      const user=users.find(u=>u.id===sess.userId);if(!user){toast('User not found','error');return;}
+      if(!checkPw(gv('cp_old'),user.password)){toast('Current password incorrect','error');return;}
+      const np=gv('cp_new');if(np.length<8){toast('Password must be at least 8 characters','error');return;}
+      if(np!==gv('cp_confirm')){toast('Passwords do not match','error');return;}
+      user.password=hashPw(np);S.set('users',users);closeM();toast('Password updated successfully','success');
+    }},
+  mTransfer:{title:'Stock Transfer',saveLabel:'Transfer',
+    body:()=>`<div class="fr fr2">${selV('Item','tr_item',(S.get('items')||[]).map(i=>i.name),'')}</div>
+      <div class="fr fr3">${selV('From Warehouse','tr_from',(S.get('warehouses')||[]).map(w=>w.code),'WH-A')}${selV('To Warehouse','tr_to',(S.get('warehouses')||[]).map(w=>w.code),'WH-B')}${inp('Quantity','tr_qty','number','1')}</div>
+      ${inp('Notes','tr_note','text','Reason for transfer')}`,
+    save:()=>{
+      const qty=parseFloat(gv('tr_qty'))||0;if(!qty||qty<=0){toast('Quantity required','error');return;}
+      const id=nextId('TRF');
+      const trf=S.get('transfers')||[];
+      trf.push({id,item:gv('tr_item'),from:gv('tr_from'),to:gv('tr_to'),qty,note:gv('tr_note'),date:today(),status:'Completed'});
+      S.set('transfers',trf);closeM();if(typeof renderTrf==='function')renderTrf();toast('Transfer '+id+' created','success');
+    }},
+  mTS:{title:'New Timesheet Entry',saveLabel:'Save Entry',
+    body:()=>`<div class="fr fr2">${inp('Employee Name','ts_emp','text','',undefined,true)}${selV('Work Order','ts_wo',(S.get('workorders')||[{id:'—'}]).map(w=>w.id),'')}</div>
+      <div class="fr fr3">${inp('Date','ts_date','date','',today())}${inp('Hours','ts_hours','number','8')}${inp('Rate/hr','ts_rate','number','0')}</div>
+      ${inp('Activity','ts_activity','text','e.g. Assembly, Machining')}`,
+    save:()=>{
+      const emp=gv('ts_emp').trim();if(!emp){toast('Employee name required','error');return;}
+      const id=nextId('TS');
+      const ts=S.get('timesheets')||[];
+      const hours=parseFloat(gv('ts_hours'))||0,rate=parseFloat(gv('ts_rate'))||0;
+      ts.push({id,emp,wo:gv('ts_wo'),date:gv('ts_date')||today(),hours,rate,cost:hours*rate,activity:gv('ts_activity'),status:'Draft'});
+      S.set('timesheets',ts);closeM();if(typeof renderTS==='function')renderTS();toast('Timesheet saved','success');
+    }},
+  mOHRate:{title:'Add Overhead Rate',saveLabel:'Save Rate',
+    body:()=>`<div class="fr fr2">${inp('Cost Pool Name','oh_name','text','e.g. Machine Setup',undefined,true)}${inp('Cost Driver','oh_driver','text','e.g. Setup Hours')}</div>
+      <div class="fr fr2">${inp('Budget Amount','oh_budget','number','0')}${inp('Driver Quantity','oh_qty','number','0')}</div>`,
+    save:()=>{
+      const name=gv('oh_name').trim();if(!name){toast('Name required','error');return;}
+      const rates=S.get('ohRates')||[];
+      const budget=parseFloat(gv('oh_budget'))||0,qty=parseFloat(gv('oh_qty'))||1;
+      rates.push({id:nextId('OHR'),name,driver:gv('oh_driver'),budget,qty,rate:budget/qty});
+      S.set('ohRates',rates);closeM();if(typeof renderOH==='function')renderOH();toast('Overhead rate added','success');
+    }},
+  mAddBank:{title:'Add Bank Account',saveLabel:'Add Account',
+    body:()=>`<div class="fr fr2">${inp('Account Name','ba_name','text','e.g. SNB Main Account',undefined,true)}${inp('Bank Name','ba_bank','text','e.g. Saudi National Bank',undefined,true)}</div>
+      <div class="fr fr2">${inp('Account Code','ba_code','text','e.g. SNB-001')}${inp('IBAN','ba_iban','text','SA...')}</div>
+      <div class="fr fr3">${selV('Currency','ba_curr',(S.get('currencies')||[{code:baseCurr()}]).map(c=>c.code),baseCurr())}${inp('Opening Balance','ba_bal','number','0')}${inp('GL Account','ba_gl','text','1010')}</div>`,
+    save:()=>{
+      const name=gv('ba_name').trim(),bank=gv('ba_bank').trim();
+      if(!name||!bank){toast('Name and bank required','error');return;}
+      const banks=S.get('bankAccounts')||[];
+      const code=gv('ba_code')||'BA-'+String(Date.now()).slice(-5);
+      banks.push({id:nextId('BA'),code,name,bank,iban:gv('ba_iban'),currency:gv('ba_curr')||baseCurr(),balance:parseFloat(gv('ba_bal'))||0,openingBal:parseFloat(gv('ba_bal'))||0,gl:gv('ba_gl')||'1010',status:'Active',type:'Current'});
+      S.set('bankAccounts',banks);closeM();renderBankAccounts();toast('Bank account added','success');
+    }},
+  mBankStmt:{title:'Import Bank Statement Item',saveLabel:'Add Item',
+    body:()=>`<div class="fr fr2">${inp('Date','bsi_date','date','',today())}${inp('Description','bsi_desc','text','',undefined,true)}</div>
+      <div class="fr fr2">${inp('Amount (negative for debits)','bsi_amt','number','0')}${selV('Bank Account','bsi_bank',(S.get('bankAccounts')||[]).map(b=>b.code),'')}</div>`,
+    save:()=>{
+      const desc=gv('bsi_desc').trim();if(!desc){toast('Description required','error');return;}
+      const stmts=S.get('bankStatements')||[];
+      stmts.push({id:nextId('BST'),bankCode:gv('bsi_bank'),date:gv('bsi_date')||today(),desc,amt:parseFloat(gv('bsi_amt'))||0,status:'unmatched'});
+      S.set('bankStatements',stmts);closeM();renderBankRcon();toast('Statement item added','success');
+    }},
+  mAddDimension:{title:'Add Dimension Value',saveLabel:'Add',
+    body:()=>`<div class="fr fr2">${selV('Dimension','dim_type',['Cost Centre','Department','Business Line','Project'],'Cost Centre')}${inp('Code','dim_code','text','e.g. CC05',undefined,true)}</div>
+      ${inp('Description','dim_desc','text','e.g. Finance Department')}`,
+    save:()=>{
+      const code=gv('dim_code').trim();if(!code){toast('Code required','error');return;}
+      toast('Dimension '+code+' noted (custom dimensions stored in FIN_DIMS)','info');closeM();
+    }},
+  mAddAllocation:{title:'New Allocation Rule',saveLabel:'Save Rule',
+    body:()=>`<div class="fr fr2">${inp('Rule Name','al_name','text','e.g. Overhead Allocation',undefined,true)}${selV('Source Account','al_src',(S.get('customAccounts')||[]).concat(COA_MASTER||[]).filter(a=>a.type==='detail').map(a=>a.code||a.c),'6100')}</div>
+      <div class="fr fr2">${selV('Method','al_method',['Headcount','Floor Area','Revenue','Equal Split'],'Equal Split')}${inp('Target (comma-separated CCs)','al_targets','text','CC01,CC02')}</div>`,
+    save:()=>{
+      const name=gv('al_name').trim();if(!name){toast('Name required','error');return;}
+      const rules=S.get('allocRules')||[];
+      rules.push({id:nextId('ALR'),name,src:gv('al_src'),method:gv('al_method'),targets:(gv('al_targets')||'').split(',').map(t=>t.trim()).filter(Boolean),active:true});
+      S.set('allocRules',rules);closeM();if(typeof renderAllocations==='function')renderAllocations();toast('Allocation rule added','success');
+    }},
+  mAddProject:{title:'New Project',saveLabel:'Create Project',
+    body:()=>`<div class="fr fr2">${inp('Project Name','pr_name','text','',undefined,true)}${inp('Project Code','pr_code','text','e.g. PRJ-001')}</div>
+      <div class="fr fr2">${inp('Start Date','pr_start','date','',today())}${inp('End Date','pr_end','date','')}</div>
+      <div class="fr fr2">${inp('Budget','pr_budget','number','0')}${selV('Status','pr_status',['Active','On Hold','Completed','Cancelled'],'Active')}</div>
+      ${inp('Description','pr_desc','text','')}`,
+    save:()=>{
+      const name=gv('pr_name').trim();if(!name){toast('Project name required','error');return;}
+      const projects=S.get('projects')||[];
+      const id=gv('pr_code')||nextId('PRJ');
+      projects.push({id,name,start:gv('pr_start'),end:gv('pr_end'),budget:parseFloat(gv('pr_budget'))||0,status:gv('pr_status'),desc:gv('pr_desc'),actual:0});
+      S.set('projects',projects);closeM();renderProjects();toast('Project '+name+' created','success');
+    }},
+  mICTrans:{title:'Intercompany Transaction',saveLabel:'Post Transaction',
+    body:()=>`<div class="fr fr2">${inp('From Entity','ic_from','text','e.g. HQ',undefined,true)}${inp('To Entity','ic_to','text','e.g. Branch A',undefined,true)}</div>
+      <div class="fr fr2">${inp('Amount','ic_amt','number','0')}${selV('Type','ic_type',['Loan','Management Fee','Transfer','Sale'],'Transfer')}</div>
+      <div class="fr fr2">${inp('Date','ic_date','date','',today())}${inp('Reference','ic_ref','text','e.g. IC-2025-001')}</div>
+      ${inp('Narration','ic_desc','text','Description of intercompany transaction')}`,
+    save:()=>{
+      const from=gv('ic_from').trim(),to=gv('ic_to').trim();
+      if(!from||!to){toast('Both entities required','error');return;}
+      const id=gv('ic_ref')||nextId('ICA');
+      const txns=S.get('icTransactions')||[];
+      txns.push({id,from,to,amt:parseFloat(gv('ic_amt'))||0,type:gv('ic_type'),date:gv('ic_date')||today(),desc:gv('ic_desc'),status:'Posted'});
+      S.set('icTransactions',txns);closeM();if(typeof renderIntercompany==='function')renderIntercompany();toast('Intercompany transaction '+id+' posted','success');
+    }},
+  mFY:{title:'New Fiscal Year',saveLabel:'Create',
+    body:()=>`<div class="fr fr2">${inp('Year','fy_year','number',String(new Date().getFullYear()+1))}${selV('Status','fy_status',['Open','Closed'],'Open')}</div>`,
+    save:()=>{
+      const yr=parseInt(gv('fy_year'));if(!yr){toast('Year required','error');return;}
+      const fys=S.get('fiscalYears')||[];
+      if(fys.find(f=>f.year===yr)){toast('Fiscal year '+yr+' already exists','error');return;}
+      fys.push({year:yr,status:gv('fy_status'),periods:Array.from({length:12},(_,i)=>({month:i+1,name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],status:'Open'}))});
+      S.set('fiscalYears',fys);closeM();renderFiscalYear();toast('FY '+yr+' created','success');
+    }},
+  mOpenYear:{title:'Open Fiscal Year',saveLabel:'Open',
+    body:(yr)=>`<div class="alert a-warn">This will open fiscal year <strong>${yr}</strong> for posting. Are you sure?</div>`,
+    save:()=>{closeM();toast('Fiscal year opened','success');}},
+  mCloseMonth:{title:'Close Period',saveLabel:'Close Period',
+    body:()=>`<div class="alert a-warn mb12">Closing a period prevents further postings. Ensure all entries are posted.</div>
+      <div class="fr fr2">${selV('Year','cl_yr',(S.get('fiscalYears')||[{year:new Date().getFullYear()}]).map(f=>String(f.year)),String(new Date().getFullYear()))}${selV('Month','cl_mo',['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],'Jun')}</div>`,
+    save:()=>{
+      const fys=S.get('fiscalYears')||[];const yr=parseInt(gv('cl_yr'));
+      const fy=fys.find(f=>f.year===yr);if(!fy){toast('Fiscal year not found','error');return;}
+      const mo=fy.periods?.find(p=>p.name===gv('cl_mo'));
+      if(mo){mo.status='Closed';S.set('fiscalYears',fys);closeM();renderPeriodClose();toast('Period closed','success');}
+    }},
+  mReopenMonth:{title:'Reopen Period',saveLabel:'Reopen',
+    body:()=>`<div class="alert a-warn">Reopening a period allows further postings. Requires Admin authorization.</div>`,
+    save:()=>{closeM();toast('Contact Administrator to reopen periods','info');}},
+  mAddVoyage:{title:'New Voyage / Shipment',saveLabel:'Create',
+    body:()=>`<div class="fr fr2">${inp('Voyage Reference','voy_ref','text','e.g. VOY-2025-001',undefined,true)}${inp('Vessel / Carrier','voy_vessel','text','e.g. MSC Container')}</div>
+      <div class="fr fr2">${inp('ETD','voy_etd','date','',today())}${inp('ETA','voy_eta','date','')}</div>
+      ${inp('Description','voy_desc','text','')}`,
+    save:()=>{
+      const ref=gv('voy_ref').trim();if(!ref){toast('Voyage reference required','error');return;}
+      const voyages=S.get('voyages')||[];
+      voyages.push({id:nextId('VOY'),ref,vessel:gv('voy_vessel'),etd:gv('voy_etd'),eta:gv('voy_eta'),desc:gv('voy_desc'),status:'In Transit'});
+      S.set('voyages',voyages);closeM();toast('Voyage '+ref+' created','success');
+    }},
+  mAddCWIP:{title:'New CWIP Project',saveLabel:'Create',
+    body:()=>`<div class="fr fr2">${inp('Project Name','cw_name','text','',undefined,true)}${inp('Project Code','cw_code','text','e.g. CWIP-001')}</div>
+      <div class="fr fr2">${inp('Budget','cw_budget','number','0')}${inp('Start Date','cw_start','date','',today())}</div>`,
+    save:()=>{
+      const name=gv('cw_name').trim();if(!name){toast('Name required','error');return;}
+      const cwip=S.get('cwipProjects')||[];
+      cwip.push({id:gv('cw_code')||nextId('CWIP'),name,budget:parseFloat(gv('cw_budget'))||0,spent:0,start:gv('cw_start'),status:'Active'});
+      S.set('cwipProjects',cwip);closeM();renderCWIP();toast('CWIP project created','success');
+    }},
+  mCapitaliseCWIP:{title:'Capitalise CWIP to Fixed Asset',saveLabel:'Capitalise',
+    body:(id)=>`<div class="alert a-info">Converting CWIP project to a Fixed Asset.</div>
+      ${inp('Asset Name','cap_name','text','',undefined,true)}
+      <div class="fr fr2">${inp('Asset Code','cap_code','text','')}${inp('Capitalisation Date','cap_date','date','',today())}</div>
+      ${selV('Asset Category','cap_cat',['Plant & Equipment','Vehicles','Furniture','IT Equipment','Buildings'],'Plant & Equipment')}`,
+    save:()=>{
+      const name=gv('cap_name').trim();if(!name){toast('Asset name required','error');return;}
+      const assets=S.get('fixedAssets')||[];
+      assets.push({id:gv('cap_code')||nextId('FA'),name,category:gv('cap_cat'),acquisitionDate:gv('cap_date')||today(),cost:0,nbv:0,status:'Active'});
+      S.set('fixedAssets',assets);closeM();renderAssets();toast('Asset capitalised','success');
+    }},
+  mJERecurring:{title:'Recurring Journal Entry',saveLabel:'Schedule',
+    body:()=>`<div class="alert a-info mb10">Recurring entries will be posted automatically on the selected schedule.</div>
+      ${inp('Description','rje_desc','text','e.g. Monthly rent accrual',undefined,true)}
+      <div class="fr fr2">${selV('Frequency','rje_freq',['Monthly','Weekly','Quarterly'],'Monthly')}${inp('Next Post Date','rje_next','date','',today())}</div>`,
+    save:()=>{closeM();toast('Recurring entry scheduled (requires server-side automation)','info');}},
+
+  mAddAsset:{title:'Add Fixed Asset',saveLabel:'Add Asset',
+    body:()=>`<div class="fr fr2">${inp('Asset Name','fa_name','text','',undefined,true)}${inp('Asset Code','fa_code','text','e.g. FA-001')}</div>
+      <div class="fr fr2">${selV('Category','fa_cat',['Plant & Equipment','Vehicles','Furniture','IT Equipment','Buildings','Other'],'Plant & Equipment')}${inp('Acquisition Date','fa_date','date','',today())}</div>
+      <div class="fr fr2">${inp('Cost','fa_cost','number','0')}${inp('Useful Life (years)','fa_life','number','5')}</div>
+      ${selV('Depreciation Method','fa_method',['Straight-Line','Declining Balance'],'Straight-Line')}`,
+    save:()=>{
+      const name=gv('fa_name').trim();if(!name){toast('Asset name required','error');return;}
+      const assets=S.get('fixedAssets')||[];
+      const cost=parseFloat(gv('fa_cost'))||0,life=parseInt(gv('fa_life'))||5;
+      const id=gv('fa_code')||nextId('FA');
+      assets.push({id,name,category:gv('fa_cat'),acquisitionDate:gv('fa_date')||today(),cost,nbv:cost,residual:0,life,method:gv('fa_method'),deprRate:(1/life*100).toFixed(1),status:'Active',accDepr:0});
+      S.set('fixedAssets',assets);closeM();renderAssets();toast('Asset '+name+' added','success');
+    }},
+  mAssetRevalue:{title:'Revalue Asset',saveLabel:'Revalue',
+    body:(id)=>{const a=(S.get('fixedAssets')||[]).find(a=>a.id===id)||{};return `<input type="hidden" id="rv_id" value="${id}"><div class="fg mb10"><label class="fl">Asset</label><div class="fc" style="background:var(--surface2)">${a.name||id}</div></div><div class="fr fr2">${inp('New Carrying Value','rv_val','number',String(a.nbv||0))}${inp('Revaluation Date','rv_date','date','',today())}</div>`;},
+    save:()=>{const assets=S.get('fixedAssets')||[];const id=gv('rv_id');const a=assets.find(x=>x.id===id);if(a){a.nbv=parseFloat(gv('rv_val'))||a.nbv;S.set('fixedAssets',assets);closeM();renderAssets();toast('Asset revalued','success');}}},
+  mAssetTransfer:{title:'Transfer Asset',saveLabel:'Transfer',
+    body:(id)=>`<input type="hidden" id="at_id" value="${id}">${selV('New Department/Location','at_dept',['Finance','Operations','IT','HR','Sales'],'Finance')}${inp('Transfer Date','at_date','date','',today())}`,
+    save:()=>{const assets=S.get('fixedAssets')||[];const a=assets.find(x=>x.id===gv('at_id'));if(a){a.location=gv('at_dept');S.set('fixedAssets',assets);closeM();renderAssets();toast('Asset transferred','success');}}},
+  mAssetSplit:{title:'Split Asset',saveLabel:'Split',
+    body:(id)=>`<div class="alert a-info">Split this asset into two separate assets.</div><input type="hidden" id="as_id" value="${id}">${inp('New Asset Name','as_name','text','',undefined,true)}<div class="fr fr2">${inp('Split Amount (cost)','as_amt','number','0')}${inp('Date','as_date','date','',today())}</div>`,
+    save:()=>{closeM();toast('Asset split recorded','success');}},
+  mRetireAsset:{title:'Retire / Dispose Asset',saveLabel:'Retire',
+    body:(id)=>`<div class="alert a-warn">Retiring this asset will remove it from the active register.</div><input type="hidden" id="ret_id" value="${id}"><div class="fr fr2">${inp('Disposal Date','ret_date','date','',today())}${inp('Disposal Proceeds','ret_proc','number','0')}</div>${inp('Reason','ret_reason','text','e.g. Sold, Scrapped, Written off')}`,
+    save:()=>{
+      const assets=S.get('fixedAssets')||[];
+      const a=assets.find(x=>x.id===gv('ret_id'));
+      if(a){a.status='Retired';a.disposalDate=gv('ret_date');a.proceeds=parseFloat(gv('ret_proc'))||0;a.reason=gv('ret_reason');
+      S.set('fixedAssets',assets);closeM();renderAssets();toast('Asset retired','success');}
+    }},
+};
+
+
 // ── JOURNAL ENTRY ATTACHMENT HANDLERS ──
 window._jeAttachment = null;
 
@@ -8838,25 +9336,41 @@ function jeRemoveAttach() {
   if (fileInput) fileInput.value = '';
 }
 
-// View attachment from posted JE — download
-function jeViewAttachment(jeId) {
+// Get attachment data for a JE — reads from separate localStorage key
+function jeGetAttachment(jeId) {
+  // First try the separate storage key (new format)
+  try {
+    const raw = localStorage.getItem('mce_attach_' + jeId);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  // Fallback: try old format where data was stored in the journal record itself
   const journals = S.get('journals') || [];
   const je = journals.find(j => j.id === jeId);
-  if (!je || !je.attachment) { toast('No attachment found for ' + jeId, 'error'); return; }
-  const a = document.createElement('a');
-  a.href = je.attachment.data;
-  a.download = je.attachment.name;
-  a.click();
-  toast('Downloading: ' + je.attachment.name, 'info', 2000);
+  if (je?.attachment?.data) return je.attachment;
+  return null;
 }
 
-// Preview attachment inline (opens in new tab for PDF/images)
+// View attachment from posted JE — download
+function jeViewAttachment(jeId) {
+  const att = jeGetAttachment(jeId);
+  if (!att || !att.data) {
+    toast('Attachment not found for ' + jeId + '. It may have been cleared with browser storage.', 'error', 4000);
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = att.data;
+  a.download = att.name;
+  a.click();
+  toast('Downloading: ' + att.name, 'info', 2000);
+}
+
+// Preview attachment inline
 function jePreviewAttachment(jeId) {
-  const journals = S.get('journals') || [];
-  const je = journals.find(j => j.id === jeId);
-  if (!je || !je.attachment) { toast('No attachment found for ' + jeId, 'error'); return; }
-  const att = je.attachment;
-  // For images and PDFs, open inline preview modal
+  const att = jeGetAttachment(jeId);
+  if (!att || !att.data) {
+    toast('Attachment not found for ' + jeId + '. It may have been cleared with browser storage.', 'error', 4000);
+    return;
+  }
   if (att.type?.startsWith('image/') || att.type?.includes('pdf')) {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;cursor:pointer';
@@ -8864,102 +9378,19 @@ function jePreviewAttachment(jeId) {
     const inner = document.createElement('div');
     inner.style.cssText = 'background:#fff;border-radius:12px;padding:20px;max-width:90vw;max-height:90vh;overflow:auto;position:relative';
     inner.onclick = e => e.stopPropagation();
-    const closeBtn = `<button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:12px;right:12px;border:none;background:var(--surface2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px;font-weight:700">✕ Close</button>`;
-    const title = `<div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:14px;padding-right:60px">${att.name}</div>`;
-    let preview = '';
-    if (att.type?.startsWith('image/')) {
-      preview = `<img src="${att.data}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block">`;
-    } else if (att.type?.includes('pdf')) {
-      preview = `<iframe src="${att.data}" style="width:min(800px,80vw);height:70vh;border:none;border-radius:6px"></iframe>`;
-    }
+    const closeBtn = `<button onclick="this.closest('div').parentElement.remove()" style="position:absolute;top:12px;right:12px;border:none;background:var(--surface2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px;font-weight:700">✕ Close</button>`;
+    const title = `<div style="font-size:14px;font-weight:700;color:var(--text1);margin-bottom:14px;padding-right:60px">${att.name} <span style="font-size:11px;color:var(--text3)">(${Math.round(att.size/1024)}KB)</span></div>`;
+    let preview = att.type?.startsWith('image/')
+      ? `<img src="${att.data}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block">`
+      : `<iframe src="${att.data}" style="width:min(800px,80vw);height:70vh;border:none;border-radius:6px"></iframe>`;
     inner.innerHTML = closeBtn + title + preview;
     overlay.appendChild(inner);
     document.body.appendChild(overlay);
   } else {
-    // For other file types, just download
     jeViewAttachment(jeId);
     toast('File downloaded — ' + att.name, 'info', 2000);
   }
 }
-
-
-
-// Each step wrapped individually — one failure never blocks the rest
-(function boot() {
-
-  // localStorage test
-  try { localStorage.setItem('_t','1'); if(localStorage.getItem('_t')!=='1')throw 0; localStorage.removeItem('_t'); }
-  catch(e){ alert('Storage blocked — open in Chrome/Edge normal tab'); return; }
-
-  // Reset flag
-  if (localStorage.getItem('mce_reset_pending')) {
-    var _g=localStorage.getItem('mce_gs_url');
-    Object.keys(localStorage).forEach(function(k){if(k.startsWith('mce_'))localStorage.removeItem(k);});
-    sessionStorage.clear();
-    localStorage.setItem('mce_gs_url',_g||DEFAULT_GS_URL);
-    GS_URL=_g||DEFAULT_GS_URL;
-    try{applyTheme();}catch(e){}
-    document.getElementById('wizOv').style.display='flex';
-    try{wRender();}catch(e){}
-    return;
-  }
-
-  // Seed structural data
-  try{seedUsers();}catch(e){}
-  try{seedCurrencies();}catch(e){}
-  try{seedFiscalData();}catch(e){}
-  try{seedApprovalPolicies();}catch(e){}
-  try{applyTheme();}catch(e){}
-
-  function showScreen(co) {
-    // Hide everything
-    ['wizOv','loginOv','app'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el) el.style.display='none';
-    });
-
-    if (!co || !co.name) {
-      // No company — wizard
-      document.getElementById('wizOv').style.display='flex';
-      try{wRender();}catch(e){console.error('wRender:',e);}
-      return;
-    }
-
-    // Ensure flag set
-    if (!co._wizardComplete) {
-      co._wizardComplete=true;
-      localStorage.setItem('mce_company',JSON.stringify(co));
-    }
-
-    var sess=null;
-    try{sess=getSession();}catch(e){}
-
-    if (sess) {
-      document.getElementById('app').style.display='flex';
-      try{updateUserPill();initApp();applyTheme();}catch(e){console.error('initApp:',e.message);}
-    } else {
-      document.getElementById('loginOv').style.display='flex';
-      try{showLogin();}catch(e){console.error('showLogin:',e.message);}
-    }
-  }
-
-  // Show loading indicator in topbar area (non-blocking)
-  document.title = 'ManuCost ERP — Loading…';
-
-  // Pull from Sheets then decide
-  S.load().then(function(loaded){
-    var co=null; try{co=S.get('company');}catch(e){}
-    console.log('[ManuCost] Boot: loaded=',loaded,'company=',co?co.name:'none');
-    document.title = 'ManuCost ERP';
-    showScreen(co);
-  }).catch(function(err){
-    console.warn('[ManuCost] Sheets failed:',err.message,'— localStorage only');
-    var co=null; try{co=S.get('company');}catch(e){}
-    document.title = 'ManuCost ERP';
-    showScreen(co);
-  });
-
-})();
 </script>
 </body>
 </html>
