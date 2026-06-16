@@ -2154,29 +2154,19 @@ const S = {
   },
   set(k, v) {
     try {
-      if (v === null || v === undefined) {
-        localStorage.removeItem('mce_' + k);
-      } else {
-        localStorage.setItem('mce_' + k, JSON.stringify(v));
-      }
-    } catch(e) { console.error('[ManuCost] localStorage WRITE FAILED for key:', k, e.message); }
-    // Background Sheets sync — completely separate, never blocks localStorage write
-    if (GS_URL) {
-      setTimeout(function() {
-        GS.set(k, v).catch(function(){});
-      }, 0);
-    }
+      if (v === null || v === undefined) localStorage.removeItem('mce_' + k);
+      else localStorage.setItem('mce_' + k, JSON.stringify(v));
+    } catch(e) { console.error('[ManuCost] LS write failed:', k, e.message); }
   },
-  del(k) {
-    try { localStorage.removeItem('mce_' + k); } catch(e) {}
-    if (GS_URL) setTimeout(function(){ GS.set(k, null).catch(function(){}); }, 0);
-  },
+  del(k) { try { localStorage.removeItem('mce_' + k); } catch(e) {} },
+
+  // Pull ALL data from Sheets → localStorage
   async load() {
     if (!GS_URL) return false;
     try {
       const backup = await GS.backup();
       if (!backup || typeof backup !== 'object') return false;
-      const skip = new Set(['gs_url','theme','data_version','last_boot','ls_ok','ls_test']);
+      const skip = new Set(['gs_url','theme','last_boot','ls_ok','ls_test','persist_test']);
       let count = 0;
       Object.entries(backup).forEach(function([k, v]) {
         if (!k || skip.has(k)) return;
@@ -2189,23 +2179,27 @@ const S = {
       return false;
     }
   },
+
+  // Push ALL localStorage → Sheets (single bulkSet call)
   async push() {
     if (!GS_URL) return false;
-    const skip = new Set(['gs_url','theme','data_version','last_boot','ls_ok','ls_test','persist_test']);
+    const skip = new Set(['gs_url','theme','last_boot','ls_ok','ls_test','persist_test','data_version']);
     const entries = {};
-    Object.keys(localStorage)
-      .filter(function(k){ return k.startsWith('mce_') && !skip.has(k.replace('mce_','')); })
-      .forEach(function(k) {
-        try {
-          const val = localStorage.getItem(k);
-          if (val && val !== 'null' && val !== 'undefined') {
-            entries[k.replace('mce_', '')] = JSON.parse(val);
-          }
-        } catch(e) {}
-      });
+    try {
+      Object.keys(localStorage)
+        .filter(function(k){ return k.startsWith('mce_') && !skip.has(k.replace('mce_','')); })
+        .forEach(function(k) {
+          try {
+            const val = localStorage.getItem(k);
+            if (val && val !== 'null' && val !== 'undefined') {
+              entries[k.replace('mce_', '')] = JSON.parse(val);
+            }
+          } catch(e) {}
+        });
+    } catch(e) {}
     if (!Object.keys(entries).length) return true;
     const ok = await GS.bulkSet(entries);
-    console.log('[ManuCost] Pushed', Object.keys(entries).length, 'keys to Sheets:', ok ? 'OK' : 'FAILED');
+    console.log('[ManuCost] Pushed', Object.keys(entries).length, 'keys to Sheets:', ok ? 'OK ✓' : 'FAILED');
     return ok;
   }
 };
@@ -2464,7 +2458,24 @@ function wRender() {
 
 function wStepHTML(step) {
   switch(step) {
-    case 1: return `<div style="text-align:center;padding:10px 0 20px"><div style="font-size:52px;margin-bottom:16px">🏭</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">Welcome to ManuCost ERP</div><div style="font-size:13px;color:var(--text2);max-width:420px;margin:0 auto 24px;line-height:1.8">This wizard runs <strong>only once</strong>. After setup, only an Administrator can change these settings.</div><div class="g2c" style="text-align:left;max-width:480px;margin:0 auto"><div class="fsec"><div class="fsec-t">What you will set up</div><div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Company name, logo &amp; details<br>✓ Fiscal year &amp; reporting periods<br>✓ Base currency &amp; exchange rates<br>✓ Costing method &amp; inventory<br>✓ Administrator account</div></div><div class="fsec"><div class="fsec-t">You will need</div><div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Commercial Registration number<br>✓ VAT / Tax number<br>✓ Company logo (optional)<br>✓ Admin password (remember it!)<br>✓ About 5 minutes</div></div></div><div class="alert a-warn" style="margin-top:20px;text-align:left">⚠ Only the <strong>Administrator</strong> can re-run this wizard or reset company data.</div><div id="wizPrivateWarn" style="display:none;margin-top:12px;padding:12px 16px;background:#FFF4CE;border:1px solid #F0C060;border-radius:8px;font-size:12px;color:#8a6000;text-align:left">⚠️ <strong>Private/Incognito mode detected.</strong> Data will be lost when you close this tab. Please open this link in a <strong>normal browser tab</strong>.</div></div><script>(function(){try{var k='mce_pm_test_'+Date.now();localStorage.setItem(k,'1');localStorage.removeItem(k);var last=localStorage.getItem('mce_last_boot');var warn=document.getElementById('wizPrivateWarn');if(warn&&!last)warn.style.display='block';}catch(e){var warn=document.getElementById('wizPrivateWarn');if(warn)warn.style.display='block';}})();<\/script>`;
+    case 1: return `<div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:52px;margin-bottom:16px">🏭</div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:10px">Welcome to ManuCost ERP</div>
+      <div style="font-size:13px;color:var(--text2);max-width:420px;margin:0 auto 24px;line-height:1.8">
+        This wizard runs <strong>only once</strong>. After setup, only an Administrator can change these settings.
+      </div>
+      <div class="g2c" style="text-align:left;max-width:480px;margin:0 auto">
+        <div class="fsec">
+          <div class="fsec-t">What you will set up</div>
+          <div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Company name, logo &amp; details<br>✓ Fiscal year &amp; reporting periods<br>✓ Base currency &amp; exchange rates<br>✓ Costing method &amp; inventory<br>✓ Administrator account</div>
+        </div>
+        <div class="fsec">
+          <div class="fsec-t">You will need</div>
+          <div style="font-size:12.5px;color:var(--text2);line-height:2">✓ Commercial Registration number<br>✓ VAT / Tax number<br>✓ Company logo (optional)<br>✓ Admin password (min 8 characters)<br>✓ About 5 minutes</div>
+        </div>
+      </div>
+      <div class="alert a-warn" style="margin-top:16px;text-align:left">⚠ Only the <strong>Administrator</strong> can re-run this wizard or reset data.</div>
+    </div>`
     case 2: return `<div class="fr fr2"><div class="fg"><label class="fl req">Company Name (English)</label><input class="fc" id="w_name" placeholder="e.g. Al-Masna'a Manufacturing Co."></div><div class="fg"><label class="fl">Company Name (Arabic)</label><input class="fc" id="w_nameAr" placeholder="اسم الشركة بالعربي"></div></div><div class="fr fr2"><div class="fg"><label class="fl req">Commercial Registration #</label><input class="fc" id="w_cr" placeholder="1010xxxxxx"></div><div class="fg"><label class="fl req">VAT / Tax Number</label><input class="fc" id="w_vat" placeholder="3xxxxxxxxx00003"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Industry</label><select class="fc" id="w_ind"><option>Manufacturing</option><option>Engineering &amp; Fabrication</option><option>Food &amp; Beverage</option><option>Chemicals</option><option>Electronics</option><option>Construction</option><option>Other</option></select></div><div class="fg"><label class="fl">Country</label><select class="fc" id="w_country"><option>Saudi Arabia</option><option>Egypt</option><option>UAE</option><option>Kuwait</option><option>Bahrain</option><option>Qatar</option><option>Oman</option><option>Jordan</option><option>Other</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Phone</label><input class="fc" id="w_phone" placeholder="+966-11-xxxxxxx"></div><div class="fg"><label class="fl">Email</label><input class="fc" id="w_email" type="email" placeholder="info@company.com"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Website</label><input class="fc" id="w_web" placeholder="www.company.com"></div><div class="fg"><label class="fl">Postal / ZIP Code</label><input class="fc" id="w_zip" placeholder="11564"></div></div><div class="fr"><div class="fg"><label class="fl">Address</label><textarea class="fc" id="w_addr" rows="2" placeholder="Street, District, City"></textarea></div></div>`;
     case 3: return `<div style="text-align:center;margin-bottom:20px"><div id="logoPreviewWrap" style="width:120px;height:120px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;cursor:pointer;background:var(--surface2);overflow:hidden" onclick="document.getElementById('logoFileInput').click()"><div id="logoPlaceholder" style="color:var(--text3);font-size:12px;text-align:center;padding:12px"><div style="font-size:32px;margin-bottom:4px">🖼</div>Click to upload</div><img id="logoPreviewImg" style="display:none;width:100%;height:100%;object-fit:contain;padding:8px"></div><input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="handleLogoUpload(event)"><button class="btn btn-s sm" onclick="document.getElementById('logoFileInput').click()">Choose Image</button> <button class="btn btn-g sm" id="logoClearBtn" onclick="clearLogo()" style="display:none">Remove</button><div class="t-xs t-muted" style="margin-top:8px">PNG, JPG, SVG · Max 500KB</div></div><div class="fr fr2"><div class="fg"><label class="fl">Brand Color</label><div style="display:flex;gap:8px;align-items:center"><input type="color" id="w_brandColor" value="#0078D4" style="width:44px;height:34px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;padding:2px"><input class="fc" id="w_brandColorHex" value="#0078D4" placeholder="#0078D4" style="flex:1" oninput="syncColorHex()"></div></div><div class="fg"><label class="fl">Report Header Style</label><select class="fc" id="w_hdrStyle"><option value="logo_left">Logo Left · Name Right</option><option value="logo_center">Logo &amp; Name Centered</option><option value="name_only">Company Name Only</option></select></div></div><div class="alert a-info" style="margin-top:8px">Logo appears on reports and in the sidebar. You can change it anytime from Company Setup.</div>`;
     case 4: return `<div class="fr fr2"><div class="fg"><label class="fl req">Fiscal Year Type</label><select class="fc" id="w_fyType"><option value="calendar">Calendar Year (Jan – Dec)</option><option value="hijri">Hijri Year</option><option value="custom">Custom</option></select></div><div class="fg"><label class="fl req">First Fiscal Year</label><input class="fc" id="w_fyYear" type="number" value="2025" min="2020" max="2035"></div></div><div class="fr fr2"><div class="fg"><label class="fl">Reporting Period</label><select class="fc" id="w_period"><option value="monthly">Monthly (12 periods/year)</option><option value="quarterly">Quarterly (4 periods/year)</option></select></div><div class="fg"><label class="fl">Period Locking</label><select class="fc" id="w_lock"><option value="manual">Manual — lock when ready</option><option value="auto">Auto-lock after 30 days</option></select></div></div><div class="fr fr2"><div class="fg"><label class="fl">Week Start Day</label><select class="fc" id="w_weekstart"><option value="sunday">Sunday</option><option value="monday">Monday</option><option value="saturday">Saturday</option></select></div><div class="fg"><label class="fl">Date Format</label><select class="fc" id="w_dateformat"><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option><option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option></select></div></div><div class="alert a-info">Fiscal year and period settings affect financial statements and period closing. Cannot be changed after transactions are posted.</div>`;
@@ -2514,44 +2525,28 @@ function wNext(){if(!wValidate(wStep))return;wSave(wStep);if(wStep===WS){launchA
 function wPrev(){if(wStep>1){wStep--;wRender();}}
 
 function launchApp(){
-  // 1. Mark wizard complete and save to localStorage immediately
-  var co = {};
-  try { co = JSON.parse(localStorage.getItem('mce_company') || '{}'); } catch(e) {}
-  co._wizardComplete = true;
-  co._launchedAt = new Date().toISOString();
-
-  // Direct localStorage writes — no async, guaranteed to persist
-  localStorage.setItem('mce_company', JSON.stringify(co));
-  localStorage.setItem('mce_seeded', JSON.stringify(true));
-  localStorage.setItem('mce_data_version', '6');
-  localStorage.setItem('mce_gs_url', GS_URL || DEFAULT_GS_URL);
-
-  // Verify it was written
-  var verify = localStorage.getItem('mce_company');
-  console.log('[ManuCost] launchApp saved company:', verify ? 'OK ('+JSON.parse(verify).name+')' : 'FAILED!');
-
-  // 2. Wipe leftover demo data
-  ['journals','glLedger','grns','pos','invoices','salesorders','quotes',
-   'transfers','workorders','timesheets','boms','fixedAssets','cwipProjects',
-   'assetDisposals','bankAccounts','voyages','projects','icTransactions',
-   'auditLog','allocRules','aprRequests','syncLog','trialBalanceData',
+  var co={};
+  try{co=JSON.parse(localStorage.getItem('mce_company')||'{}');}catch(e){}
+  if(!co.name){toast('Company name missing — go back to step 2.','error');return;}
+  co._wizardComplete=true;
+  co._launchedAt=new Date().toISOString();
+  localStorage.setItem('mce_company',JSON.stringify(co));
+  localStorage.setItem('mce_seeded',JSON.stringify(true));
+  localStorage.setItem('mce_gs_url',GS_URL||DEFAULT_GS_URL);
+  console.log('[ManuCost] launchApp: company=',co.name,'_wizardComplete=',co._wizardComplete);
+  ['journals','glLedger','grns','pos','invoices','salesorders','quotes','transfers','workorders',
+   'timesheets','boms','fixedAssets','cwipProjects','assetDisposals','bankAccounts','voyages',
+   'projects','icTransactions','auditLog','allocRules','aprRequests','syncLog','trialBalanceData',
    'suppliers','customers','payterms','items','stock'
-  ].forEach(function(k) { localStorage.removeItem('mce_' + k); });
-
-  // 3. Seed structural data
-  try { seedCurrencies(); } catch(e) {}
-  try { seedFiscalData(); } catch(e) {}
-  try { seedApprovalPolicies(); } catch(e) {}
-
-  // 4. Push to Sheets in background (don't wait for it)
-  setTimeout(function() {
-    S.push().then(function(ok) {
-      console.log('[ManuCost] Background push to Sheets:', ok ? 'OK' : 'failed');
-      if (ok) setSyncBadge('on');
-    }).catch(function(){});
-  }, 500);
-
-  document.getElementById('wizOv').style.display = 'none';
+  ].forEach(function(k){localStorage.removeItem('mce_'+k);});
+  try{seedCurrencies();}catch(e){}
+  try{seedFiscalData();}catch(e){}
+  try{seedApprovalPolicies();}catch(e){}
+  S.push().then(function(ok){
+    console.log('[ManuCost] Push to Sheets after wizard:',ok?'OK':'FAILED');
+    if(!ok)toast('Could not sync to Sheets — data saved locally.','warn',5000);
+  }).catch(function(){});
+  document.getElementById('wizOv').style.display='none';
   showLogin();
 }
 
@@ -7085,15 +7080,11 @@ const mUserTemplates = {
 // Each step wrapped individually — one failure never blocks the rest
 (function boot() {
 
-  // Test localStorage
-  var hasLS = false;
-  try { localStorage.setItem('mce_t','1'); hasLS = localStorage.getItem('mce_t')==='1'; localStorage.removeItem('mce_t'); } catch(e) {}
-  if (!hasLS) {
-    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;text-align:center"><h2 style="color:red">⚠ Storage Blocked</h2><p>Open in Chrome or Edge (normal tab, not private).</p></div>';
-    return;
-  }
+  // 1. localStorage test
+  try { localStorage.setItem('mce_t','1'); if(localStorage.getItem('mce_t')!=='1') throw 0; localStorage.removeItem('mce_t'); }
+  catch(e) { document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;text-align:center"><h2>Storage Blocked</h2><p>Open in Chrome/Edge, normal tab.</p></div>'; return; }
 
-  // Handle reset
+  // 2. Reset flag
   if (localStorage.getItem('mce_reset_pending')) {
     var _t=localStorage.getItem('mce_theme'), _g=localStorage.getItem('mce_gs_url');
     Object.keys(localStorage).forEach(function(k){if(k.startsWith('mce_'))localStorage.removeItem(k);});
@@ -7107,53 +7098,59 @@ const mUserTemplates = {
     return;
   }
 
-  // Seed
+  // 3. Seed
   try{seedUsers();}catch(e){}
   try{seedCurrencies();}catch(e){}
   try{seedFiscalData();}catch(e){}
   try{seedApprovalPolicies();}catch(e){}
   try{applyTheme();}catch(e){}
 
-  // Always pull from Sheets first (fixes Safari ITP clearing localStorage)
+  // 4. Loader
+  var ldr=document.createElement('div');
+  ldr.style.cssText='position:fixed;inset:0;background:#f8f9fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:14px;font-family:Calibri,sans-serif';
+  ldr.innerHTML='<div style="font-size:40px">🏭</div>'
+    +'<div style="font-size:17px;font-weight:700;color:#0078D4">ManuCost ERP</div>'
+    +'<div id="_lmsg" style="font-size:12px;color:#666">Loading…</div>'
+    +'<div style="width:180px;height:3px;background:#ddd;border-radius:3px;overflow:hidden">'
+    +'<div style="height:100%;background:#0078D4;border-radius:3px;animation:_lp 1s ease-in-out infinite alternate"></div></div>';
+  var _sty=document.createElement('style');_sty.textContent='@keyframes _lp{0%{width:15%}100%{width:85%}}';
+  document.head.appendChild(_sty); document.body.appendChild(ldr);
+  function setMsg(m){var e=document.getElementById('_lmsg');if(e)e.textContent=m;}
+  function hideLdr(){if(ldr.parentNode)ldr.parentNode.removeChild(ldr);}
+
+  // 5. Decide what to show (company.name = wizard done, no _wizardComplete needed)
   function proceed(co) {
-    var hasCompany = co && co.name && co._wizardComplete;
+    hideLdr();
+    var hasCompany = !!(co && co.name);
+    console.log('[ManuCost] proceed: company=', hasCompany ? co.name : 'none');
     if (!hasCompany) {
       document.getElementById('wizOv').style.display='flex';
       try{wRender();}catch(e){}
       return;
     }
+    // Ensure _wizardComplete is set
+    if (!co._wizardComplete) {
+      co._wizardComplete = true;
+      localStorage.setItem('mce_company', JSON.stringify(co));
+    }
     var sess=null; try{sess=getSession();}catch(e){}
     if (sess) {
       document.getElementById('app').style.display='flex';
-      try{updateUserPill();initApp();applyTheme();}catch(e){console.error('initApp:',e.message);}
+      try{updateUserPill();initApp();applyTheme();}catch(e){console.error('[ManuCost] initApp:',e.message);}
     } else {
       try{showLogin();}catch(e){}
     }
   }
 
-  // Show loading screen
-  var loader = document.createElement('div');
-  loader.id='_loader';
-  loader.style.cssText='position:fixed;inset:0;background:#f8f9fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:12px;font-family:Calibri,sans-serif';
-  loader.innerHTML='<div style="font-size:36px">🏭</div><div style="font-size:16px;font-weight:600;color:#0078D4">ManuCost ERP</div><div style="font-size:12px;color:#666" id="_loaderMsg">Loading your data…</div><div style="width:160px;height:3px;background:#e0e0e0;border-radius:3px"><div style="height:100%;width:40%;background:#0078D4;border-radius:3px;animation:_lp 1s ease-in-out infinite alternate"></div></div>';
-  var st=document.createElement('style');st.textContent='@keyframes _lp{from{width:20%}to{width:80%}}';
-  document.head.appendChild(st);
-  document.body.appendChild(loader);
-
-  function setMsg(m){var el=document.getElementById('_loaderMsg');if(el)el.textContent=m;}
-  function hideLoader(){var el=document.getElementById('_loader');if(el)el.remove();}
-
-  // Try Sheets first, then fall back to localStorage
+  // 6. Try Sheets, fall back to localStorage
   setMsg('Connecting to Google Sheets…');
-  S.load().then(function(loaded) {
-    if (loaded) setMsg('Data loaded ✓');
+  S.load().then(function(loaded){
     var co=null; try{co=S.get('company');}catch(e){}
-    hideLoader();
+    console.log('[ManuCost] Sheets pull: loaded=',loaded,'company=',co?co.name:'none');
     proceed(co);
-  }).catch(function(e) {
-    console.warn('[ManuCost] Sheets load failed:',e.message,'. Using localStorage.');
-    var co=null; try{co=S.get('company');}catch(e2){}
-    hideLoader();
+  }).catch(function(err){
+    console.warn('[ManuCost] Sheets pull failed:',err.message,'— using localStorage');
+    var co=null; try{co=S.get('company');}catch(e){}
     proceed(co);
   });
 
