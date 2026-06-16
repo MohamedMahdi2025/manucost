@@ -3323,6 +3323,23 @@ function closeM(){const _sh=document.getElementById('mShell');_sh.classList.remo
 function mSave(){mSaveFn();}
 
 // Modal templates
+
+// ── AUTO JE NUMBER GENERATOR ──
+function autoJENum() {
+  const now   = new Date();
+  const yyyy  = now.getFullYear();
+  const mm    = String(now.getMonth()+1).padStart(2,'0');
+  const dd    = String(now.getDate()).padStart(2,'0');
+  const dateKey = yyyy + mm + dd;          // e.g. 20260616
+  const seqKey  = 'jeSeq_' + dateKey;
+
+  // Get + increment daily sequence
+  let seq = parseInt(S.get(seqKey) || '0') + 1;
+  S.set(seqKey, String(seq));
+
+  return 'JE-' + dateKey + '-' + String(seq).padStart(4,'0');
+  // Result: JE-20260616-0001, JE-20260616-0002, ...
+}
 const supOpts=()=>(S.get('suppliers')||[]).map(s=>s.name);
 const custOpts=()=>(S.get('customers')||[]).map(c=>c.name);
 const woOpts=()=>(S.get('workorders')||[]).map(w=>w.id+' — '+w.prod);
@@ -3355,7 +3372,7 @@ const mTemplates={
     save:()=>{closeM();toast('Account added.','success');renderCOA();}},
   mJE:{title:'New Journal Entry',saveLabel:'Post Entry',
 body:()=>`
-<div class="fr fr3">${inp('JE Number','mje_id','text','','')}${inp('Date','mje_d','date','',today())}${selV('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation','Treasury','Intercompany'],'Manual')}</div>
+<div class="fr fr3">${inp('JE Number','mje_id','text','Auto-generated',autoJENum())}${inp('Date','mje_d','date','',today())}${selV('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation','Treasury','Intercompany'],'Manual')}</div>
 <div class="fg mb10"><label class="fl">Narration / Description <span style="color:var(--red)">*</span></label><input class="fc" id="mje_desc" placeholder="Describe this journal entry — purpose, reference, period"></div>
 <div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px">
   <span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span>
@@ -3406,7 +3423,7 @@ save:()=>{
   const jeDate=gv('mje_d')||today();
   if(checkPeriod(jeDate))return;
   const src=gv('mje_src')||'Manual';
-  const jeId='JE-'+String(Date.now()).slice(-6);
+  const jeId=(gv('mje_id').trim())||autoJENum();
   const lineEls=document.querySelectorAll('#jeLines .je-grid');
   const lines=[];let totalDr=0,totalCr=0;
   lineEls.forEach(el=>{
