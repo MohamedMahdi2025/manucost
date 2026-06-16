@@ -4131,63 +4131,109 @@ function renderPayroll(){const emps=S.get('employees')||[];const rows=emps.map(e
 // ── RENDER: FINANCIALS ──
 function co(){return(S.get('company')||{}).name||'Company';}
 function _tb() {
-  // SINGLE SOURCE OF TRUTH — reads from localStorage via getTBData()
-  // Returns zeros after reset (no seeded data), demo data after seedData()
-  const rows = getTBData();
-  const cur = baseCurr();
-  const get = (code) => { const r = rows.find(x=>x.c===code); return r ? (r.dr||0)-(r.cr||0) : 0; };
+  // SINGLE SOURCE OF TRUTH — aggregates from posted glLedger entries
+  // This ensures every posted JE immediately appears in all financial statements
+  const ledger = S.get('glLedger') || [];
+  const cur    = baseCurr();
 
-  const rev       = Math.abs(get('4010')) + Math.abs(get('4020')); // Cr normal
-  const cogs      = get('5010') + get('5020') + get('5030');
+  // Build account balances directly from GL entries
+  const balMap = {};
+  ledger.forEach(e => {
+    if (!balMap[e.account]) balMap[e.account] = { dr:0, cr:0 };
+    balMap[e.account].dr += (e.dr || 0);
+    balMap[e.account].cr += (e.cr || 0);
+  });
+
+  // Also merge in any trialBalanceData opening balances (for accounts not in GL)
+  const tbRows = getTBData();
+  tbRows.forEach(r => {
+    if (!balMap[r.c] && ((r.dr||0) + (r.cr||0)) > 0) {
+      balMap[r.c] = { dr: r.dr||0, cr: r.cr||0 };
+    }
+  });
+
+  // net(code) = Dr - Cr for Dr-normal accounts; returns signed net
+  const net = (code) => {
+    const b = balMap[code];
+    return b ? (b.dr||0) - (b.cr||0) : 0;
+  };
+  // For Cr-normal accounts (liabilities, equity, revenue): Cr - Dr
+  const netCr = (code) => {
+    const b = balMap[code];
+    return b ? (b.cr||0) - (b.dr||0) : 0;
+  };
+  // Sum multiple accounts
+  const sum = (...codes) => codes.reduce((s,c) => s + Math.abs(net(c)), 0);
+
+  // ── Income Statement ──
+  const rev         = netCr('4010') + netCr('4020');
+  const dmCost      = net('5010');
+  const dlCost      = net('5020');
+  const ohCost      = net('5030');
+  const cogs        = dmCost + dlCost + ohCost;
   const grossProfit = rev - cogs;
-  const sellExp   = get('6010');
-  const gaExp     = get('6020');
-  const deprExp   = get('6030');
-  const finCost   = get('6040');
-  const taxExp    = get('6050');
-  const totalOpEx = sellExp + gaExp + deprExp;
-  const ebit      = grossProfit - totalOpEx;
-  const ebt       = ebit - finCost;
-  const netIncome = ebt - taxExp;
+  const sellExp     = net('6010');
+  const gaExp       = net('6020');
+  const deprExp     = net('6030');
+  const finCosts    = net('6040');
+  const taxExp      = net('6050');
+  const totalOpEx   = sellExp + gaExp + deprExp;
+  const ebit        = grossProfit - totalOpEx;
+  const ebt         = ebit - finCosts;
+  const netIncome   = ebt - taxExp;
 
-  const cashBank  = get('1010');
-  const ar        = get('1020');
-  const prepaid   = get('1030');
-  const rmInv     = get('1300');
-  const wipInv    = get('1310');
-  const fgInv     = get('1320');
-  const ppe       = get('1500') + get('1511'); // 1511 is Cr normal so get() returns negative
-  const intangible= get('1700');
-  const totalCA   = cashBank + ar + prepaid + rmInv + wipInv + fgInv;
-  const totalNCA  = ppe + intangible;
+  // ── Balance Sheet — Assets ──
+  const cashBank    = net('1010') + net('1011') + net('1012');
+  const ar          = net('1020');
+  const prepaid     = net('1030');
+  const rmInv       = net('1300');
+  const wipInv      = net('1310');
+  const fgInv       = net('1320');
+  const ppe         = net('1500') - Math.abs(net('1511')); // net of accum depr
+  const intangible  = net('1700');
+  const totalCA     = cashBank + ar + prepaid + rmInv + wipInv + fgInv;
+  const totalNCA    = Math.max(0, ppe) + Math.max(0, intangible);
   const totalAssets = totalCA + totalNCA;
 
-  const ap         = Math.abs(get('2010'));
-  const accrued    = Math.abs(get('2020'));
-  const vatPayable = Math.abs(get('2030'));
-  const taxPayable = Math.abs(get('2040'));
-  const ltDebt     = Math.abs(get('2500'));
-  const totalCL    = ap + accrued + vatPayable + taxPayable;
-  const totalNCL   = ltDebt;
-  const totalLiab  = totalCL + totalNCL;
+  // ── Balance Sheet — Liabilities ──
+  const ap           = netCr('2010');
+  const accruedLiab  = netCr('2020');
+  const vatPay       = netCr('2030');
+  const taxPay       = netCr('2040');
+  const ltDebt       = netCr('2500');
+  const totalCL      = ap + accruedLiab + vatPay + taxPay;
+  const totalNCL     = ltDebt;
+  const totalLiab    = totalCL + totalNCL;
 
-  const shareCapital     = Math.abs(get('3010'));
-  const retainedEarnings = Math.abs(get('3020'));
-  const totalEquity = shareCapital + retainedEarnings + netIncome;
-  const totalLandE  = totalLiab + totalEquity;
-  const isSeeded    = rows.some(r => (r.dr||0)+(r.cr||0) > 0);
+  // ── Balance Sheet — Equity ──
+  const shareCap      = netCr('3010');
+  const apic          = netCr('3011');
+  const retEarnings   = netCr('3020');
+  const totalEquity   = shareCap + apic + retEarnings + netIncome;
+  const totalLandE    = totalLiab + totalEquity;
 
-  return { rev, cogs, grossProfit, grossMargin: rev > 0 ? grossProfit/rev : 0,
-    sellExp, gaExp, deprExp, finCost, taxExp, totalOpEx, ebit, ebt, netIncome,
+  // isSeeded = true if ANY GL entry exists OR trialBalanceData has balances
+  const isSeeded = ledger.length > 0 || tbRows.some(r => (r.dr||0)+(r.cr||0) > 0);
+
+  return {
+    rev, dmCost, dlCost, ohCost, cogs, grossProfit,
+    grossMargin: rev > 0 ? grossProfit/rev : 0,
+    sellExp, gaExp, deprExp, finCosts, taxExp, totalOpEx,
+    ebit, ebt, netIncome,
     cashBank, ar, prepaid, rmInv, wipInv, fgInv, ppe, intangible,
     totalCA, totalNCA, totalAssets,
-    ap, accrued, vatPayable, taxPayable, ltDebt, totalCL, totalNCL, totalLiab,
-    shareCapital, retainedEarnings, totalEquity, totalLandE, cur, isSeeded,
-    balanced: Math.abs(totalAssets - totalLandE) < 1, rows };
+    ap, accruedLiab, vatPay, taxPay, ltDebt,
+    totalCL, totalNCL, totalLiab,
+    shareCap, apic, retEarnings, totalEquity, totalLandE,
+    // legacy aliases
+    accruedLiab, vatPayable:vatPay, taxPayable:taxPay,
+    shareCapital:shareCap, retainedEarnings:retEarnings,
+    finCost:finCosts,
+    cur, isSeeded,
+    balanced: Math.abs(totalAssets - totalLandE) < 1,
+    rows: tbRows, balMap
+  };
 }
-
-
-// ── FINANCIAL REPORT SHARED HELPERS ──
 function rptHeader(title, subtitle, standard) {
   const co    = S.get('company') || {};
   const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
