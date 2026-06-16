@@ -2094,6 +2094,36 @@ const GS = {
       return j.ok === true;
     } catch { return false; }
   },
+  // Push all localStorage data to Sheets
+  async push(data, key) {
+    if (!GS_URL) return false;
+    try {
+      const allData = {};
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('mce_')) {
+          try { allData[k.replace('mce_','')] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
+        }
+      });
+      const r = await fetch(GS_URL, { method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({action:'pushAll', data: allData}) });
+      const j = await r.json();
+      return j.ok === true;
+    } catch { return false; }
+  },
+  // Pull all data from Sheets
+  async pull() {
+    if (!GS_URL) return false;
+    try {
+      const r = await fetch(GS_URL + '?action=pullAll');
+      const j = await r.json();
+      if (j.ok && j.data) {
+        Object.entries(j.data).forEach(([k,v]) => { S.set(k, v); });
+        return true;
+      }
+      return false;
+    } catch { return false; }
+  },
   // Read one key from Sheets
   async get(key) {
     if (!GS_URL) return null;
@@ -2398,6 +2428,8 @@ function seedApprovalPolicies() {
 
 function seedApprovalRequests() {
   if (S.get('aprRequests')) return;
+  const _co = S.get('company');
+  if (_co && _co._wizardComplete) return;
   S.set('aprRequests', [
     { id:'REQ-001', module:'procurement', txType:'PO', docRef:'PO-0044', amount:284000, desc:'Purchase — Steel Plates (China Steel Works)', status:'pending', submittedBy:'USR-002', submittedAt:'2025-06-10', tiers:[{level:1,roleName:'manager',status:'pending'}] },
     { id:'REQ-002', module:'gl', txType:'MANJE', docRef:'JE-DRAFT-001', amount:48000, desc:'Intercompany management fee accrual', status:'pending', submittedBy:'USR-003', submittedAt:'2025-06-11', tiers:[{level:1,roleName:'manager',status:'pending'}] },
@@ -2656,8 +2688,10 @@ function initApp(){
   document.getElementById('sbCo').textContent=co.name||'ManuCost ERP';
   document.getElementById('sbFY').textContent='FY '+(co.fyYear||2025);
   document.getElementById('tbPeriod').textContent='FY '+(co.fyYear||2025)+' · Q2';
-  document.getElementById('dashH').textContent='Dashboard';
-  document.getElementById('dashSub').textContent=(co.name||'')+' — Manufacturing Overview';
+  const _dashH = document.getElementById('dashH');
+  const _dashSub = document.getElementById('dashSub');
+  if (_dashH) _dashH.textContent = 'Dashboard';
+  if (_dashSub) _dashSub.textContent = (co.name||'') + ' — Manufacturing Overview';
   costMode=co.costMethod||'job';
   document.getElementById('mJob').classList.toggle('active',costMode==='job');
   document.getElementById('mABC').classList.toggle('active',costMode==='abc');
@@ -2709,18 +2743,7 @@ const ON_NAV={coa:renderCOA,journal:renderJE,ledger:()=>{buildGLSel();renderGL()
   disposal:     renderDisposals,
   overhead:     renderOH,
 };
-// Register report pages
-ON_NAV['rpt-hub']      = renderRptHub;
-ON_NAV['rpt-equity']   = renderEquity;
-ON_NAV['rpt-ar-aging'] = renderARAgingReport;
-ON_NAV['rpt-ap-aging'] = renderAPAgingReport;
-ON_NAV['rpt-budget']   = renderBudgetReport;
-ON_NAV['rpt-costvar']  = renderCostVariance;
-// Register auth/admin pages
-ON_NAV['users']        = renderUsers;
-ON_NAV['currencies']   = renderCurrencies;
-ON_NAV['approvals']    = renderApprovals;
-ON_NAV['myrequests']   = renderMyApprovals;
+// ON_NAV registrations consolidated above
 
 // Page titles
 const PT_ALL = {
@@ -5716,6 +5739,8 @@ function renderCurrencies() {
 
 // ── WIRE ALL NEW MODULE SEEDS & ON_NAV ──
 function seedAllNew() {
+  const _co = S.get('company');
+  if (_co && _co._wizardComplete) return; // new company: no demo data
   seedIntercompany();
   seedBankAccounts();
   seedVoyages();
@@ -6483,12 +6508,17 @@ function renderTB() {
   const catColor = {Assets:'var(--blue)',Liabilities:'var(--red)',Equity:'var(--purple)',Revenue:'var(--green)',COGS:'var(--teal)',Expenses:'var(--orange)'};
 
   // Compute period movements from GL ledger
+  // Only include if company has opening balance data (not a blank new company)
+  const tbData = getTBData();
+  const hasOpeningData = tbData.some(r=>(r.dr||0)+(r.cr||0)>0);
   const periodMovements = {};
-  ledger.forEach(e=>{
-    periodMovements[e.account] = periodMovements[e.account]||{dr:0,cr:0};
-    periodMovements[e.account].dr += (e.dr||0);
-    periodMovements[e.account].cr += (e.cr||0);
-  });
+  if (hasOpeningData) {
+    ledger.forEach(e=>{
+      periodMovements[e.account] = periodMovements[e.account]||{dr:0,cr:0};
+      periodMovements[e.account].dr += (e.dr||0);
+      periodMovements[e.account].cr += (e.cr||0);
+    });
+  }
 
   // Opening balances from localStorage (getTBData) — clears on reset
   const openBal = {};
@@ -7052,12 +7082,19 @@ function saveSetup() { saveCompany(); }
 function runAH() { toast('Approval hierarchy saved.', 'success'); }
 function pushToSheets() {
   if (!GS_URL) { toast('Connect Google Sheets first.', 'error'); return; }
-  toast('Pushing data to Google Sheets…', 'info', 2000);
-  GS.push(S.get('journals')||[], 'journals').then(ok => toast(ok?'✓ Synced to Sheets':'Sync failed','success'));
+  toast('Pushing all data to Google Sheets…', 'info', 2000);
+  GS.push().then(ok => {
+    toast(ok ? '✓ All data synced to Sheets' : 'Sync failed — check connection', ok?'success':'error');
+    renderSyncLog && renderSyncLog();
+  });
 }
 function pullFromSheets() {
   if (!GS_URL) { toast('Connect Google Sheets first.', 'error'); return; }
   toast('Pulling data from Google Sheets…', 'info', 2000);
+  GS.pull().then(ok => {
+    if (ok) { toast('✓ Data pulled from Sheets. Reloading…', 'success', 1500); setTimeout(()=>location.reload(), 1500); }
+    else toast('Pull failed — check connection', 'error');
+  });
 }
 function exportApprovalPolicy() { exportReport('approvals'); }
 
@@ -7297,13 +7334,28 @@ try {
   if (localStorage.getItem('mce_data_version') !== DATA_VERSION) {
     const theme = localStorage.getItem('mce_theme');
     const gsUrl = localStorage.getItem('mce_gs_url') || DEFAULT_GS_URL;
-    // Clear ALL stale data
-    Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
+    const existingCo = localStorage.getItem('mce_company');
+    // Only full-clear if no company configured — preserve wizard users
+    if (!existingCo) {
+      Object.keys(localStorage).forEach(k => { if (k.startsWith('mce_')) localStorage.removeItem(k); });
+    }
     localStorage.setItem('mce_theme', theme || 'light');
     localStorage.setItem('mce_gs_url', gsUrl);
     localStorage.setItem('mce_data_version', DATA_VERSION);
     sessionStorage.clear();
   }
+  // Retroactively protect wizard-configured companies from demo seeding
+  (function fixWizardFlag() {
+    const co = S.get('company');
+    if (co && co.name && !co._wizardComplete) {
+      // If users key was manually created (not demo seedUsers default), mark as wizard
+      const users = S.get('users') || [];
+      const hasCustomAdmin = users.some(u => u.role === 'admin' && u.username !== 'admin');
+      const seeded = localStorage.getItem('mce_seeded');
+      // If company exists but wasn't demo-seeded, treat as wizard-configured
+      if (!seeded) { co._wizardComplete = true; S.set('company', co); }
+    }
+  })();
   seedData();        // guarded: skips if seeded OR _wizardComplete
   seedUsers();       // guarded: skips if users exist
   seedCurrencies();  // guarded: skips if currencies exist
