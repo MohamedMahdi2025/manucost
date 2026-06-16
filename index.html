@@ -2338,6 +2338,26 @@ function fC(amt,code,opts) {
 }
 
 // ── SEED FUNCTIONS ──
+function updateUserPill() {
+  const s = getSession();
+  const pill = document.getElementById('userPill');
+  const pillName = document.getElementById('userPillName');
+  const pillRole = document.getElementById('userPillRole');
+  if (!s) return;
+  if (pill) pill.title = s.name || s.username;
+  if (pillName) pillName.textContent = s.name || s.username;
+  if (pillRole) pillRole.textContent = (ROLES[s.role]?.label) || s.role;
+  // Update topbar user display
+  const topUser = document.getElementById('topbarUser');
+  if (topUser) topUser.textContent = s.name || s.username;
+}
+function updateAprBell() {
+  const reqs = S.get('aprRequests') || [];
+  const pending = reqs.filter(r => r.status === 'pending').length;
+  const bell = document.getElementById('aprBell');
+  if (bell) { bell.textContent = pending || ''; bell.style.display = pending ? 'flex' : 'none'; }
+}
+
 function seedUsers() {
   if (S.get('users')) return;
   S.set('users', [{ id:'USR-001', name:'Administrator', username:'admin', password:hashPw('Admin@1234'), role:'admin', dept:'Management', email:'admin@company.sa', status:'Active', lastLogin:'—', created:today() }]);
