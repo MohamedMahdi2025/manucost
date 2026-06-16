@@ -2085,107 +2085,79 @@ if (!localStorage.getItem('mce_gs_url')) {
 }
 
 const GS = {
-  // Save URL
   setURL(url) {
     GS_URL = url.trim();
     localStorage.setItem('mce_gs_url', GS_URL);
   },
-  // Test connectivity
   async ping() {
     if (!GS_URL) return false;
     try {
-      const r = await fetch(GS_URL + '?action=ping', { method: 'GET' });
+      const r = await fetch(GS_URL + '?action=ping');
       const j = await r.json();
       return j.ok === true;
     } catch { return false; }
   },
-  // Push all localStorage data to Sheets
-  async push(data, key) {
-    if (!GS_URL) return false;
-    try {
-      const allData = {};
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith('mce_')) {
-          try { allData[k.replace('mce_','')] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
-        }
-      });
-      const r = await fetch(GS_URL, { method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({action:'pushAll', data: allData}) });
-      const j = await r.json();
-      return j.ok === true;
-    } catch { return false; }
-  },
-  // Pull all data from Sheets
-  async pull() {
-    if (!GS_URL) return false;
-    try {
-      const r = await fetch(GS_URL + '?action=pullAll');
-      const j = await r.json();
-      if (j.ok && j.data) {
-        Object.entries(j.data).forEach(([k,v]) => { S.set(k, v); });
-        return true;
-      }
-      return false;
-    } catch { return false; }
-  },
-  // Read one key from Sheets
-  async get(key) {
-    if (!GS_URL) return null;
-    try {
-      const r = await fetch(`${GS_URL}?action=get&key=${encodeURIComponent(key)}`);
-      const j = await r.json();
-      return j.ok ? j.value : null;
-    } catch { return null; }
-  },
-  // Write one key to Sheets (fire-and-forget, don't block UI)
+  // Write one key (fire-and-forget background sync)
   async set(key, value) {
     if (!GS_URL) return;
     try {
       await fetch(GS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'set', key, data: value }),
+        body: JSON.stringify({ action:'set', key, data: value }),
       });
-    } catch { /* silent — localStorage already saved it */ }
+    } catch { /* silent */ }
   },
-  // Push ALL localStorage keys to Sheets (full sync)
-  async pushAll() {
-    if (!GS_URL) return { pushed: 0 };
+  // Read one key
+  async get(key) {
+    if (!GS_URL) return null;
+    try {
+      const r = await fetch(GS_URL + '?action=get&key=' + encodeURIComponent(key));
+      const j = await r.json();
+      return j.ok ? j.value : null;
+    } catch { return null; }
+  },
+  // Push ALL localStorage → Sheets (uses bulkSet action in AppsScript)
+  async push() {
+    if (!GS_URL) return false;
     const entries = {};
     Object.keys(localStorage)
-      .filter(k => k.startsWith('mce_') && k !== 'mce_gs_url')
+      .filter(k => k.startsWith('mce_') && k !== 'mce_gs_url' && k !== 'mce_theme')
       .forEach(k => {
-        try { entries[k.replace('mce_', '')] = JSON.parse(localStorage.getItem(k)); } catch {}
+        try { entries[k.replace('mce_', '')] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
       });
     try {
+      // No Content-Type header — GAS CORS requires plain POST body
       const r = await fetch(GS_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'bulkSet', data: entries }),
+        body: JSON.stringify({ action:'bulkSet', data: entries }),
       });
       const j = await r.json();
-      return { pushed: j.count || 0, ok: j.ok };
-    } catch (e) { return { pushed: 0, error: e.message }; }
+      return j.ok === true;
+    } catch { return false; }
   },
-  // Pull ALL keys from Sheets into localStorage (full restore)
-  async pullAll() {
-    if (!GS_URL) return { pulled: 0 };
+  // Pull ALL Sheets → localStorage (uses backup action in AppsScript)
+  async pull() {
+    if (!GS_URL) return false;
     try {
-      const r = await fetch(`${GS_URL}?action=backup`);
+      const r = await fetch(GS_URL + '?action=backup');
       const j = await r.json();
-      if (!j.ok) return { pulled: 0, error: j.error };
-      let pulled = 0;
+      if (!j.ok) return false;
       Object.entries(j.backup || {}).forEach(([k, v]) => {
         localStorage.setItem('mce_' + k, JSON.stringify(v));
-        pulled++;
       });
-      return { pulled };
-    } catch (e) { return { pulled: 0, error: e.message }; }
+      return true;
+    } catch { return false; }
   },
-  // Delete all Sheets data
+  // Wipe all Sheets data
   async reset() {
     if (!GS_URL) return;
-    await fetch(GS_URL, { method: 'POST', body: JSON.stringify({ action: 'reset' }) });
-  }
+    try {
+      await fetch(GS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action:'reset' }),
+      });
+    } catch {}
+  },
 };
 
 // ── LOCAL STORAGE WRAPPER (primary — always instant) ──
@@ -2939,7 +2911,7 @@ const mTemplates={
   mAcc:{title:'New Account',saveLabel:'Add Account',body:()=>`<div class="fr fr2">${inp('Account Code','ma_c','text','',undefined,true)}${inp('Account Name','ma_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','ma_t',['Asset','Liability','Equity','Revenue','COGS','Expense'])}${sel('Normal Balance','ma_nb',['Debit','Credit'])}</div><div class="fr fr2">${sel('Parent Account','ma_pa',['— None —','1000 Current Assets','2000 Liabilities','3000 Equity','4000 Revenue','5000 COGS','6000 Expenses'])}${sel('Cost Center','ma_cc',['All','Production','Admin','Sales'])}</div>`,
     save:()=>{closeM();toast('Account added.','success');renderCOA();}},
   mJE:{title:'New Journal Entry',saveLabel:'Post Entry',body:()=>`<div class="fr fr3">${inp('JE Number','mje_id','text','','JE-0089')}${inp('Date','mje_d','date','',today())}${sel('Source','mje_src',['Manual','Procurement','Payroll','Costing','OH Allocation'])}</div><div class="fg mb12"><label class="fl">Narration</label><input class="fc" id="mje_desc" placeholder="Describe this journal entry"></div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 34px;gap:6px;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--text2)">Account</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Debit</span><span style="font-size:11px;font-weight:600;color:var(--text2)">Credit</span><span></span></div><div id="jeLines">${jeLineHTML()}${jeLineHTML()}</div><button class="btn btn-g sm mt12" onclick="addJELine()">+ Add Line</button><div class="je-bal" id="jeBal"><span>Dr: <strong id="jeDr">0.00</strong></span><span>Cr: <strong id="jeCr">0.00</strong></span><span id="jeSt" style="font-weight:600;color:var(--orange)">Not balanced</span></div>`,
-    save:()=>{if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const l=S.get('journals')||[];l.unshift({id:'JE-'+(89+l.length),date:jeDate,desc:gv('mje_desc')||'Manual JE',dr:0,cr:0,src:gv('mje_src'),status:'Posted'});S.set('journals',l);closeM();renderJE();toast('Journal Entry posted.','success');}},
+    save:()=>{if(!document.getElementById('jeSt').textContent.includes('✓')){toast('Entry must be balanced (Dr = Cr)','error');return;}const jeDate=gv('mje_d')||today();if(checkPeriod(jeDate))return;const desc=gv('mje_desc')||'Manual Journal Entry';const src=gv('mje_src')||'Manual';const jeId='JE-'+String(Date.now()).slice(-6);const lineEls=document.querySelectorAll('#jeLines .je-grid');const lines=[];let totalDr=0,totalCr=0;lineEls.forEach(el=>{const inputs=el.querySelectorAll('input[type=number]');const selEl=el.querySelector('select');const accCode=selEl?selEl.value:'';const dr=parseFloat(inputs[0]?.value)||0;const cr=parseFloat(inputs[1]?.value)||0;if((dr||cr)&&accCode){lines.push({account:accCode,dr,cr});totalDr+=dr;totalCr+=cr;}});if(!lines.length){toast('Add at least one line with an amount.','error');return;}const journals=S.get('journals')||[];journals.unshift({id:jeId,date:jeDate,desc,dr:totalDr,cr:totalCr,src,status:'Posted',lines});S.set('journals',journals);const cur=baseCurr();const ledger=S.get('glLedger')||[];const buildH=(prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};let lastHash='GENESIS';lines.forEach((ln,idx)=>{const hash=buildH(lastHash,ln);lastHash=hash;ledger.push({jeId,date:jeDate,desc,src,account:ln.account,dr:ln.dr,cr:ln.cr,txCurr:cur,txAmt:ln.dr||(-ln.cr),baseAmt:ln.dr||ln.cr,dims:{cc:'CC01'},book:'ifrs',status:'Posted',userId:getSession()?.userId||'USR-001',hash,ts:new Date().toISOString()});});S.set('glLedger',ledger);closeM();renderJE();if(typeof audioPostSuccess==='function')audioPostSuccess();toast('✓ JE '+jeId+' posted — '+lines.length+' lines, Dr/Cr: '+fC(totalDr,cur),'success',4000);}},
   mJETpl:{title:'Journal Entry Templates',saveLabel:'Close',body:()=>`<div style="display:flex;flex-direction:column;gap:8px">${[['GRN Receipt','Dr. Raw Materials / Cr. Accounts Payable'],['Payroll Post','Dr. Wages Expense / Cr. Wages Payable + GOSI'],['OH Allocation','Dr. WIP / Cr. OH Applied'],['WIP → FG','Dr. Finished Goods / Cr. WIP Inventory'],['COGS Entry','Dr. COGS / Cr. Finished Goods'],['Customer Invoice','Dr. AR / Cr. Revenue + VAT Payable'],['Depreciation','Dr. Depreciation / Cr. Accum. Depreciation']].map(([t,d])=>`<div class="fsec flex ic jb"><div><div class="fw6 mb8" style="font-size:12.5px">${t}</div><div class="t-sm t-muted">${d}</div></div><button class="btn btn-s sm" onclick="closeM();openM('mJE')">Use</button></div>`).join('')}</div>`,
     save:()=>closeM()},
   mAct:{title:'New Activity Pool (ABC)',saveLabel:'Add Pool',body:()=>`<div class="fr fr2">${inp('Activity Name','mact_n','text','',undefined,true)}${inp('Cost Driver','mact_d','text','e.g. Machine Hours',undefined,true)}</div><div class="fr fr2">${inp('Total Pool Cost (SAR)','mact_c','number','','0')}${inp('Budgeted Driver Qty','mact_q','number','','0')}</div>`,
@@ -5634,30 +5606,35 @@ function renderUsers() {
   const users = S.get('users') || [];
   const s = getSession();
 
-  // KPIs
+  // Safe initials: handles missing/empty name
+  const initials = (name) => {
+    if (!name) return '?';
+    return (name||'').split(' ').filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+  };
+
   document.getElementById('userKPIs').innerHTML = [
-    { l:'Total Users', v: users.length, c:'c-blue' },
-    { l:'Active', v: users.filter(u=>u.status==='Active').length, c:'c-green' },
-    { l:'Inactive', v: users.filter(u=>u.status==='Inactive').length, c:'c-orange' },
-    { l:'Roles Defined', v: Object.keys(ROLES).length, c:'c-teal' },
+    { l:'Total Users',   v: users.length,                                    c:'c-blue'   },
+    { l:'Active',        v: users.filter(u=>u.status==='Active').length,     c:'c-green'  },
+    { l:'Inactive',      v: users.filter(u=>u.status==='Inactive').length,   c:'c-orange' },
+    { l:'Roles Defined', v: Object.keys(ROLES).length,                      c:'c-teal'   },
   ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div></div>`).join('');
 
-  // Users table
   document.getElementById('usersTbl').innerHTML = users.map(u => {
-    const role = ROLES[u.role] || {};
-    const isMe = s && s.userId === u.id;
+    const role  = ROLES[u.role] || { color:'#666', bg:'#eee', label: u.role||'—' };
+    const isMe  = s && s.userId === u.id;
+    const name  = u.name || u.username || '—';
     return `<tr>
       <td>
         <div class="flex ic gap8">
-          <div class="user-avatar" style="background:${role.color||'#666'}">${u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}</div>
-          <span class="fw6">${u.name}${isMe?' <span class="b b-blue" style="font-size:10px">You</span>':''}</span>
+          <div class="user-avatar" style="background:${role.color}">${initials(name)}</div>
+          <span class="fw6">${name}${isMe?' <span class="b b-blue" style="font-size:10px">You</span>':''}</span>
         </div>
       </td>
-      <td class="t-blue fw6">${u.username}</td>
-      <td><span class="b" style="background:${role.bg||'#eee'};color:${role.color||'#333'}">${role.label||u.role}</span></td>
+      <td class="t-blue fw6">${u.username||'—'}</td>
+      <td><span class="b" style="background:${role.bg};color:${role.color}">${role.label}</span></td>
       <td>${u.dept||'—'}</td>
       <td class="t-muted t-sm">${u.lastLogin||'Never'}</td>
-      <td>${sBadge(u.status)}</td>
+      <td>${sBadge(u.status||'Active')}</td>
       <td>
         <div class="btn-row">
           <button class="btn btn-g xs" onclick="openM('mEditUser','${u.id}')">Edit</button>
@@ -5665,17 +5642,15 @@ function renderUsers() {
         </div>
       </td>
     </tr>`;
-  }).join('');
+  }).join('') || '<tr><td colspan="7" class="t-muted" style="text-align:center;padding:20px">No users found</td></tr>';
 
-  // Role cards
   document.getElementById('roleCards').innerHTML = Object.entries(ROLES).map(([key, r]) => `
-    <div class="fsec mb8" style="border-left:3px solid ${r.color};border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px;background:${r.bg}">
-      <div class="fw6 t-sm mb4" style="color:${r.color}">${r.label}</div>
-      <div class="t-xs t-muted mb4">${r.desc}</div>
-      <div class="t-xs" style="color:${r.color}">${r.perms==='*' ? 'All modules (unrestricted)' : r.perms.length + ' modules'}</div>
+    <div class="fsec mb8" style="border-left:3px solid ${r.color};border-radius:0 var(--radius) var(--radius) 0;padding:10px 12px;background:${r.bg}20">
+      <div class="fw6 t-sm mb4" style="color:${r.color}">${r.label||key}</div>
+      <div class="t-xs t-muted mb4">${r.desc||''}</div>
+      <div class="t-xs" style="color:${r.color}">${r.perms==='*' ? 'All modules (unrestricted)' : (Array.isArray(r.perms) ? r.perms.length : 0) + ' modules'}</div>
     </div>`).join('');
 
-  // Permission matrix
   const modules = [
     {key:'dashboard',label:'Dashboard'},{key:'coa',label:'Chart of Accounts'},{key:'journal',label:'Journal Entry'},
     {key:'po',label:'Purchase Orders'},{key:'grn',label:'Goods Receipt'},{key:'aging-ap',label:'AP Aging'},
@@ -5685,20 +5660,25 @@ function renderUsers() {
     {key:'periodclose',label:'Period Closing'},{key:'users',label:'User Management'},
   ];
   const roleKeys = Object.keys(ROLES);
-  document.getElementById('permMatrix').innerHTML = `<table>
-    <thead><tr><th>Module</th>${roleKeys.map(k=>`<th style="color:${ROLES[k].color};text-align:center">${ROLES[k].label.split(' ')[0]}</th>`).join('')}</tr></thead>
+  document.getElementById('permMatrix').innerHTML = `<div class="tw"><table>
+    <thead><tr><th>Module</th>${roleKeys.map(k=>{
+      const r = ROLES[k]||{};
+      const lbl = (r.label||k).split(' ')[0];
+      return `<th style="color:${r.color||'#333'};text-align:center;font-size:11px">${lbl}</th>`;
+    }).join('')}</tr></thead>
     <tbody>${modules.map(m=>`<tr>
-      <td>${m.label}</td>
+      <td style="font-size:12px">${m.label}</td>
       ${roleKeys.map(k=>{
-        const has = ROLES[k].perms==='*' || ROLES[k].perms.includes(m.key);
-        const write = has && k !== 'viewer' && WRITE_PAGES.has(m.key);
+        const r = ROLES[k]||{};
+        const has = r.perms==='*' || (Array.isArray(r.perms) && r.perms.includes(m.key));
+        const readOnly = has && k==='viewer';
         const icon = !has ? '<span style="color:var(--border2)">—</span>'
-          : WRITE_PAGES.has(m.key) && k==='viewer' ? '<span style="color:var(--orange)">??</span>'
-          : has ? '<span style="color:var(--green)">✓</span>' : '—';
+          : readOnly   ? '<span style="color:var(--orange);font-size:11px">R</span>'
+          : '<span style="color:var(--green)">✓</span>';
         return `<td style="text-align:center">${icon}</td>`;
       }).join('')}
     </tr>`).join('')}</tbody>
-  </table><div class="t-xs t-muted" style="padding:10px 12px">✓ Full access &nbsp; ?? Read-only &nbsp; — No access</div>`;
+  </table></div><div class="t-xs t-muted" style="padding:8px 12px">✓ Full access &nbsp; R Read-only &nbsp; — No access</div>`;
 }
 
 function renderApprovals() {
@@ -7121,19 +7101,42 @@ function doLogout() { logout(); }
 function saveSetup() { saveCompany(); }
 function runAH() { toast('Approval hierarchy saved.', 'success'); }
 function pushToSheets() {
-  if (!GS_URL) { toast('Connect Google Sheets first.', 'error'); return; }
-  toast('Pushing all data to Google Sheets…', 'info', 2000);
+  if (!GS_URL) { toast('Connect Google Sheets first in Company Setup.', 'error'); return; }
+  const btn = document.querySelector('[onclick="pushToSheets()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Pushing…'; }
+  toast('Pushing all data to Google Sheets…', 'info', 3000);
   GS.push().then(ok => {
-    toast(ok ? '✓ All data synced to Sheets' : 'Sync failed — check connection', ok?'success':'error');
-    renderSyncLog && renderSyncLog();
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#8593; Push All Data to Sheets'; }
+    if (ok) {
+      toast('✓ All data pushed to Google Sheets successfully.', 'success', 4000);
+      setSyncBadge('on');
+    } else {
+      toast('Push failed. Check your Apps Script URL and that deployment is set to "Anyone".', 'error', 5000);
+      setSyncBadge('err');
+    }
+    if (typeof renderSyncLog === 'function') renderSyncLog();
+  }).catch(e => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#8593; Push All Data to Sheets'; }
+    toast('Push error: ' + e.message, 'error', 5000);
   });
 }
 function pullFromSheets() {
-  if (!GS_URL) { toast('Connect Google Sheets first.', 'error'); return; }
-  toast('Pulling data from Google Sheets…', 'info', 2000);
+  if (!GS_URL) { toast('Connect Google Sheets first in Company Setup.', 'error'); return; }
+  const btn = document.querySelector('[onclick="pullFromSheets()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Pulling…'; }
+  toast('Pulling all data from Google Sheets…', 'info', 3000);
   GS.pull().then(ok => {
-    if (ok) { toast('✓ Data pulled from Sheets. Reloading…', 'success', 1500); setTimeout(()=>location.reload(), 1500); }
-    else toast('Pull failed — check connection', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#8595; Pull All Data from Sheets'; }
+    if (ok) {
+      toast('✓ Data pulled successfully. Reloading…', 'success', 1500);
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      toast('Pull failed. Check your Apps Script URL and that deployment is set to "Anyone".', 'error', 5000);
+      setSyncBadge('err');
+    }
+  }).catch(e => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#8595; Pull All Data from Sheets'; }
+    toast('Pull error: ' + e.message, 'error', 5000);
   });
 }
 function exportApprovalPolicy() { exportReport('approvals'); }
