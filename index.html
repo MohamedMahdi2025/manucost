@@ -2089,11 +2089,7 @@ textarea.fc{resize:vertical;min-height:80px}
 <div class="page" id="page-bs">
   <div class="page-hdr"><div><h1>Balance Sheet</h1><p>Statement of Financial Position · IAS 1 compliant</p></div>
     <div class="btn-row">
-      <select class="fc" id="bsDate" onchange="renderBS()" style="width:140px">
-        <option value="jun25" selected>June 30, 2025</option>
-        <option value="mar25">March 31, 2025</option>
-        <option value="dec24">December 31, 2024</option>
-      </select>
+      <select class="fc" id="bsDate" onchange="renderBS()" style="width:190px"></select>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
         <input type="checkbox" id="bsComp" onchange="renderBS()" style="accent-color:var(--blue)"> Prior year
       </label>
@@ -4236,7 +4232,15 @@ function _tb() {
 }
 function rptHeader(title, subtitle, standard) {
   const co    = S.get('company') || {};
-  const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  // Use selected period date or latest GL entry date
+  const ledger = S.get('glLedger') || [];
+  const bsDateSel = document.getElementById('bsDate');
+  let asOfDate = bsDateSel?.value || '';
+  if (!asOfDate && ledger.length) {
+    asOfDate = ledger.map(e=>e.date||'').filter(Boolean).sort().reverse()[0];
+  }
+  if (!asOfDate) asOfDate = new Date().toISOString().slice(0,10);
+  const today = new Date(asOfDate+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   return `<div style="display:flex;justify-content:space-between;align-items:flex-start;
     padding-bottom:18px;margin-bottom:20px;border-bottom:3px solid var(--text1)">
     <div>
@@ -4346,6 +4350,16 @@ function renderPnL() {
 
 
 function renderBS() {
+  // Populate date selector with GL dates
+  const _ledger = S.get('glLedger') || [];
+  const _bsSel = document.getElementById('bsDate');
+  if (_bsSel && _bsSel.options.length <= 1) {
+    const _years = [...new Set(_ledger.map(e=>e.date?.slice(0,4)).filter(Boolean))].sort().reverse();
+    const _today = new Date().toISOString().slice(0,10);
+    _bsSel.innerHTML = `<option value="${_today}">As of Today (${_today})</option>`
+      + _years.map(y => `<option value="${y}-12-31">Year End ${y}</option><option value="${y}-06-30">Mid Year ${y} (Jun 30)</option>`).join('');
+    if (!_bsSel.value) _bsSel.value = _today;
+  }
   const t   = _tb();
   const cur = t.cur;
   const co  = S.get('company') || {};
@@ -8069,103 +8083,109 @@ function renderPivot() {
 
 // ── RENDER: TRIAL BALANCE (enhanced with opening/period/closing) ──
 function renderTB() {
-  const cur = baseCurr();
-  const book = document.getElementById('tbBook')?.value || 'ifrs';
+  const ledger  = S.get('glLedger') || [];
+  const cur     = baseCurr();
+  const book    = document.getElementById('tbBook')?.value || 'ifrs';
   const bookDef = GL_BOOKS[book] || GL_BOOKS.ifrs;
-  const type = document.getElementById('tbType')?.value || 'unadj';
-  const period = document.getElementById('tbPeriod')?.value || 'jun25';
-  const periodLabel = {jun25:'June 30, 2025', mar25:'March 31, 2025', dec24:'December 31, 2024'}[period] || 'June 30, 2025';
+  const type    = document.getElementById('tbType')?.value || 'unadj';
   const catColor = {Assets:'var(--blue)',Liabilities:'var(--red)',Equity:'var(--purple)',Revenue:'var(--green)',COGS:'var(--teal)',Expenses:'var(--orange)'};
 
-  // SINGLE SOURCE: opening balances always from trialBalanceData
-  const tbData = getTBData();
-  const hasData = tbData.some(r => (r.dr||0) + (r.cr||0) > 0);
+  // Build period options from actual GL entry dates
+  const periodSel = document.getElementById('tbPeriod');
+  if (periodSel) {
+    // Get unique year-months from GL
+    const months = [...new Set(ledger.map(e => e.date?.slice(0,7)).filter(Boolean))].sort().reverse();
+    // Also add year-end dates
+    const years  = [...new Set(ledger.map(e => e.date?.slice(0,4)).filter(Boolean))];
+    const options = [];
+    // Add "As of today" first
+    const today = new Date().toISOString().slice(0,10);
+    options.push({ val: today, lbl: 'As of Today (' + today + ')' });
+    // Add each year-end
+    years.sort().reverse().forEach(y => {
+      options.push({ val: y+'-12-31', lbl: 'Year End ' + y + ' (Dec 31)' });
+      options.push({ val: y+'-06-30', lbl: 'Mid Year ' + y + ' (Jun 30)' });
+    });
+    // Rebuild options
+    const curVal = periodSel.value || today;
+    periodSel.innerHTML = options.map(o =>
+      `<option value="${o.val}"${o.val===curVal?' selected':''}>${o.lbl}</option>`
+    ).join('');
+    if (!periodSel.value) periodSel.value = today;
+  }
 
-  // Period movements from glLedger (informational only — not used for balance check)
-  const ledger = S.get('glLedger') || [];
-  const periodMovements = {};
-  ledger.forEach(e => {
-    periodMovements[e.account] = periodMovements[e.account] || {dr:0, cr:0};
-    periodMovements[e.account].dr += (e.dr || 0);
-    periodMovements[e.account].cr += (e.cr || 0);
+  const asOfDate   = periodSel?.value || new Date().toISOString().slice(0,10);
+  const periodLabel = new Date(asOfDate).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  // Filter ledger up to selected date
+  const filtered = ledger.filter(e => (e.date||'') <= asOfDate);
+
+  // Aggregate balances by account from filtered GL
+  const balMap = {};
+  filtered.forEach(e => {
+    if (!balMap[e.account]) balMap[e.account] = { dr:0, cr:0 };
+    balMap[e.account].dr += (e.dr||0);
+    balMap[e.account].cr += (e.cr||0);
   });
 
-  // Compute totals from OPENING BALANCES only (the single balanced source)
-  let totalOpenDr = 0, totalOpenCr = 0;
-  let totalPeriodDr = 0, totalPeriodCr = 0;
+  // Build rows from COA_MASTER + custom accounts
+  const customAccs = S.get('customAccounts') || [];
+  const allAccs = [...COA_MASTER.filter(a=>a.type==='detail'), ...customAccs.map(a=>({code:a.c,name:a.n,category:a.cat,normal:a.normal,type:'detail'}))];
 
-  const rows = tbData.map(r => {
-    const obDr = r.dr || 0;
-    const obCr = r.cr || 0;
-    totalOpenDr  += obDr;
-    totalOpenCr  += obCr;
-    const pm = periodMovements[r.c] || {dr:0, cr:0};
-    totalPeriodDr += pm.dr;
-    totalPeriodCr += pm.cr;
+  const rows = allAccs
+    .filter(a => balMap[a.code] || Object.keys(balMap).includes(a.code))
+    .map(a => {
+      const b = balMap[a.code] || {dr:0,cr:0};
+      return {
+        code: a.code, name: a.name, cat: a.category||a.cat||'',
+        normal: a.normal||'Dr',
+        openDr:0, openCr:0,  // opening balances (could add later)
+        periodDr: b.dr, periodCr: b.cr,
+        closeDr: a.normal==='Dr' ? Math.max(0,b.dr-b.cr) : 0,
+        closeCr: a.normal==='Cr' ? Math.max(0,b.cr-b.dr) : 0,
+      };
+    });
 
-    // Closing balance: net opening + net period movements
-    // Result is a single signed number — positive = DR balance, negative = CR balance
-    const openingNet = obDr - obCr;
-    const periodNet  = pm.dr - pm.cr;
-    const closingNet = openingNet + periodNet;
-    const closingDr  = closingNet > 0 ? closingNet : 0;
-    const closingCr  = closingNet < 0 ? Math.abs(closingNet) : 0;
+  const totalDr = rows.reduce((s,r)=>s+r.periodDr,0);
+  const totalCr = rows.reduce((s,r)=>s+r.periodCr,0);
+  const balanced = Math.abs(totalDr-totalCr) < 0.01;
 
-    const color = catColor[r.cat] || 'var(--text2)';
-    return `<tr>
-      <td class="t-blue fw6" style="cursor:pointer" onclick="navGuarded('ledger');setTimeout(()=>{const s=document.getElementById('lgAccSel');if(s){s.value='${r.c}';renderGL();}},200)">${r.c}</td>
-      <td>${r.n}</td>
-      <td><span class="b" style="background:${color}22;color:${color};font-size:9px;padding:1px 6px;border-radius:10px">${r.cat||''}</span></td>
-      <td class="t-muted t-xs">${['Assets','COGS','Expenses'].includes(r.cat)?'CC01':'—'}</td>
-      <td class="num">${obDr ? fC(obDr,cur) : '—'}</td>
-      <td class="num">${obCr ? fC(obCr,cur) : '—'}</td>
-      <td class="num t-green">${pm.dr ? fC(pm.dr,cur) : '—'}</td>
-      <td class="num t-red">${pm.cr ? fC(pm.cr,cur) : '—'}</td>
-      <td class="num fw6">${closingDr ? fC(closingDr,cur) : '—'}</td>
-      <td class="num fw6">${closingCr ? fC(closingCr,cur) : '—'}</td>
-    </tr>`;
-  });
-
-  // BALANCE CHECK: based on opening balances only (they come from DEMO_TB_BALANCES which is verified balanced)
-  const openBalanced = !hasData || Math.abs(totalOpenDr - totalOpenCr) < 1;
-  const statusColor = openBalanced ? 'var(--green)' : 'var(--red)';
-  const statusText  = !hasData ? '— No Data' : openBalanced ? '✓ In Agreement' : '✗ Out of Balance';
-
+  // KPIs
   document.getElementById('tbKPIs').innerHTML = [
-    {l:'Accounts in Schedule', v:String(tbData.length),          c:'c-blue'},
-    {l:'Book',                 v:bookDef.label,                  c:'c-teal'},
-    {l:'Period',               v:periodLabel,                     c:'c-green'},
-    {l:'Balance Status',       v:statusText, c:openBalanced?'c-green':'c-red', id:'tbBalStatus'},
-  ].map(k => `<div class="kpi ${k.c}" ${k.id?`id="${k.id}"`:''}>
-    <div class="kpi-lbl">${k.l}</div>
-    <div class="kpi-val" style="font-size:${k.v.length>14?'11':'14'}px">${k.v}</div>
-  </div>`).join('');
+    {l:'Accounts in Schedule', v:String(rows.length),     c:'c-blue'},
+    {l:'Book',                 v:bookDef?.label||'IFRS',   c:'c-teal'},
+    {l:'Period',               v:periodLabel,              c:'c-green'},
+    {l:'Balance Status',       v:balanced?'✓ Balanced':'✗ Unbalanced', c:balanced?'c-green':'c-red'},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val" style="font-size:16px">${k.v}</div></div>`).join('');
 
-  document.getElementById('tbTbl').innerHTML = rows.join('');
+  // Table
+  const fN2 = n => n ? fC(n,cur) : '<span style="color:var(--text3)">—</span>';
+  document.getElementById('tbTbl').innerHTML = rows.length
+    ? rows.map(r => `<tr onclick="nav('ledger');buildGLSel();document.getElementById('glAcc').value='${r.code}';renderGL()" style="cursor:pointer">
+        <td class="fw6" style="color:var(--blue)">${r.code}</td>
+        <td>${r.name}</td>
+        <td><span class="b" style="background:${catColor[r.cat]||'var(--surface3)'}18;color:${catColor[r.cat]||'var(--text2)'};font-size:10px;padding:2px 7px;border-radius:3px">${r.cat}</span></td>
+        <td>CC01</td>
+        <td class="num">${fN2(r.openDr)}</td>
+        <td class="num">${fN2(r.openCr)}</td>
+        <td class="num" style="color:var(--green)">${fN2(r.periodDr)}</td>
+        <td class="num" style="color:var(--red)">${fN2(r.periodCr)}</td>
+        <td class="num fw6">${fN2(r.closeDr)}</td>
+        <td class="num fw6">${fN2(r.closeCr)}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="10" style="padding:32px;text-align:center;color:var(--text3)">
+        No GL entries found up to ${periodLabel}. Post journal entries to see the trial balance.
+      </td></tr>`;
 
-  // Closing totals: net of (opening + period) split into DR/CR
-  const closingNetTotal = (totalOpenDr - totalOpenCr) + (totalPeriodDr - totalPeriodCr);
-  const totalClosingDr = closingNetTotal > 0 ? closingNetTotal : 0;
-  const totalClosingCr = closingNetTotal < 0 ? Math.abs(closingNetTotal) : 0;
-
-  document.getElementById('tbFoot').innerHTML = `
-    <tr style="font-weight:700;background:var(--surface2)">
-      <td colspan="4">TOTAL — ${bookDef.label}</td>
-      <td class="num">${fC(totalOpenDr,cur)}</td>
-      <td class="num">${fC(totalOpenCr,cur)}</td>
-      <td class="num">${totalPeriodDr ? fC(totalPeriodDr,cur) : '—'}</td>
-      <td class="num">${totalPeriodCr ? fC(totalPeriodCr,cur) : '—'}</td>
-      <td class="num t-blue">${totalClosingDr ? fC(totalClosingDr,cur) : '—'}</td>
-      <td class="num t-blue">${totalClosingCr ? fC(totalClosingCr,cur) : '—'}</td>
-    </tr>
-    <tr><td colspan="10" style="padding:10px 8px;font-weight:700;color:${statusColor}">
-      ${!hasData
-        ? 'No opening balance data. Post journal entries or import opening balances to begin.'
-        : openBalanced
-          ? '✓ Trial Balance is in agreement — Opening balances: DR ' + fC(totalOpenDr,cur) + ' = CR ' + fC(totalOpenCr,cur)
-          : '✗ OUT OF BALANCE — Opening DR ' + fC(totalOpenDr,cur) + ' vs CR ' + fC(totalOpenCr,cur) + ' — Diff: ' + fC(Math.abs(totalOpenDr-totalOpenCr),cur)
-      }
-    </td></tr>`;
+  // Totals row
+  document.getElementById('tbFoot').innerHTML = `<tr style="background:var(--text1);color:#fff;font-weight:700">
+    <td colspan="4" style="padding:10px 14px">TOTAL</td>
+    <td class="num">—</td><td class="num">—</td>
+    <td class="num">${fC(totalDr,cur)}</td>
+    <td class="num">${fC(totalCr,cur)}</td>
+    <td class="num ${balanced?'':'t-red'}">${balanced?'✓ Balanced':'✗ '+fC(Math.abs(totalDr-totalCr),cur)+' diff'}</td>
+    <td class="num"></td>
+  </tr>`;
 }
 
 // ── UNIVERSAL JOURNAL SEARCH ──
