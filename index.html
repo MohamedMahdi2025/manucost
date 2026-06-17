@@ -1245,11 +1245,7 @@ textarea.fc{resize:vertical;min-height:80px}
   <div class="page-hdr">
     <div><h1>Trial Balance</h1><p>Multi-book · Dimension breakdown · Real-time balancing check</p></div>
     <div class="btn-row">
-      <select class="fc" id="tbPeriod" onchange="renderTB()" style="width:140px">
-        <option value="jun25" selected>June 30, 2025</option>
-        <option value="mar25">March 31, 2025</option>
-        <option value="dec24">December 31, 2024</option>
-      </select>
+      <input type="date" class="fc" id="tbPeriod" onchange="renderTB()" style="width:180px;font-size:13px" value="" oninput="renderTB()">
       <select class="fc" id="tbBook" onchange="renderTB()" style="width:150px">
         <option value="ifrs">IFRS Ledger</option>
         <option value="tax">Tax Ledger</option>
@@ -2066,20 +2062,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ INCOME STATEMENT ════ -->
 <div class="page" id="page-pnl">
-  <div class="page-hdr"><div><h1>Income Statement</h1><p>Profit & Loss · IAS 1 compliant</p></div>
+  <div class="page-hdr">
+    <div><h1>Income Statement</h1><p>Statement of Profit or Loss · IAS 1 compliant</p></div>
     <div class="btn-row">
-      <select class="fc" id="pnlPeriod" onchange="renderPnL()" style="width:140px">
-        <option value="month">Current Month</option>
-        <option value="q" selected>Current Quarter</option>
-        <option value="h1">H1 (Jan–Jun)</option>
-        <option value="ytd">Year to Date</option>
-        <option value="annual">Full Year</option>
-      </select>
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
-        <input type="checkbox" id="pnlComp" onchange="renderPnL()" style="accent-color:var(--blue)"> Prior period
-      </label>
-      <button class="btn btn-g sm" onclick="printReport('pnlRpt')">🖨 Print</button>
-      <button class="btn btn-s sm" onclick="exportReport('pnl')">↓ Export</button>
+      <input type="date" class="fc" id="pnlPeriod" onchange="renderPnL()" style="width:180px;font-size:13px" value="" oninput="renderPnL()">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="card"><div class="card-body" id="pnlRpt"></div></div>
@@ -2087,14 +2075,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ BALANCE SHEET ════ -->
 <div class="page" id="page-bs">
-  <div class="page-hdr"><div><h1>Balance Sheet</h1><p>Statement of Financial Position · IAS 1 compliant</p></div>
+  <div class="page-hdr">
+    <div><h1>Balance Sheet</h1><p>Statement of Financial Position · IAS 1 compliant</p></div>
     <div class="btn-row">
-      <select class="fc" id="bsDate" onchange="renderBS()" style="width:190px"></select>
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
-        <input type="checkbox" id="bsComp" onchange="renderBS()" style="accent-color:var(--blue)"> Prior year
-      </label>
-      <button class="btn btn-g sm" onclick="printReport('bsRpt')">🖨 Print</button>
-      <button class="btn btn-s sm" onclick="exportReport('bs')">↓ Export</button>
+      <input type="date" class="fc" id="bsPeriod" onchange="renderBS()" style="width:180px;font-size:13px" value="" oninput="renderBS()">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="card"><div class="card-body" id="bsRpt"></div></div>
@@ -2102,16 +2088,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ CASH FLOW ════ -->
 <div class="page" id="page-cf">
-  <div class="page-hdr"><div><h1>Statement of Cash Flows</h1><p>Indirect method · IAS 7 compliant</p></div>
+  <div class="page-hdr">
+    <div><h1>Cash Flow Statement</h1><p>Statement of Cash Flows · IAS 7 · Indirect Method</p></div>
     <div class="btn-row">
-      <select class="fc" id="cfPeriod" onchange="renderCF()" style="width:140px">
-        <option value="q" selected>Q2 2025</option>
-        <option value="h1">H1 2025</option>
-        <option value="ytd">YTD 2025</option>
-        <option value="annual">Full Year 2025</option>
-      </select>
-      <button class="btn btn-g sm" onclick="printReport('cfRpt')">🖨 Print</button>
-      <button class="btn btn-s sm" onclick="exportReport('cf')">↓ Export</button>
+      <input type="date" class="fc" id="cfPeriod" onchange="renderCF()" style="width:180px;font-size:13px" value="" oninput="renderCF()">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="card"><div class="card-body" id="cfRpt"></div></div>
@@ -2133,14 +2115,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ AR AGING REPORT ════ -->
 <div class="page" id="page-rpt-ar-aging">
-  <div class="page-hdr"><div><h1>Accounts Receivable Aging</h1><p>IFRS 9 — expected credit loss & collections dashboard</p></div>
+  <div class="page-hdr">
+    <div><h1>AR Aging Report</h1><p>Accounts receivable aging analysis</p></div>
     <div class="btn-row">
-      <select class="fc" id="arAgingDate" onchange="renderARAgingReport()" style="width:160px">
-        <option value="jun25" selected>As at June 30, 2025</option>
-        <option value="mar25">As at March 31, 2025</option>
-      </select>
-      <button class="btn btn-g sm" onclick="printReport('arAgingRpt')">🖨 Print</button>
-      <button class="btn btn-s sm" onclick="exportReport('ar-aging')">↓ Export</button>
+      <input type="date" class="fc" id="arAgePeriod" onchange="renderAgingRpt('ar')" style="width:180px;font-size:13px" value="" oninput="renderAgingRpt('ar')">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="kpi-grid g4 mb16" id="arAgingKPIs"></div>
@@ -2149,13 +2129,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ AP AGING REPORT ════ -->
 <div class="page" id="page-rpt-ap-aging">
-  <div class="page-hdr"><div><h1>Accounts Payable Aging</h1><p>Supplier payment obligations by age bucket</p></div>
+  <div class="page-hdr">
+    <div><h1>AP Aging Report</h1><p>Accounts payable aging analysis</p></div>
     <div class="btn-row">
-      <select class="fc" id="apAgingDate" onchange="renderAPAgingReport()" style="width:160px">
-        <option value="jun25" selected>As at June 30, 2025</option>
-      </select>
-      <button class="btn btn-g sm" onclick="printReport('apAgingRpt')">🖨 Print</button>
-      <button class="btn btn-s sm" onclick="exportReport('ap-aging')">↓ Export</button>
+      <input type="date" class="fc" id="apAgePeriod" onchange="renderAgingRpt('ap')" style="width:180px;font-size:13px" value="" oninput="renderAgingRpt('ap')">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="kpi-grid g4 mb16" id="apAgingKPIs"></div>
@@ -2164,14 +2143,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ BUDGET VS ACTUAL ════ -->
 <div class="page" id="page-rpt-budget">
-  <div class="page-hdr"><div><h1>Budget vs Actual Analysis</h1><p>Variance analysis · IAS 1 management commentary</p></div>
+  <div class="page-hdr">
+    <div><h1>Budget vs Actual</h1><p>Management reporting · Current fiscal year</p></div>
     <div class="btn-row">
-      <select class="fc" id="budgetPeriod" onchange="renderBudgetReport()" style="width:140px">
-        <option value="q2" selected>Q2 2025</option>
-        <option value="h1">H1 2025</option>
-        <option value="ytd">YTD 2025</option>
-      </select>
-      <button class="btn btn-g sm" onclick="printReport('budgetRpt')">🖨 Print</button>
+      <input type="date" class="fc" id="bvaPeriod" onchange="renderBudgetVsActual()" style="width:180px;font-size:13px" value="" oninput="renderBudgetVsActual()">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="kpi-grid g4 mb16" id="budgetKPIs"></div>
@@ -2180,13 +2157,12 @@ textarea.fc{resize:vertical;min-height:80px}
 
 <!-- ════ COST VARIANCE REPORT ════ -->
 <div class="page" id="page-rpt-costvar">
-  <div class="page-hdr"><div><h1>Cost Variance Analysis</h1><p>Standard vs actual cost · IAS 2 manufacturing cost control</p></div>
+  <div class="page-hdr">
+    <div><h1>Cost Variance</h1><p>Standard vs actual costing · IAS 2</p></div>
     <div class="btn-row">
-      <select class="fc" id="costvarPeriod" onchange="renderCostVariance()" style="width:140px">
-        <option value="jun25" selected>June 2025</option>
-        <option value="q2">Q2 2025</option>
-      </select>
-      <button class="btn btn-g sm" onclick="printReport('costVarRpt')">🖨 Print</button>
+      <input type="date" class="fc" id="cvPeriod" onchange="renderCostVariance()" style="width:180px;font-size:13px" value="" oninput="renderCostVariance()">
+      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-s sm">↓ Export</button>
     </div>
   </div>
   <div class="kpi-grid g4 mb16" id="costVarKPIs"></div>
@@ -4291,6 +4267,10 @@ function rptFooter() {
 
 
 function renderPnL() {
+  buildPeriodOpts("pnlPeriod","renderPnL()");
+  const _period = getPeriod("pnlPeriod");
+  const _asOf = _period.asOf;
+
   const t   = _tb();
   const cur = t.cur;
   const f   = n => fC(Math.abs(n||0), cur);
@@ -4350,6 +4330,10 @@ function renderPnL() {
 
 
 function renderBS() {
+  buildPeriodOpts("bsPeriod","renderBS()");
+  const _period = getPeriod("bsPeriod");
+  const _asOf = _period.asOf;
+
   // Populate date selector with GL dates
   const _ledger = S.get('glLedger') || [];
   const _bsSel = document.getElementById('bsDate');
@@ -4476,6 +4460,10 @@ function renderBS() {
 }
 
 function renderCF() {
+  buildPeriodOpts("cfPeriod","renderCF()");
+  const _period = getPeriod("cfPeriod");
+  const _asOf = _period.asOf;
+
   const t   = _tb();
   const cur = t.cur;
   const f   = n => fC(Math.abs(n||0), cur);
@@ -4649,6 +4637,10 @@ function renderBudgetReport() {
 
 // ── COST VARIANCE ANALYSIS ──
 function renderCostVariance() {
+  buildPeriodOpts("cvPeriod","renderCostVariance()");
+  const _period = getPeriod("cvPeriod");
+  const _asOf = _period.asOf;
+
   const cur = baseCurr();
   const wo  = S.get('workorders') || [];
   const f   = n => fC(Math.abs(n||0), cur);
@@ -8083,6 +8075,11 @@ function renderPivot() {
 
 // ── RENDER: TRIAL BALANCE (enhanced with opening/period/closing) ──
 function renderTB() {
+  buildPeriodOpts("tbPeriod","renderTB()");
+  const _period = getPeriod("tbPeriod");
+  const asOfDate = _period.asOf;
+  const periodLabel = _period.label;
+
   const ledger  = S.get('glLedger') || [];
   const cur     = baseCurr();
   const book    = document.getElementById('tbBook')?.value || 'ifrs';
@@ -8114,8 +8111,7 @@ function renderTB() {
     if (!periodSel.value) periodSel.value = today;
   }
 
-  const asOfDate   = periodSel?.value || new Date().toISOString().slice(0,10);
-  const periodLabel = new Date(asOfDate).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  // asOfDate and periodLabel set by getPeriod() above
 
   // Filter ledger up to selected date
   const filtered = ledger.filter(e => (e.date||'') <= asOfDate);
@@ -8817,6 +8813,9 @@ function renderEquityStmt() {
 }
 
 function renderAgingRpt(type) {
+  buildPeriodOpts("arAgePeriod","renderAgingRpt('ar')");
+  buildPeriodOpts("apAgePeriod","renderAgingRpt('ap')");
+
   const isAR = type === 'ar';
   const records = isAR ? (S.get('invoices')||[]) : (S.get('pos')||[]);
   const cur = baseCurr();
@@ -8899,6 +8898,10 @@ function renderAgingRpt(type) {
 
 
 function renderBudgetVsActual() {
+  buildPeriodOpts("bvaPeriod","renderBudgetVsActual()");
+  const _period = getPeriod("bvaPeriod");
+  const _asOf = _period.asOf;
+
   const t   = _tb(); const cur = t.cur;
   const b   = S.get('budgets') || {};
   const f   = n => fC(Math.abs(n||0), cur);
@@ -9560,7 +9563,19 @@ function showScreen(co) {
     try { showLogin(); } catch(e) {}
   }
 
-})();
+})();function buildPeriodOpts(selId) {
+  const el = document.getElementById(selId);
+  if (!el) return;
+  if (!el.value) el.value = new Date().toISOString().slice(0,10);
+}
+
+function getPeriod(selId) {
+  const el  = document.getElementById(selId);
+  const v   = el?.value || new Date().toISOString().slice(0,10);
+  const lbl = new Date(v+'T00:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  return { asOf:v, label:lbl };
+}
+
 </script>
 </body>
 </html>
