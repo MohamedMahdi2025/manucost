@@ -1159,8 +1159,8 @@ textarea.fc{resize:vertical;min-height:80px}
         <option value="tax">Tax Ledger</option>
         <option value="mgmt">Management Ledger</option>
       </select>
-      <input class="fc" type="date" id="lgDateFrom" value="2025-01-01" style="width:130px;height:36px">
-      <input class="fc" type="date" id="lgDateTo" value="2025-06-30" style="width:130px;height:36px">
+      <input class="fc" type="date" id="lgDateFrom" style="width:130px;height:36px">
+      <input class="fc" type="date" id="lgDateTo" style="width:130px;height:36px">
       <button class="btn btn-s" onclick="renderGL()" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>⚡</span>Apply</button>
       <button class="btn btn-g" onclick="exportReport('gl')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>↓</span>Export</button>
       <button class="btn btn-p" onclick="nav('journal')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>+</span>New Entry</button>
@@ -2595,10 +2595,16 @@ try { localStorage.setItem('mce_gs_url', GS_URL); } catch(e) {}
 const GS = {
   // POST helper (no Content-Type — GAS CORS requirement)
   async _post(body) {
-    if (!GS_URL) throw new Error('No GS_URL');
-    const r = await fetch(GS_URL, { method:'POST', body: JSON.stringify(body) });
+    if (!GS_URL) throw new Error('No GS_URL configured');
+    const r = await fetch(GS_URL, {
+      method:'POST',
+      mode:'cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify(body)
+    });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
+    const txt = await r.text();
+    try { return JSON.parse(txt); } catch(e) { throw new Error('Bad JSON: '+txt.slice(0,80)); }
   },
   // GET helper
   async _get(params) {
@@ -2660,7 +2666,8 @@ const S = {
 
   // Pull ALL data from Sheets → localStorage (called on boot)
   async load() {
-    if (!GS_URL) return false;
+    setSyncBadge('loading');
+    if (!GS_URL) { setSyncBadge('off'); return false; }
     try {
       const backup = await GS.backup();
       if (!backup || typeof backup !== 'object') return false;
@@ -3104,6 +3111,20 @@ function updateSidebarLogo(){
 // ── APP INIT ──
 let costMode='job';
 function initApp(){
+  // Set default dates for all financial date pickers
+  const _td = new Date().toISOString().slice(0,10);
+  const _yr = _td.slice(0,4);
+  ['bsPeriod','pnlPeriod','cfPeriod','bvaPeriod','cvPeriod',
+   'arAgePeriod','apAgePeriod','tbPeriod'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = _td;
+  });
+  // GL ledger from/to defaults
+  const _lgFrom = document.getElementById('lgDateFrom');
+  const _lgTo   = document.getElementById('lgDateTo');
+  if (_lgFrom && !_lgFrom.value) _lgFrom.value = _yr + '-01-01';
+  if (_lgTo   && !_lgTo.value)   _lgTo.value   = _td;
+
   const co = S.get('company') || {};
   const setText  = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   const setClass = (id, cls, on) => { const el = document.getElementById(id); if (el) el.classList.toggle(cls, on); };
@@ -7905,8 +7926,9 @@ function buildGLSel() {
 function renderGL() {
   const accCode = document.getElementById('lgAccSel')?.value || '1010';
   const book    = document.getElementById('lgBook')?.value    || 'ifrs';
-  const dateFrom = document.getElementById('lgDateFrom')?.value || '2025-01-01';
-  const dateTo   = document.getElementById('lgDateTo')?.value   || '2025-06-30';
+  const _now = new Date(); const _yr = _now.getFullYear();
+  const dateFrom = document.getElementById('lgDateFrom')?.value || (_yr+'-01-01');
+  const dateTo   = document.getElementById('lgDateTo')?.value   || _now.toISOString().slice(0,10);
   const cur = baseCurr();
   const bookDef = GL_BOOKS[book] || GL_BOOKS.ifrs;
 
