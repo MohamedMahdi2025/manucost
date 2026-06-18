@@ -1,4 +1,591 @@
-<!DOCTYPE html>
+<div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">AP Aging Report</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Accounts Payable Aging</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="apAgeFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="apAgeTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="apAgeInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderAgingRpt('ap')"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'apagingreport_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">AR Aging Report</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Accounts Receivable Aging</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="arAgeFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="arAgeTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="arAgeInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderAgingRpt('ar')"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'aragingreport_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Cost Variance Analysis</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Standard vs Actual Costing</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="cvFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="cvTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="cvInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderCostVariance()"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'costvarianceanalysis_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Budget vs Actual</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Management Report</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="bvaFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="bvaTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="bvaInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderBudgetVsActual()"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'budgetvsactual_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Cash Flow Statement</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Statement of Cash Flows</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="cfFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="cfTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="cfInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- DATA TO INCLUDE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Data to Include</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap"><div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Method</div>
+              <select class="fc" style="width:180px"><option>Indirect</option><option>Direct</option></select>
+            </div></div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderCF()"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'cashflowstatement_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Income Statement</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Statement of Profit or Loss</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="pnlFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="pnlTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="pnlInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- DATA TO INCLUDE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Data to Include</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap"><div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Display</div>
+              <select class="fc" style="width:180px"><option>By Nature</option><option>By Function</option></select>
+            </div></div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderPnL()"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'incomestatement_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Balance Sheet</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Statement of Financial Position</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="bsFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="bsTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="bsInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- DATA TO INCLUDE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Data to Include</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap"><div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Reporting standard</div>
+              <select class="fc" style="width:180px"><option>IFRS</option><option>Local GAAP</option></select>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Comparative period</div>
+              <input type="checkbox" id="bsComp" style="accent-color:var(--blue)">
+              <label style="font-size:13px;color:var(--text2);margin-left:6px">Prior year</label>
+            </div></div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderBS()"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'balancesheet_filter')">
+    </div>
+  </div>
+</div><div>
+  <!-- Page Title -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Trial balance</div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--text1);letter-spacing:-.01em">Standard view</h1>
+  </div>
+
+  <!-- Parameters Panel -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r6);margin-bottom:20px;box-shadow:var(--shadow-sm)">
+    <!-- Panel header -->
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none"
+         onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <input type="checkbox" checked style="accent-color:var(--blue);width:14px;height:14px" onclick="event.stopPropagation()">
+      <span style="font-size:13px;font-weight:600;color:var(--text1)">Parameters</span>
+    </div>
+    <!-- Panel body -->
+    <div style="padding:16px 20px">
+      <!-- DATE RANGE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Date Range</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">From date</div>
+            <input type="date" id="tbFrom" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">To date</div>
+            <input type="date" id="tbTo" class="fc" style="width:160px" onchange="">
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Date interval</div>
+            <select id="tbInterval" class="fc" style="width:160px">
+              <option value="custom">Custom</option>
+              <option value="ytd">Year to Date</option>
+              <option value="q1">Q1 (Jan-Mar)</option>
+              <option value="q2">Q2 (Apr-Jun)</option>
+              <option value="q3">Q3 (Jul-Sep)</option>
+              <option value="q4">Q4 (Oct-Dec)</option>
+              <option value="mtd">Month to Date</option>
+              <option value="ly">Last Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- DATA TO INCLUDE -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px">Data to Include</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap"><div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Financial dimension set</div>
+              <select id="tbDimSet" class="fc" style="width:180px">
+                <option>Main account set</option><option>Cost centre</option><option>Department</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Posting layer</div>
+              <select id="tbBook" onchange="" class="fc" style="width:160px">
+                <option value="ifrs">Current (IFRS)</option>
+                <option value="tax">Tax</option>
+                <option value="mgmt">Operations</option>
+              </select>
+            </div></div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="renderTB()"
+          style="padding:6px 20px;font-weight:600;border:1px solid var(--border2)">
+          Calculate balances
+        </button>
+        
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+          <button class="btn btn-g sm">↓ Export</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <div style="position:relative;flex:0 0 240px">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px">🔍</span>
+      <input type="text" class="fc" placeholder="Filter" style="padding-left:34px;height:34px"
+             oninput="filterRptTable(this.value, 'trialbalance_filter')">
+    </div>
+  </div>
+</div><!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1098,8 +1685,10 @@ textarea.fc{resize:vertical;min-height:80px}
   <div class="page-hdr">
     <div><h1>Journal Entry</h1><p>Universal Ledger · Multi-currency · Parallel books · Dimension validation</p></div>
     <div class="btn-row">
+      <input class="fc" type="date" id="jeDateFrom" onchange="renderJE()" style="width:150px;height:34px" title="Date from">
+      <input class="fc" type="date" id="jeDateTo"   onchange="renderJE()" style="width:150px;height:34px" title="Date to">
+      <button class="btn btn-s sm" onclick="renderJE()" style="height:34px">⚡ Apply</button>
       <button class="btn btn-g sm" onclick="openM('mJETpl')">📋 Templates</button>
-      <button class="btn btn-g sm" onclick="openM('mJERecurring')">↻ Recurring</button>
       <button class="btn btn-p sm" onclick="openM('mJE')">+ New Entry</button>
     </div>
   </div>
@@ -1159,8 +1748,8 @@ textarea.fc{resize:vertical;min-height:80px}
         <option value="tax">Tax Ledger</option>
         <option value="mgmt">Management Ledger</option>
       </select>
-      <input class="fc" type="date" id="lgDateFrom" style="width:130px;height:36px">
-      <input class="fc" type="date" id="lgDateTo" style="width:130px;height:36px">
+      <input class="fc" type="date" id="lgDateFrom" onchange="renderGL()" style="width:150px;height:36px">
+      <input class="fc" type="date" id="lgDateTo" onchange="renderGL()" style="width:150px;height:36px">
       <button class="btn btn-s" onclick="renderGL()" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>⚡</span>Apply</button>
       <button class="btn btn-g" onclick="exportReport('gl')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>↓</span>Export</button>
       <button class="btn btn-p" onclick="nav('journal')" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:5px"><span>+</span>New Entry</button>
@@ -3111,15 +3700,33 @@ function updateSidebarLogo(){
 // ── APP INIT ──
 let costMode='job';
 function initApp(){
+  // Wire date interval selectors
+  try { wireIntervals(); } catch(e) {}
+
   // Set default dates for all financial date pickers
   const _td = new Date().toISOString().slice(0,10);
   const _yr = _td.slice(0,4);
-  ['bsPeriod','pnlPeriod','cfPeriod','bvaPeriod','cvPeriod',
-   'arAgePeriod','apAgePeriod','tbPeriod'].forEach(id => {
+  // Set To date = today, From date = start of year for all report inputs
+  ['tbTo','bsTo','pnlTo','cfTo','bvaTo','cvTo','arAgeTo','apAgeTo'].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = _td;
   });
+  ['tbFrom','bsFrom','pnlFrom','cfFrom','bvaFrom','cvFrom','arAgeFrom','apAgeFrom'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = _yr + '-01-01';
+  });
+  // Also set GL ledger dates
+  const _lgFromEl = document.getElementById('lgDateFrom');
+  const _lgToEl   = document.getElementById('lgDateTo');
+  if (_lgFromEl && !_lgFromEl.value) _lgFromEl.value = _yr + '-01-01';
+  if (_lgToEl   && !_lgToEl.value)   _lgToEl.value   = _td;
   // GL ledger from/to defaults
+  // JE date defaults
+  const _jeF = document.getElementById('jeDateFrom');
+  const _jeT = document.getElementById('jeDateTo');
+  if (_jeF && !_jeF.value) _jeF.value = _yr + '-01-01';
+  if (_jeT && !_jeT.value) _jeT.value = _td;
+  // GL date defaults
   const _lgFrom = document.getElementById('lgDateFrom');
   const _lgTo   = document.getElementById('lgDateTo');
   if (_lgFrom && !_lgFrom.value) _lgFrom.value = _yr + '-01-01';
@@ -4288,10 +4895,14 @@ function rptFooter() {
 
 
 function renderPnL() {
+  buildPeriodOpts("pnlFrom");
+  buildPeriodOpts("pnlTo");
+  const _now2 = new Date().toISOString().slice(0,10);
+  const _yr2  = _now2.slice(0,4);
+  const asOfDate = document.getElementById("pnlTo")?.value || _now2;
+  const fromDate = document.getElementById("pnlFrom")?.value || (_yr2+"-01-01");
+  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("pnlPeriod","renderPnL()");
-  const _period = getPeriod("pnlPeriod");
-  const _asOf = _period.asOf;
-
   const t   = _tb();
   const cur = t.cur;
   const f   = n => fC(Math.abs(n||0), cur);
@@ -4351,21 +4962,14 @@ function renderPnL() {
 
 
 function renderBS() {
-  buildPeriodOpts("bsPeriod","renderBS()");
-  const _period = getPeriod("bsPeriod");
-  const _asOf = _period.asOf;
-
-  // Populate date selector with GL dates
-  const _ledger = S.get('glLedger') || [];
-  const _bsSel = document.getElementById('bsDate');
-  if (_bsSel && _bsSel.options.length <= 1) {
-    const _years = [...new Set(_ledger.map(e=>e.date?.slice(0,4)).filter(Boolean))].sort().reverse();
-    const _today = new Date().toISOString().slice(0,10);
-    _bsSel.innerHTML = `<option value="${_today}">As of Today (${_today})</option>`
-      + _years.map(y => `<option value="${y}-12-31">Year End ${y}</option><option value="${y}-06-30">Mid Year ${y} (Jun 30)</option>`).join('');
-    if (!_bsSel.value) _bsSel.value = _today;
-  }
-  const t   = _tb();
+  buildPeriodOpts("bsFrom");
+  buildPeriodOpts("bsTo");
+  const _now2 = new Date().toISOString().slice(0,10);
+  const _yr2  = _now2.slice(0,4);
+  const asOfDate = document.getElementById("bsTo")?.value || _now2;
+  const fromDate = document.getElementById("bsFrom")?.value || (_yr2+"-01-01");
+  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+  buildPeriodOpts("bsPeriod","renderBS()");  const t   = _tb();
   const cur = t.cur;
   const co  = S.get('company') || {};
   const balanced = Math.abs(t.totalAssets - t.totalLandE) < 1;
@@ -4481,10 +5085,14 @@ function renderBS() {
 }
 
 function renderCF() {
+  buildPeriodOpts("cfFrom");
+  buildPeriodOpts("cfTo");
+  const _now2 = new Date().toISOString().slice(0,10);
+  const _yr2  = _now2.slice(0,4);
+  const asOfDate = document.getElementById("cfTo")?.value || _now2;
+  const fromDate = document.getElementById("cfFrom")?.value || (_yr2+"-01-01");
+  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("cfPeriod","renderCF()");
-  const _period = getPeriod("cfPeriod");
-  const _asOf = _period.asOf;
-
   const t   = _tb();
   const cur = t.cur;
   const f   = n => fC(Math.abs(n||0), cur);
@@ -4658,10 +5266,14 @@ function renderBudgetReport() {
 
 // ── COST VARIANCE ANALYSIS ──
 function renderCostVariance() {
+  buildPeriodOpts("cvFrom");
+  buildPeriodOpts("cvTo");
+  const _now2 = new Date().toISOString().slice(0,10);
+  const _yr2  = _now2.slice(0,4);
+  const asOfDate = document.getElementById("cvTo")?.value || _now2;
+  const fromDate = document.getElementById("cvFrom")?.value || (_yr2+"-01-01");
+  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("cvPeriod","renderCostVariance()");
-  const _period = getPeriod("cvPeriod");
-  const _asOf = _period.asOf;
-
   const cur = baseCurr();
   const wo  = S.get('workorders') || [];
   const f   = n => fC(Math.abs(n||0), cur);
@@ -7757,6 +8369,16 @@ function renderJE() {
   const ledger = S.get('glLedger') || [];
   const cur = baseCurr();
   const filterSrc = document.getElementById('jeFilterSrc')?.value || '';
+  // Date filter
+  const _now = new Date().toISOString().slice(0,10);
+  const _yr  = _now.slice(0,4);
+  const jeDateFrom = document.getElementById('jeDateFrom')?.value || (_yr+'-01-01');
+  const jeDateTo   = document.getElementById('jeDateTo')?.value   || _now;
+  // Set default values in the inputs if empty
+  const _f = document.getElementById('jeDateFrom');
+  const _t = document.getElementById('jeDateTo');
+  if (_f && !_f.value) _f.value = _yr+'-01-01';
+  if (_t && !_t.value) _t.value = _now;
 
   // Build display list from both journals (legacy) and new ACDOCA ledger grouped by JE
   const jeMap = {};
@@ -7774,7 +8396,7 @@ function renderJE() {
     }
   });
 
-  const jeList = Object.values(jeMap);
+  const jeList = Object.values(jeMap).filter(j => (!j.date || (j.date >= jeDateFrom && j.date <= jeDateTo)));
 
   // Add legacy journals not in ledger
   journals.forEach(j => {
@@ -8096,13 +8718,63 @@ function renderPivot() {
 }
 
 // ── RENDER: TRIAL BALANCE (enhanced with opening/period/closing) ──
-function renderTB() {
-  buildPeriodOpts("tbPeriod","renderTB()");
-  const _period = getPeriod("tbPeriod");
-  const asOfDate = _period.asOf;
-  const periodLabel = _period.label;
 
-  const ledger  = S.get('glLedger') || [];
+// ── DATE INTERVAL HELPER ──
+// Applies a Date Interval shortcut to From/To inputs, then calls the render fn
+function applyDateInterval(intervalId, fromId, toId, renderFn) {
+  const interval = document.getElementById(intervalId)?.value || 'custom';
+  const now   = new Date();
+  const yr    = now.getFullYear();
+  const mo    = now.getMonth(); // 0-indexed
+  let from_v, to_v;
+  switch(interval) {
+    case 'ytd':  from_v = yr+'-01-01'; to_v = now.toISOString().slice(0,10); break;
+    case 'q1':   from_v = yr+'-01-01'; to_v = yr+'-03-31'; break;
+    case 'q2':   from_v = yr+'-04-01'; to_v = yr+'-06-30'; break;
+    case 'q3':   from_v = yr+'-07-01'; to_v = yr+'-09-30'; break;
+    case 'q4':   from_v = yr+'-10-01'; to_v = yr+'-12-31'; break;
+    case 'mtd':  from_v = yr+'-'+String(mo+1).padStart(2,'0')+'-01'; to_v = now.toISOString().slice(0,10); break;
+    case 'ly':   from_v = (yr-1)+'-01-01'; to_v = (yr-1)+'-12-31'; break;
+    default:     from_v = null; to_v = null; // use whatever is in the inputs
+  }
+  if (from_v) { const el=document.getElementById(fromId); if(el) el.value=from_v; }
+  if (to_v)   { const el=document.getElementById(toId);   if(el) el.value=to_v; }
+  if(renderFn) renderFn();
+}
+
+// Wire all interval selects on page load
+function wireIntervals() {
+  const map = [
+    ['tbInterval',  'tbFrom',     'tbTo',     renderTB],
+    ['bsInterval',  'bsFrom',     'bsTo',     renderBS],
+    ['pnlInterval', 'pnlFrom',    'pnlTo',    renderPnL],
+    ['cfInterval',  'cfFrom',     'cfTo',     renderCF],
+    ['bvaInterval', 'bvaFrom',    'bvaTo',    renderBudgetVsActual],
+    ['cvInterval',  'cvFrom',     'cvTo',     renderCostVariance],
+    ['arAgeInterval','arAgeFrom', 'arAgeTo',  ()=>renderAgingRpt('ar')],
+    ['apAgeInterval','apAgeFrom', 'apAgeTo',  ()=>renderAgingRpt('ap')],
+  ];
+  map.forEach(([intId, fromId, toId, fn]) => {
+    const el = document.getElementById(intId);
+    if (el) el.onchange = () => applyDateInterval(intId, fromId, toId, fn);
+  });
+}
+
+// Filter any report table rows by text
+function filterRptTable(query, tableId) {
+  const q = (query||'').toLowerCase();
+  const rows = document.querySelectorAll('#'+tableId+' tbody tr, #tbTbl tr, #bsRpt .fs-row, #pnlRpt .fs-row');
+  rows.forEach(r => { r.style.display = !q || r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+}
+function renderTB() {
+  buildPeriodOpts("tbFrom");
+  buildPeriodOpts("tbTo");
+  const _now2 = new Date().toISOString().slice(0,10);
+  const _yr2  = _now2.slice(0,4);
+  const asOfDate = document.getElementById("tbTo")?.value || _now2;
+  const fromDate = document.getElementById("tbFrom")?.value || (_yr2+"-01-01");
+  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
+  buildPeriodOpts("tbPeriod","renderTB()");  const ledger  = S.get('glLedger') || [];
   const cur     = baseCurr();
   const book    = document.getElementById('tbBook')?.value || 'ifrs';
   const bookDef = GL_BOOKS[book] || GL_BOOKS.ifrs;
@@ -8136,7 +8808,7 @@ function renderTB() {
   // asOfDate and periodLabel set by getPeriod() above
 
   // Filter ledger up to selected date
-  const filtered = ledger.filter(e => (e.date||'') <= asOfDate);
+  const filtered = ledger.filter(e => (e.date||'') >= fromDate && (e.date||'') <= asOfDate);
 
   // Aggregate balances by account from filtered GL
   const balMap = {};
@@ -8835,13 +9507,18 @@ function renderEquityStmt() {
 }
 
 function renderAgingRpt(type) {
-  buildPeriodOpts("arAgePeriod","renderAgingRpt('ar')");
-  buildPeriodOpts("apAgePeriod","renderAgingRpt('ap')");
+  const _ageFromId = isAR ? "arAgeFrom" : "apAgeFrom";
+  const _ageToId   = isAR ? "arAgeTo"   : "apAgeTo";
+  buildPeriodOpts(_ageFromId);
+  buildPeriodOpts(_ageToId);
+  const _ageNow = new Date().toISOString().slice(0,10);
+  const _ageFrom = document.getElementById(_ageFromId)?.value || new Date().getFullYear()+'-01-01';
+  const _ageTo   = document.getElementById(_ageToId)?.value   || _ageNow;
 
   const isAR = type === 'ar';
   const records = isAR ? (S.get('invoices')||[]) : (S.get('pos')||[]);
   const cur = baseCurr();
-  const today = new Date();
+  const today = new Date((_ageTo||new Date().toISOString().slice(0,10))+'T00:00:00');
   const f = n => fC(Math.abs(n||0), cur);
 
   // Build aging buckets
@@ -8920,10 +9597,14 @@ function renderAgingRpt(type) {
 
 
 function renderBudgetVsActual() {
+  buildPeriodOpts("bvaFrom");
+  buildPeriodOpts("bvaTo");
+  const _now2 = new Date().toISOString().slice(0,10);
+  const _yr2  = _now2.slice(0,4);
+  const asOfDate = document.getElementById("bvaTo")?.value || _now2;
+  const fromDate = document.getElementById("bvaFrom")?.value || (_yr2+"-01-01");
+  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("bvaPeriod","renderBudgetVsActual()");
-  const _period = getPeriod("bvaPeriod");
-  const _asOf = _period.asOf;
-
   const t   = _tb(); const cur = t.cur;
   const b   = S.get('budgets') || {};
   const f   = n => fC(Math.abs(n||0), cur);
@@ -9588,7 +10269,14 @@ function showScreen(co) {
 })();function buildPeriodOpts(selId) {
   const el = document.getElementById(selId);
   if (!el) return;
-  if (!el.value) el.value = new Date().toISOString().slice(0,10);
+  if (!el.value) {
+    const now = new Date();
+    const today = now.toISOString().slice(0,10);
+    // "From" fields default to start of current year
+    // "To" / single-date fields default to today
+    const isFrom = selId.toLowerCase().includes('from');
+    el.value = isFrom ? now.getFullYear() + '-01-01' : today;
+  }
 }
 
 function getPeriod(selId) {
