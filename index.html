@@ -850,6 +850,30 @@ textarea.fc{resize:vertical;min-height:80px}
 .ifrs-2col{display:grid;grid-template-columns:1fr 1fr;gap:32px}
 @media(max-width:760px){.ifrs-2col{grid-template-columns:1fr}}
 .ifrs-pct{font-size:11px;color:#8893a8;font-family:Consolas,monospace;margin-right:10px}
+
+/* ══ FINANCIAL REPORT PARAMETERS PANEL ══ */
+.fin-params{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r6);padding:14px 16px;margin-bottom:16px}
+.fin-params-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.fin-fld{display:flex;flex-direction:column;gap:4px}
+.fin-fld label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.fin-fld .fc{width:165px;height:36px}
+.fin-calc{height:36px;align-self:flex-end}
+/* Collapsible report wrapper */
+.fin-report-wrap{border:1px solid var(--border);border-radius:var(--r6);overflow:hidden;background:var(--surface)}
+.fin-report-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.fin-report-bar:hover{background:var(--surface3)}
+.fin-report-title{font-size:13px;font-weight:600;color:var(--text1);display:flex;align-items:center;gap:8px}
+.fin-report-toggle{font-size:14px;color:var(--text2);transition:transform .25s}
+.fin-report-wrap.collapsed .fin-report-toggle{transform:rotate(-90deg)}
+.fin-report-body{max-height:none;overflow:auto;transition:max-height .3s ease}
+.fin-report-wrap.collapsed .fin-report-body{max-height:0;overflow:hidden}
+.fin-report-body.scroll-on{max-height:70vh;overflow-y:auto}
+/* Nice scrollbar */
+.fin-report-body::-webkit-scrollbar{width:10px;height:10px}
+.fin-report-body::-webkit-scrollbar-track{background:var(--surface2)}
+.fin-report-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;border:2px solid var(--surface2)}
+.fin-report-body::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+@media(max-width:680px){.fin-fld .fc{width:140px}}
 </style>
 </head>
 <body>
@@ -2182,39 +2206,111 @@ textarea.fc{resize:vertical;min-height:80px}
 <div class="page" id="page-pnl">
   <div class="page-hdr">
     <div><h1>Income Statement</h1><p>Statement of Profit or Loss · IAS 1 compliant</p></div>
-    <div class="btn-row">
-      <input type="date" class="fc" id="pnlPeriod" onchange="renderPnL()" style="width:180px;font-size:13px" value="" oninput="renderPnL()">
-      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
-      <button class="btn btn-s sm">↓ Export</button>
+    <div class="fin-params">
+      <div class="fin-params-row">
+        <div class="fin-fld"><label>From date</label><input type="date" class="fc" id="pnlFrom" onchange="renderPnL()"></div>
+        <div class="fin-fld"><label>To date</label><input type="date" class="fc" id="pnlTo" onchange="renderPnL()"></div>
+        <div class="fin-fld"><label>Date interval</label>
+          <select class="fc" id="pnlInterval" onchange="applyDateInterval('pnlInterval','pnlFrom','pnlTo',()=>{renderPnL()})">
+            <option value="custom">Custom</option>
+            <option value="ytd">Year to Date</option>
+            <option value="q1">Q1 (Jan–Mar)</option>
+            <option value="q2">Q2 (Apr–Jun)</option>
+            <option value="q3">Q3 (Jul–Sep)</option>
+            <option value="q4">Q4 (Oct–Dec)</option>
+            <option value="mtd">Month to Date</option>
+            <option value="ly">Last Year</option>
+          </select>
+        </div>
+        <button class="btn btn-p sm fin-calc" onclick="renderPnL()"><i class="ti"></i>⚡ Calculate</button>
+        <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      </div>
     </div>
   </div>
-  <div class="card"><div class="card-body" id="pnlRpt"></div></div>
+  <div class="fin-report-wrap" id="pnlRptWrap">
+      <div class="fin-report-bar" onclick="toggleFinReport('pnlRptWrap')">
+        <span class="fin-report-title">📄 Income Statement</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-g sm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();toggleReportScroll('pnlRpt')">⇕ Scroll</button>
+          <span class="fin-report-toggle">▼</span>
+        </div>
+      </div>
+      <div class="fin-report-body" id="pnlRptBody"><div id="pnlRpt"></div></div>
+    </div>
 </div>
 
 <!-- ════ BALANCE SHEET ════ -->
 <div class="page" id="page-bs">
   <div class="page-hdr">
     <div><h1>Balance Sheet</h1><p>Statement of Financial Position · IAS 1 compliant</p></div>
-    <div class="btn-row">
-      <input type="date" class="fc" id="bsPeriod" onchange="renderBS()" style="width:180px;font-size:13px" value="" oninput="renderBS()">
-      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
-      <button class="btn btn-s sm">↓ Export</button>
+    <div class="fin-params">
+      <div class="fin-params-row">
+        <div class="fin-fld"><label>From date</label><input type="date" class="fc" id="bsFrom" onchange="renderBS()"></div>
+        <div class="fin-fld"><label>To date</label><input type="date" class="fc" id="bsTo" onchange="renderBS()"></div>
+        <div class="fin-fld"><label>Date interval</label>
+          <select class="fc" id="bsInterval" onchange="applyDateInterval('bsInterval','bsFrom','bsTo',()=>{renderBS()})">
+            <option value="custom">Custom</option>
+            <option value="ytd">Year to Date</option>
+            <option value="q1">Q1 (Jan–Mar)</option>
+            <option value="q2">Q2 (Apr–Jun)</option>
+            <option value="q3">Q3 (Jul–Sep)</option>
+            <option value="q4">Q4 (Oct–Dec)</option>
+            <option value="mtd">Month to Date</option>
+            <option value="ly">Last Year</option>
+          </select>
+        </div>
+        <button class="btn btn-p sm fin-calc" onclick="renderBS()"><i class="ti"></i>⚡ Calculate</button>
+        <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      </div>
     </div>
   </div>
-  <div class="card"><div class="card-body" id="bsRpt"></div></div>
+  <div class="fin-report-wrap" id="bsRptWrap">
+      <div class="fin-report-bar" onclick="toggleFinReport('bsRptWrap')">
+        <span class="fin-report-title">📄 Balance Sheet</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-g sm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();toggleReportScroll('bsRpt')">⇕ Scroll</button>
+          <span class="fin-report-toggle">▼</span>
+        </div>
+      </div>
+      <div class="fin-report-body" id="bsRptBody"><div id="bsRpt"></div></div>
+    </div>
 </div>
 
 <!-- ════ CASH FLOW ════ -->
 <div class="page" id="page-cf">
   <div class="page-hdr">
     <div><h1>Cash Flow Statement</h1><p>Statement of Cash Flows · IAS 7 · Indirect Method</p></div>
-    <div class="btn-row">
-      <input type="date" class="fc" id="cfPeriod" onchange="renderCF()" style="width:180px;font-size:13px" value="" oninput="renderCF()">
-      <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
-      <button class="btn btn-s sm">↓ Export</button>
+    <div class="fin-params">
+      <div class="fin-params-row">
+        <div class="fin-fld"><label>From date</label><input type="date" class="fc" id="cfFrom" onchange="renderCF()"></div>
+        <div class="fin-fld"><label>To date</label><input type="date" class="fc" id="cfTo" onchange="renderCF()"></div>
+        <div class="fin-fld"><label>Date interval</label>
+          <select class="fc" id="cfInterval" onchange="applyDateInterval('cfInterval','cfFrom','cfTo',()=>{renderCF()})">
+            <option value="custom">Custom</option>
+            <option value="ytd">Year to Date</option>
+            <option value="q1">Q1 (Jan–Mar)</option>
+            <option value="q2">Q2 (Apr–Jun)</option>
+            <option value="q3">Q3 (Jul–Sep)</option>
+            <option value="q4">Q4 (Oct–Dec)</option>
+            <option value="mtd">Month to Date</option>
+            <option value="ly">Last Year</option>
+          </select>
+        </div>
+        <button class="btn btn-p sm fin-calc" onclick="renderCF()"><i class="ti"></i>⚡ Calculate</button>
+        <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+      </div>
     </div>
   </div>
-  <div class="card"><div class="card-body" id="cfRpt"></div></div>
+  <div class="fin-report-wrap" id="cfRptWrap">
+      <div class="fin-report-bar" onclick="toggleFinReport('cfRptWrap')">
+        <span class="fin-report-title">📄 Cash Flow Statement</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-g sm" style="font-size:11px;padding:3px 10px" onclick="event.stopPropagation();toggleReportScroll('cfRpt')">⇕ Scroll</button>
+          <span class="fin-report-toggle">▼</span>
+        </div>
+      </div>
+      <div class="fin-report-body" id="cfRptBody"><div id="cfRpt"></div></div>
+    </div>
 </div>
 
 <!-- ════ STATEMENT OF CHANGES IN EQUITY ════ -->
@@ -10204,6 +10300,17 @@ function showScreen(co) {
 }
 
 // ── BOOT ──
+
+
+// ── COLLAPSIBLE / SCROLLABLE FINANCIAL REPORTS ──
+function toggleFinReport(wrapId) {
+  const w = document.getElementById(wrapId);
+  if (w) w.classList.toggle('collapsed');
+}
+function toggleReportScroll(elId) {
+  const body = document.getElementById(elId + 'Body');
+  if (body) body.classList.toggle('scroll-on');
+}
 
 // ── SPLASH SCREEN CONTROLLER ──
 function runSplash(afterDone) {
