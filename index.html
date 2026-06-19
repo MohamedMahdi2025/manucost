@@ -3531,7 +3531,7 @@ function seedApprovalPolicies() {
 function seedFiscalData() {
   const existing = S.get('fiscalYears') || [];
   const yr = new Date().getFullYear();
-  const mkFY = y => ({ year:y, status:'Open', periods: Array.from({length:12},(_,i)=>({ month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i], status:'Open' })) });
+  const mkFY = y => ({ year:y, status:'Open', periods: Array.from({length:12},(_,i)=>({ month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i], status:'Open', allowedModules:[] })) });
   // Ensure current year and adjacent years exist
   const years = [yr-1, yr, yr+1];
   let changed = false;
@@ -3955,7 +3955,7 @@ const mTemplates={
   mPO:{title:'New Purchase Order',saveLabel:'Create PO',body:()=>`<div class="fr fr2">${inp('PO Number','mpo_id','text','','')}${inp('Date','mpo_d','date','')}</div><div class="fr fr2">${sel('Supplier','mpo_s',supOpts())}${sel('Payment Terms','mpo_t',['NET30','NET45','COD','2/10N30'])}</div><div class="fr fr2">${inp('Delivery Date','mpo_del','date','')}${sel('Linked Work Order','mpo_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div><div class="alert a-info" style="margin-top:8px">Add line items after saving the PO header.</div>`,
     save:()=>{const l=S.get('pos')||[];l.unshift({id:nextId('PO'),date:gv('mpo_d')||today(),supplier:gv('mpo_s'),items:0,amount:0,status:'Draft',grn:''});S.set('pos',l);closeM();renderPO();toast('Purchase Order created.','success');}},
   mGRN:{title:'New Goods Receipt (GRN)',saveLabel:'Confirm Receipt',body:()=>`<div class="fr fr2">${inp('GRN Number','mg_id','text','','')}${inp('Date','mg_d','date','')}</div><div class="fr fr2">${sel('PO Reference','mg_po',(S.get('pos')||[]).map(p=>p.id+' — '+p.supplier))}${sel('Received By','mg_rb',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr3">${sel('Warehouse','mg_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Location','mg_bin','text','','A-03-R2')}${sel('QC Hold?','mg_qc',['No — Direct Receipt','Yes — QC Hold'])}</div><div class="alert a-info" style="margin-top:8px">Auto-posts JE: <strong>Dr. Inventory / Cr. Accounts Payable</strong></div>`,
-    save:()=>{const grnDate=gv('mg_d')||today();if(checkPeriod(grnDate))return;const l=S.get('grns')||[];const id=nextId('GRN');l.unshift({id,date:grnDate,po:gv('mg_po').split(' ')[0],supplier:'',loc:gv('mg_wh').split(' ')[0],value:0,je:nextId('JE')});S.set('grns',l);closeM();renderGRN();toast(`${id} confirmed. JE posted: Dr. Inventory / Cr. AP`,'success');}},
+    save:()=>{const grnDate=gv('mg_d')||today();if(checkPeriod(grnDate,'inventory'))return;const l=S.get('grns')||[];const id=nextId('GRN');l.unshift({id,date:grnDate,po:gv('mg_po').split(' ')[0],supplier:'',loc:gv('mg_wh').split(' ')[0],value:0,je:nextId('JE')});S.set('grns',l);closeM();renderGRN();toast(`${id} confirmed. JE posted: Dr. Inventory / Cr. AP`,'success');}},
   mItem:{title:'New Item',saveLabel:'Save Item',body:()=>`<div class="fr fr2">${inp('Item Code','mi_c','text','',undefined,true)}${inp('Item Name','mi_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','mi_t',['Raw Material','Component','WIP','Finished Good','Service','Consumable'])}${sel('Unit of Measure','mi_u',['kg','pcs','L','m','m²','ton','set','roll'])}</div><div class="fr fr2">${inp('Standard Cost (SAR)','mi_cost','number','','0')}${inp('Reorder Point','mi_ro','number','','0')}</div><div class="fr fr2">${sel('Valuation Method','mi_val',['FIFO','Weighted Average'])}${sel('GL Account','mi_gl',['1300 — Raw Materials','1310 — WIP','1320 — Finished Goods'])}</div>`,
     save:()=>{const c=gv('mi_c'),n=gv('mi_n');if(!c||!n){toast('Code and Name required','error');return;}const l=S.get('items')||[];l.push({code:c,name:n,type:gv('mi_t'),uom:gv('mi_u'),val:gv('mi_val'),cost:parseFloat(gv('mi_cost'))||0,reorder:parseInt(gv('mi_ro'))||0,gl:gv('mi_gl').split(' ')[0]});S.set('items',l);closeM();renderItems();toast('Item saved.','success');}},
   mWH:{title:'New Warehouse',saveLabel:'Create Warehouse',body:()=>`<div class="fr fr2">${inp('Location Code','mwh_c','text','','WH-D',true)}${inp('Name','mwh_n','text','',undefined,true)}</div><div class="fr fr2">${sel('Type','mwh_t',['Raw Material Store','Production Input','Finished Goods','WIP Zone','Quarantine'])}${sel('Store Keeper','mwh_k',(S.get('employees')||[]).map(e=>e.name))}</div><div class="fr fr2">${inp('Number of Bins','mwh_b','number','','8')}${sel('GL Account','mwh_gl',['1300 — Raw Materials','1310 — WIP','1320 — Finished Goods'])}</div>`,
@@ -3963,7 +3963,7 @@ const mTemplates={
   mBin:{title:'Add Storage Bin',saveLabel:'Add Bin',body:()=>`<div class="fr fr2">${sel('Warehouse','mb_wh',['WH-A · Main Store','WH-B · Production','WH-C · FG'])}${inp('Bin Code','mb_c','text','','A-13-R1',true)}</div><div class="fr fr2">${inp('Aisle','mb_a','text','','A')}${inp('Rack / Shelf','mb_r','text','','R1')}</div><div class="fr fr2">${inp('Max Weight (kg)','mb_w','number','','500')}${sel('Restriction','mb_rs',['None','Raw Materials Only','Hazardous','Heavy Items'])}</div>`,
     save:()=>{closeM();toast('Bin added.','success');}},
   mTrf:{title:'New Transfer / Issue',saveLabel:'Post',body:()=>`<div class="fr fr2">${sel('Type','mt_t',['Material Issue to Job','Inter-Warehouse Transfer','FG Receipt from Production','Return to Store'])}${inp('Date','mt_d','date','')}</div><div class="fr fr2">${sel('From','mt_f',['WH-A · Main','WH-B · Production','WH-C · FG','FL-1 · Floor'])}${sel('To','mt_to',['FL-1 · Production Floor','WH-A · Main','WH-B · Production','WH-C · FG'])}</div><div class="fr fr2">${sel('Item','mt_i',(S.get('items')||[]).map(i=>i.code+' '+i.name))}${inp('Quantity','mt_q','number','','0')}</div>${sel('Work Order (if Issue)','mt_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)],'')}<div class="fhint">Auto-posts inventory JE on save.</div>`,
-    save:()=>{const trfDate=gv('mt_d')||today();if(checkPeriod(trfDate))return;const l=S.get('transfers')||[];const tp=gv('mt_t');const pfx=tp.includes('Issue')?'ISS':tp.includes('Transfer')?'TRF':tp.includes('FG')?'FGR':'RTN';l.unshift({id:nextId(pfx),date:trfDate,type:tp.split(' ')[0],item:gv('mt_i').split(' ').slice(1).join(' '),from:gv('mt_f').split(' ')[0],to:gv('mt_to').split(' ')[0],qty:gv('mt_q')+' units',val:0,wo:gv('mt_wo'),status:'Posted'});S.set('transfers',l);closeM();renderTrf();toast('Transfer posted. JE auto-generated.','success');}},
+    save:()=>{const trfDate=gv('mt_d')||today();if(checkPeriod(trfDate,'inventory'))return;const l=S.get('transfers')||[];const tp=gv('mt_t');const pfx=tp.includes('Issue')?'ISS':tp.includes('Transfer')?'TRF':tp.includes('FG')?'FGR':'RTN';l.unshift({id:nextId(pfx),date:trfDate,type:tp.split(' ')[0],item:gv('mt_i').split(' ').slice(1).join(' '),from:gv('mt_f').split(' ')[0],to:gv('mt_to').split(' ')[0],qty:gv('mt_q')+' units',val:0,wo:gv('mt_wo'),status:'Posted'});S.set('transfers',l);closeM();renderTrf();toast('Transfer posted. JE auto-generated.','success');}},
   mBOM:{title:'New Bill of Materials',saveLabel:'Save BOM',body:()=>`<div class="fr fr2">${inp('BOM #','mbom_id','text','','')}${inp('Product Name','mbom_p','text','',undefined,true)}</div><div class="fr fr2">${inp('Version','mbom_v','text','','1.0')}${inp('Batch Size (qty)','mbom_q','number','','1')}</div><div class="fr fr3">${inp('Material Cost / Unit','mbom_m','number','','0')}${inp('Labor Cost / Unit','mbom_l','number','','0')}${inp('Overhead / Unit','mbom_o','number','','0')}</div>`,
     save:()=>{const p=gv('mbom_p');if(!p){toast('Product name required','error');return;}const m=parseFloat(gv('mbom_m'))||0,l2=parseFloat(gv('mbom_l'))||0,o=parseFloat(gv('mbom_o'))||0;const l=S.get('boms')||[];l.push({id:nextId('BOM'),prod:p,ver:gv('mbom_v')||'1.0',qty:parseInt(gv('mbom_q'))||1,mat:m,lab:l2,oh:o,total:m+l2+o,status:'Active'});S.set('boms',l);closeM();renderBOM();toast('BOM saved.','success');}},
   mWO:{title:'New Work Order',saveLabel:'Create WO',body:()=>`<div class="fr fr2">${inp('WO Number','mwo_id','text','','')}${sel('Customer','mwo_c',custOpts())}</div><div class="fr fr2">${inp('Product','mwo_p','text','')}${inp('Quantity','mwo_q','number','','0')}</div><div class="fr fr2">${inp('Start Date','mwo_sd','date','')}${inp('Target Completion','mwo_td','date','')}</div><div class="fr fr2">${sel('BOM Reference','mwo_bom',['— None —',...bomOpts()])}${inp('Sales Order Ref','mwo_so','text','','SO-')}</div>`,
@@ -4021,7 +4021,7 @@ save:()=>{
     toast('⚠ Posting without attachment — attach supporting document for audit compliance.','warn',4000);
   }
   const jeDate=gv('mje_d')||today();
-  if(checkPeriod(jeDate))return;
+  if(checkPeriod(jeDate,'gl'))return;
   const src=gv('mje_src')||'Manual';
   const jeId=(gv('mje_id').trim())||autoJENum();
   const lineEls=document.querySelectorAll('#jeLines .je-grid');
@@ -4082,7 +4082,7 @@ save:()=>{
   mSO:{title:'New Sales Order',saveLabel:'Create SO',body:()=>`<div class="fr fr2">${inp('SO Number','mso_id','text','','')}${inp('Date','mso_d','date','',today())}</div><div class="fr fr2">${sel('Customer','mso_c',custOpts())}${inp('Delivery Date','mso_del','date','')}</div><div class="fr fr2">${inp('Amount (SAR)','mso_a','number','','0')}${sel('Link Work Order','mso_wo',['— None —',...(S.get('workorders')||[]).map(w=>w.id)])}</div>`,
     save:()=>{const l=S.get('salesorders')||[];l.unshift({id:nextId('SO'),date:gv('mso_d')||today(),cust:gv('mso_c'),amount:parseFloat(gv('mso_a'))||0,delivery:gv('mso_del'),status:'Draft',wo:gv('mso_wo')});S.set('salesorders',l);closeM();renderSO();toast('Sales Order created.','success');}},
   mInv:{title:'New Sales Invoice',saveLabel:'Post Invoice',body:()=>`<div class="fr fr2">${inp('Invoice #','minv_id','text','','')}${inp('Date','minv_d','date','',today())}</div><div class="fr fr2">${sel('Customer','minv_c',custOpts())}${inp('Sales Order Ref','minv_so','text','','SO-')}</div><div class="fr fr2">${inp('Net Amount (SAR)','minv_a','number','','0')}${inp('VAT Rate %','minv_vr','number','','15')}</div><div class="fhint">Auto-posts JE: Dr. Accounts Receivable / Cr. Revenue + VAT Payable</div>`,
-    save:()=>{const invDate=gv('minv_d')||today();if(checkPeriod(invDate))return;const a=parseFloat(gv('minv_a'))||0,vr=parseFloat(gv('minv_vr'))||15,vat=Math.round(a*vr/100);const l=S.get('invoices')||[];l.unshift({id:nextId('SI'),date:invDate,cust:gv('minv_c'),amount:a,vat,total:a+vat,due:'TBD',status:'Open'});S.set('invoices',l);closeM();renderInv();toast('Invoice saved. JE posted: Dr. AR / Cr. Revenue + VAT.','success');}}
+    save:()=>{const invDate=gv('minv_d')||today();if(checkPeriod(invDate,'ar'))return;const a=parseFloat(gv('minv_a'))||0,vr=parseFloat(gv('minv_vr'))||15,vat=Math.round(a*vr/100);const l=S.get('invoices')||[];l.unshift({id:nextId('SI'),date:invDate,cust:gv('minv_c'),amount:a,vat,total:a+vat,due:'TBD',status:'Open'});S.set('invoices',l);closeM();renderInv();toast('Invoice saved. JE posted: Dr. AR / Cr. Revenue + VAT.','success');}}
 };
 
 // JE helpers
@@ -4730,10 +4730,16 @@ function renderPayroll(){const emps=S.get('employees')||[];const rows=emps.map(e
 
 // ── RENDER: FINANCIALS ──
 function co(){return(S.get('company')||{}).name||'Company';}
-function _tb() {
+function _tb(asOf, from) {
   // SINGLE SOURCE OF TRUTH — aggregates from posted glLedger entries
   // This ensures every posted JE immediately appears in all financial statements
-  const ledger = S.get('glLedger') || [];
+  const _allLedger = S.get('glLedger') || [];
+  const _asOfDate = asOf || new Date().toISOString().slice(0,10);
+  const _fromDate = from || '1900-01-01';
+  // Filter ledger by date range if provided
+  const ledger = (asOf || from)
+    ? _allLedger.filter(e => (e.date||'') >= _fromDate && (e.date||'') <= _asOfDate)
+    : _allLedger;
   const cur    = baseCurr();
 
   // Build account balances directly from GL entries
@@ -4903,7 +4909,7 @@ function renderPnL() {
   const fromDate = document.getElementById("pnlFrom")?.value || (_yr2+"-01-01");
   const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("pnlPeriod","renderPnL()");
-  const t   = _tb();
+  const t   = _tb(asOfDate, fromDate);
   const cur = t.cur;
   const f   = n => fC(Math.abs(n||0), cur);
   const fp  = n => t.rev > 0 ? (Math.abs(n||0)/t.rev*100).toFixed(1)+'%' : '—';
@@ -4969,7 +4975,7 @@ function renderBS() {
   const asOfDate = document.getElementById("bsTo")?.value || _now2;
   const fromDate = document.getElementById("bsFrom")?.value || (_yr2+"-01-01");
   const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
-  buildPeriodOpts("bsPeriod","renderBS()");  const t   = _tb();
+  buildPeriodOpts("bsPeriod","renderBS()");  const t   = _tb(asOfDate, fromDate);
   const cur = t.cur;
   const co  = S.get('company') || {};
   const balanced = Math.abs(t.totalAssets - t.totalLandE) < 1;
@@ -5093,7 +5099,7 @@ function renderCF() {
   const fromDate = document.getElementById("cfFrom")?.value || (_yr2+"-01-01");
   const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("cfPeriod","renderCF()");
-  const t   = _tb();
+  const t   = _tb(asOfDate, fromDate);
   const cur = t.cur;
   const f   = n => fC(Math.abs(n||0), cur);
   const ledger = S.get('glLedger') || [];
@@ -5275,7 +5281,7 @@ function renderCostVariance() {
   const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("cvPeriod","renderCostVariance()");
   const cur = baseCurr();
-  const wo  = S.get('workorders') || [];
+  const wo  = (S.get('workorders') || []).filter(w=>!w.date||(w.date>=fromDate&&w.date<=asOfDate));
   const f   = n => fC(Math.abs(n||0), cur);
   const data = wo.map(w => ({
     wo:w.id, prod:w.prod||'—', cust:w.cust||'—',
@@ -6476,6 +6482,119 @@ function closeAssetDetail() {
   document.querySelectorAll('#assetTbl tr').forEach(r => r.classList.remove('selected'));
 }
 
+
+// ════════════════════════════════════════════════════════════
+//  FIXED ASSETS — ERPNext-grade module additions
+// ════════════════════════════════════════════════════════════
+
+// Post a GL journal for asset transactions (acquisition, depreciation, disposal)
+function postAssetGL(lines, desc, date, src) {
+  // D365 period validation for asset module
+  if (checkPeriodD365(date||today(), 'assets')) return null;
+  const ledger = S.get('glLedger') || [];
+  const jeId = 'JE-' + (date||today()).replace(/-/g,'') + '-' +
+               String((parseInt(S.get('jeSeq_'+(date||today()).replace(/-/g,''))||'0')+1)).padStart(4,'0');
+  S.set('jeSeq_'+(date||today()).replace(/-/g,''),
+        String(parseInt(S.get('jeSeq_'+(date||today()).replace(/-/g,''))||'0')+1));
+  const cur = baseCurr();
+  let lastHash = 'GENESIS';
+  const buildH = (prev,e)=>{let h=0x811c9dc5;const s=prev+jeId+e.account;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return 'GL'+h.toString(16).padStart(8,'0').toUpperCase();};
+  lines.forEach(ln => {
+    const hash = buildH(lastHash, ln); lastHash = hash;
+    ledger.push({
+      jeId, date: date||today(), desc, src: src||'Fixed Assets',
+      account: ln.account, dr: ln.dr||0, cr: ln.cr||0,
+      txCurr: cur, txAmt: ln.dr||(-ln.cr), baseAmt: ln.dr||ln.cr,
+      dims:{cc:'CC01'}, book:'ifrs', status:'Posted',
+      userId: getSession()?.userId||'USR-001', hash, ts:new Date().toISOString()
+    });
+  });
+  S.set('glLedger', ledger);
+  // Also record in journals list
+  const journals = S.get('journals') || [];
+  const totalDr = lines.reduce((s,l)=>s+(l.dr||0),0);
+  journals.unshift({ id:jeId, date:date||today(), desc, dr:totalDr, cr:totalDr,
+    src:'Fixed Assets', status:'Posted',
+    lines: lines.map(l=>({account:l.account, dr:l.dr||0, cr:l.cr||0})) });
+  S.set('journals', journals);
+  return jeId;
+}
+
+// Build a full depreciation schedule for an asset & book (ERPNext-style)
+function buildDeprSchedule(asset, bookKey) {
+  const b = asset.books?.[bookKey];
+  if (!b) return [];
+  const method = DEPR_METHODS[b.method] || DEPR_METHODS.SL;
+  const life = b.life || 10;
+  const cost = asset.cost || 0;
+  const salvage = asset.salvage || 0;
+  const startYr = new Date(asset.acqDate).getFullYear();
+  const schedule = [];
+  let nbv = cost, accum = 0;
+  for (let yr = 1; yr <= life; yr++) {
+    let depr;
+    if (b.method === 'SL')        depr = (cost - salvage) / life;
+    else if (b.method === 'DB')   depr = nbv * (1/life) * 1.5;
+    else if (b.method === 'DDB')  depr = nbv * (2/life);
+    else if (b.method === 'SYD')  depr = (cost - salvage) * ((life-yr+1)/(life*(life+1)/2));
+    else                          depr = (cost - salvage) / life;
+    // Don't depreciate below salvage
+    if (nbv - depr < salvage) depr = nbv - salvage;
+    if (depr < 0) depr = 0;
+    accum += depr; nbv -= depr;
+    schedule.push({
+      year: startYr + yr - 1, period: yr,
+      opening: nbv + depr, depr, accum, closing: nbv
+    });
+  }
+  return schedule;
+}
+
+// Render the asset value grid (depreciation schedule table)
+function renderAssetValueGrid(assetId, bookKey) {
+  bookKey = bookKey || 'ifrs';
+  const asset = (S.get('fixedAssets')||[]).find(a => a.id === assetId);
+  const grid = document.getElementById('assetValueGrid');
+  if (!asset || !grid) return;
+  const cur = baseCurr();
+  const b = asset.books?.[bookKey] || {};
+  const schedule = buildDeprSchedule(asset, bookKey);
+  const f = n => fC(Math.abs(n||0), cur);
+
+  grid.innerHTML = `
+    <div class="g4c mb12" style="gap:10px">
+      <div class="kpi c-blue"><div class="kpi-lbl">Acquisition Cost</div><div class="kpi-val">${f(asset.cost)}</div></div>
+      <div class="kpi c-orange"><div class="kpi-lbl">Accumulated Depr.</div><div class="kpi-val">${f(b.accumDepr)}</div></div>
+      <div class="kpi c-green"><div class="kpi-lbl">Net Book Value</div><div class="kpi-val">${f(b.nbv)}</div></div>
+      <div class="kpi c-teal"><div class="kpi-lbl">Method</div><div class="kpi-val" style="font-size:14px">${(DEPR_METHODS[b.method]||{}).label||b.method}</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th>Year</th><th>Period</th>
+        <th class="num">Opening NBV</th><th class="num">Depreciation</th>
+        <th class="num">Accum. Depr.</th><th class="num">Closing NBV</th>
+      </tr></thead>
+      <tbody>
+        ${schedule.map(r => `<tr>
+          <td class="fw6">${r.year}</td><td>Y${r.period}</td>
+          <td class="num">${f(r.opening)}</td>
+          <td class="num" style="color:var(--orange)">${f(r.depr)}</td>
+          <td class="num">${f(r.accum)}</td>
+          <td class="num fw6">${f(r.closing)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+// Flip between depreciation books in the asset detail panel
+function flipAssetBook(assetId, bookKey) {
+  document.querySelectorAll('#bookToggle .book-tog').forEach(b =>
+    b.classList.toggle('active', b.dataset.book === bookKey));
+  const lbl = document.getElementById('activeBookLabel');
+  if (lbl) lbl.textContent = (DEPR_BOOKS[bookKey]||{}).label || bookKey;
+  renderAssetValueGrid(assetId, bookKey);
+}
+
 function renderAssets() {
 const all = S.get('fixedAssets') || [];
 const cur = baseCurr();
@@ -6827,16 +6946,59 @@ function runDepreciationPost() {
   const bookDef = DEPR_BOOKS[bookKey] || {};
   const assets = (S.get('fixedAssets')||[]).filter(a => a.status === 'Active');
   const cur = baseCurr();
-  const total = assets.reduce((s,a) => {
-    const b = a.books?.[bookKey] || {};
-    return s + (b.life > 0 ? (a.cost-(a.salvage||0))/b.life/12 : 0);
-  }, 0);
+  if (!assets.length) { toast('No active assets to depreciate','info'); return; }
+  // D365 period validation
+  if (checkPeriodD365(today(), 'assets')) return;
 
-  appendAuditLog('assets','DEPRECIATION_POST',`DEPR-${today()}-${bookKey.toUpperCase()}`,{
-    book: bookDef.label, period: today(), amount: total, assets: assets.length
+  // Compute monthly depreciation per asset and update NBV
+  const allAssets = S.get('fixedAssets') || [];
+  const glLines = {};  // group by GL account
+  let totalDepr = 0;
+
+  assets.forEach(a => {
+    const b = a.books?.[bookKey];
+    if (!b || b.life <= 0) return;
+    let monthlyDepr;
+    if (b.method === 'SL')       monthlyDepr = (a.cost - (a.salvage||0)) / b.life / 12;
+    else if (b.method === 'DDB') monthlyDepr = (b.nbv||a.cost) * (2/b.life) / 12;
+    else if (b.method === 'DB')  monthlyDepr = (b.nbv||a.cost) * (1.5/b.life) / 12;
+    else                         monthlyDepr = (a.cost - (a.salvage||0)) / b.life / 12;
+    // Don't depreciate below salvage
+    if ((b.nbv||a.cost) - monthlyDepr < (a.salvage||0)) monthlyDepr = Math.max(0,(b.nbv||a.cost)-(a.salvage||0));
+    if (monthlyDepr <= 0) return;
+
+    // Update asset book
+    const idx = allAssets.findIndex(x => x.id === a.id);
+    if (idx >= 0) {
+      allAssets[idx].books[bookKey].accumDepr = (b.accumDepr||0) + monthlyDepr;
+      allAssets[idx].books[bookKey].nbv = (b.nbv||a.cost) - monthlyDepr;
+      allAssets[idx].history = allAssets[idx].history || [];
+      allAssets[idx].history.push({date:today(), event:'Depreciation', amount:monthlyDepr, ref:bookKey});
+    }
+    // Accumulate GL lines by class
+    const cls = ASSET_CLASSES[a.class] || {glDepr:'1511', glDeprExp:'6030'};
+    glLines[cls.glDeprExp] = (glLines[cls.glDeprExp]||0) + monthlyDepr; // Dr expense
+    glLines['_credit_'+cls.glDepr] = (glLines['_credit_'+cls.glDepr]||0) + monthlyDepr; // Cr accum depr
+    totalDepr += monthlyDepr;
   });
-  audioPostSuccess();
-  toast(`✓ ${bookDef.label} depreciation posted — ${fC(total,cur)} across ${assets.length} assets. GL entries created.`, 'success', 4000);
+
+  if (totalDepr <= 0) { toast('Nothing to depreciate this period','info'); return; }
+
+  // Build GL journal lines
+  const lines = [];
+  Object.entries(glLines).forEach(([acct, amt]) => {
+    if (acct.startsWith('_credit_')) lines.push({account:acct.replace('_credit_',''), dr:0, cr:amt});
+    else lines.push({account:acct, dr:amt, cr:0});
+  });
+
+  S.set('fixedAssets', allAssets);
+  const jeId = postAssetGL(lines, `Monthly depreciation — ${bookDef.label||bookKey}`, today(), 'Fixed Assets');
+  appendAuditLog('assets','DEPRECIATION_POST',`DEPR-${today()}-${bookKey.toUpperCase()}`,{
+    book: bookDef.label, period: today(), amount: totalDepr, assets: assets.length, je:jeId
+  });
+  if (typeof audioPostSuccess==='function') audioPostSuccess();
+  renderAssets();
+  toast(`Depreciation posted: ${fC(totalDepr,cur)} across ${assets.length} assets (${jeId})`, 'success');
 }
 
 // ── RENDER: CWIP / CAPEX ──
@@ -7029,10 +7191,16 @@ const mAssetTemplates = {
       };
       assets.push(newAsset);
       S.set('fixedAssets', assets);
-      appendAuditLog('assets','ACQUISITION', id, {cost, desc});
+      // Post acquisition journal: Dr Asset account, Cr Accounts Payable
+      const clsCfg = ASSET_CLASSES[cls] || {glAcq:'1510'};
+      const jeId = postAssetGL([
+        { account: clsCfg.glAcq||'1510', dr: cost, cr: 0 },
+        { account: '2010', dr: 0, cr: cost }
+      ], `Asset acquisition — ${id} ${desc}`, gv('aa_date')||today(), 'Fixed Assets');
+      appendAuditLog('assets','ACQUISITION', id, {cost, desc, je:jeId});
       closeM(); renderAssets();
-      audioPostSuccess();
-      toast(`Asset ${id} created. Acquisition journal posted to GL.`, 'success');
+      if (typeof audioPostSuccess==='function') audioPostSuccess();
+      toast(`Asset ${id} created. Journal ${jeId} posted (Dr ${clsCfg.glAcq} / Cr 2010).`, 'success');
     }
   },
   mCapitaliseCWIP: {
@@ -7107,11 +7275,24 @@ const mAssetTemplates = {
       const disposals = S.get('assetDisposals')||[];
       disposals.push({ id:`DISP-${String(disposals.length+1).padStart(3,'0')}`, assetId:id, desc:a?.desc||'', type, nbvIFRS, nbvTax, proceeds, gainLossIFRS:gainIFRS, gainLossTax:gainTax, date:gv('ret_date')||today(), approvedBy:gv('ret_auth'), status:'Posted', reason:gv('ret_reason') });
       S.set('assetDisposals', disposals);
-      appendAuditLog('assets','DISPOSAL', id, {type, proceeds, gainLossIFRS:gainIFRS});
-      closeM(); renderAssets(); renderDisposals();
-      audioPostSuccess();
+      // Post disposal journal:
+      //   Dr Cash/Bank (proceeds), Dr Accum Depr (to clear), Cr Asset (cost)
+      //   Dr/Cr Gain or Loss on Disposal (6060 expense / 4090 other income)
+      const clsCfg = ASSET_CLASSES[a?.class] || {glAcq:'1510', glDepr:'1511'};
+      const accumDepr = a ? a.cost - nbvIFRS : 0;
+      const dispLines = [];
+      if (proceeds > 0) dispLines.push({ account:'1010', dr:proceeds, cr:0 });   // Cash received
+      if (accumDepr > 0) dispLines.push({ account:clsCfg.glDepr, dr:accumDepr, cr:0 }); // Clear accum depr
+      dispLines.push({ account:clsCfg.glAcq, dr:0, cr:a?.cost||0 });             // Remove asset cost
+      // Gain or loss balancing entry
+      if (gainIFRS > 0)      dispLines.push({ account:'4090', dr:0, cr:gainIFRS });        // Gain (other income)
+      else if (gainIFRS < 0) dispLines.push({ account:'6060', dr:-gainIFRS, cr:0 });       // Loss (expense)
+      const dispJE = postAssetGL(dispLines, `Asset disposal — ${id} (${type})`, gv('ret_date')||today(), 'Fixed Assets');
+      appendAuditLog('assets','DISPOSAL', id, {type, proceeds, gainLossIFRS:gainIFRS, je:dispJE});
+      closeM(); renderAssets(); if(typeof renderDisposals==='function') renderDisposals();
+      if (typeof audioPostSuccess==='function') audioPostSuccess();
       const cur = baseCurr();
-      toast(`${id} retired. Gain/(Loss): ${fC(gainIFRS,cur)} IFRS · ${fC(gainTax,cur)} Tax.`, gainIFRS>=0?'success':'warn', 5000);
+      toast(`${id} retired. Gain/(Loss): ${fC(gainIFRS,cur)} · Journal ${dispJE} posted.`, gainIFRS>=0?'success':'warn', 5000);
     }
   },
   mAssetTransfer: {
@@ -8199,6 +8380,8 @@ const COA_MASTER = [
   { code:'1320', name:'Finished Goods Inventory',         type:'detail',  normal:'Dr', category:'Assets',      parent:'1000', glType:'inventory' },
   { code:'1500', name:'Property, Plant & Equipment',      type:'detail',  normal:'Dr', category:'Assets',      parent:'1000', glType:'asset' },
   { code:'1511', name:'Accumulated Depreciation — PP&E', type:'detail',  normal:'Cr', category:'Assets',      parent:'1000', glType:'contra' },
+  { code:'1520', name:'Fleet Vehicles', type:'detail', normal:'Dr', category:'Assets' },
+  { code:'1521', name:'Accum. Depreciation — Fleet', type:'detail', normal:'Cr', category:'Assets' },
   { code:'1700', name:'Intangible Assets',                type:'detail',  normal:'Dr', category:'Assets',      parent:'1000', glType:'asset' },
   // Liabilities
   { code:'2000', name:'LIABILITIES',                      type:'header',  normal:'Cr', category:'Liabilities' },
@@ -8221,6 +8404,7 @@ const COA_MASTER = [
   { code:'4000', name:'REVENUE',                          type:'header',  normal:'Cr', category:'Revenue' },
   { code:'4010', name:'Product Sales Revenue',            type:'detail',  normal:'Cr', category:'Revenue',     parent:'4000', taxCode:'O15' },
   { code:'4020', name:'Service Revenue',                  type:'detail',  normal:'Cr', category:'Revenue',     parent:'4000', taxCode:'O15' },
+  { code:'4090', name:'Gain on Asset Disposal', type:'detail', normal:'Cr', category:'Revenue' },
   { code:'4030', name:'Other Operating Income',           type:'detail',  normal:'Cr', category:'Revenue',     parent:'4000' },
   { code:'4040', name:'Finance Income',                   type:'detail',  normal:'Cr', category:'Revenue',     parent:'4000' },
   { code:'4050', name:'FX Gain',                          type:'detail',  normal:'Cr', category:'Revenue',     parent:'4000', glType:'fxgain' },
@@ -8560,7 +8744,7 @@ function renderGL() {
 
   // Transactions
   const ledger  = S.get('glLedger') || [];
-  const acTxns  = ledger.filter(e => e.account===accCode && e.book===book && e.date>=dateFrom && e.date<=dateTo);
+  const acTxns  = ledger.filter(e => e.account===accCode && ((e.book||"ifrs")===book) && e.date>=dateFrom && e.date<=dateTo);
 
   // Opening balance
   const openBals = {};
@@ -9294,19 +9478,35 @@ function renderFiscalYear() {
   const el = document.getElementById('fyList');
   if (!el) return;
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  el.innerHTML = years.map(fy => `
-    <div class="fsec mb16">
-      <div class="flex ic gap12 mb8">
-        <span class="fw6 t-blue">${fy.year}</span>
-        <span class="b ${fy.status==='Open'?'b-green':'b-grey'}">${fy.status}</span>
-        ${fy.status==='Open'?`<button class="btn btn-d xs" onclick="closeFY(${fy.year})">Close FY ${fy.year}</button>`:''}
+  const statusColor = {
+    'Open':'b-green', 'On Hold':'b-orange', 'Closed':'b-grey', 'Permanently Closed':'b-red'
+  };
+  el.innerHTML = years.sort((a,b)=>b.year-a.year).map(fy => `
+    <div class="fsec mb16" style="border:1px solid var(--border);border-radius:var(--r6);padding:14px">
+      <div class="flex ic gap12 mb10" style="flex-wrap:wrap">
+        <span class="fw6" style="font-size:16px;color:var(--blue)">FY ${fy.year}</span>
+        <span class="b ${statusColor[fy.status]||'b-grey'}">${fy.status}</span>
+        ${fy.status==='Open'?`<button class="btn btn-d xs" onclick="closeFY(${fy.year})">Close Year</button>`:''}
+        ${fy.status==='Closed'?`<button class="btn btn-s xs" onclick="reopenFY(${fy.year})">Reopen Year</button>`:''}
+        <span class="t-muted t-xs" style="margin-left:auto">Click a period to manage its status</span>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${(fy.periods||[]).map(p=>`
-          <div class="b ${p.status==='Open'?'b-green':p.locked?'b-red':'b-grey'}" style="min-width:50px;text-align:center;cursor:${p.status==='Open'?'pointer':'default'}"
-            onclick="${p.status==='Open'?`closePeriod(${fy.year},${p.month})`:''}">
-            ${months[p.month-1]}<br><span style="font-size:9px">${p.status}</span>
-          </div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+        ${(fy.periods||[]).map(p=>{
+          const sc = statusColor[p.status]||'b-grey';
+          const onHoldMods = p.status==='On Hold' && p.allowedModules?.length ? ' ('+p.allowedModules.join(',')+')' : '';
+          return `<div style="border:1px solid var(--border);border-radius:var(--r4);padding:8px 10px;background:var(--surface2)">
+            <div class="flex ic" style="justify-content:space-between;margin-bottom:6px">
+              <span class="fw6 t-sm">${months[p.month-1]} ${fy.year}</span>
+              <span class="b ${sc}" style="font-size:9px">${p.status}${onHoldMods}</span>
+            </div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap">
+              ${p.status!=='Open' && p.status!=='Permanently Closed' ? `<button class="btn btn-g" style="font-size:9px;padding:2px 6px" onclick="reopenPeriod(${fy.year},${p.month})" title="Reopen">Open</button>`:''}
+              ${p.status==='Open' ? `<button class="btn btn-g" style="font-size:9px;padding:2px 6px" onclick="putPeriodOnHold(${fy.year},${p.month})" title="On Hold (GL+Assets only)">Hold</button>`:''}
+              ${p.status!=='Closed' && p.status!=='Permanently Closed' ? `<button class="btn btn-g" style="font-size:9px;padding:2px 6px" onclick="setPeriodStatus(${fy.year},${p.month},'Closed')" title="Close">Close</button>`:''}
+              ${p.status==='Closed' ? `<button class="btn btn-d" style="font-size:9px;padding:2px 6px" onclick="permanentlyClosePeriod(${fy.year},${p.month})" title="Permanently close">Perm</button>`:''}
+            </div>
+          </div>`;
+        }).join('')}
       </div>
     </div>`).join('') || '<div class="alert a-info">No fiscal years configured.</div>';
 }
@@ -9341,7 +9541,124 @@ function closePeriod(year, month) {
   toast(`${months[month-1]} ${year} period closed.`, 'success');
 }
 
-function checkPeriod(date) {
+
+// ════════════════════════════════════════════════════════════
+//  D365-STYLE FINANCIAL PERIOD MANAGEMENT
+//  Period statuses: Open | On Hold | Closed | Permanently Closed
+//  On Hold = open only for specified module(s)
+// ════════════════════════════════════════════════════════════
+
+// Central posting-validation gate. Returns true if BLOCKED.
+// module: 'gl','ap','ar','inventory','assets','payroll','bank' (D365 "module access")
+function checkPeriodD365(date, module) {
+  module = module || 'gl';
+  const d = new Date(date);
+  const yr = d.getFullYear();
+  let years = S.get('fiscalYears') || [];
+  let fy = years.find(y => y.year === yr);
+
+  // Auto-create fiscal year if entirely missing
+  if (!fy) {
+    fy = { year:yr, status:'Open', periods: Array.from({length:12},(_,i)=>({
+      month:i+1, name:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i],
+      status:'Open', allowedModules:[] })) };
+    years.push(fy); S.set('fiscalYears', years);
+  }
+
+  // Fiscal year-level lock
+  if (fy.status === 'Permanently Closed') {
+    toast('Cannot post to ' + yr + ' — fiscal year permanently closed.', 'error');
+    return true;
+  }
+  if (fy.status === 'Closed') {
+    toast('Cannot post to ' + yr + ' — fiscal year is closed. Reopen in GL → Fiscal Year.', 'error');
+    return true;
+  }
+
+  // Period-level status
+  const p = fy.periods?.find(p => p.month === d.getMonth()+1);
+  if (!p) return false; // no period record = allow
+  const pName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+
+  if (p.status === 'Permanently Closed') {
+    toast('Cannot post to ' + pName + ' ' + yr + ' — period permanently closed.', 'error');
+    return true;
+  }
+  if (p.status === 'Closed') {
+    toast('Cannot post to ' + pName + ' ' + yr + ' — period is closed.', 'error');
+    return true;
+  }
+  if (p.status === 'On Hold') {
+    // On Hold: only allowed if this module is in allowedModules
+    const allowed = (p.allowedModules || []);
+    if (!allowed.includes(module) && !allowed.includes('all')) {
+      toast('Period ' + pName + ' ' + yr + ' is On Hold — ' + module.toUpperCase() + ' postings not permitted.', 'error');
+      return true;
+    }
+  }
+  return false; // Open or allowed-on-hold
+}
+
+// Set a period's status (D365 period-status workflow)
+function setPeriodStatus(year, month, status, allowedModules) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const years = S.get('fiscalYears') || [];
+  const fy = years.find(y => y.year === year);
+  if (!fy) { toast('Fiscal year not found','error'); return; }
+  const p = fy.periods?.find(p => p.month === month);
+  if (!p) { toast('Period not found','error'); return; }
+
+  // Prevent reopening permanently closed
+  if (p.status === 'Permanently Closed') {
+    toast('Permanently closed periods cannot be changed.', 'error'); return;
+  }
+  const prev = p.status;
+  p.status = status;
+  p.locked = (status === 'Closed' || status === 'Permanently Closed');
+  if (status === 'On Hold') p.allowedModules = allowedModules || [];
+  else p.allowedModules = [];
+  S.set('fiscalYears', years);
+
+  // Audit log
+  const log = S.get('periodLog') || [];
+  log.push({ period:`${months[month-1]} ${year}`, action:`${prev} → ${status}`,
+             closedBy:getSession()?.name||'System', ts:new Date().toISOString() });
+  S.set('periodLog', log);
+  if (typeof appendAuditLog==='function') appendAuditLog('gl','PERIOD_STATUS',`${months[month-1]}-${year}`,{from:prev,to:status});
+
+  renderFiscalYear();
+  if (typeof audioPostSuccess==='function') audioPostSuccess();
+  toast(`${months[month-1]} ${year}: ${prev} → ${status}`, 'success');
+}
+
+// Reopen a closed period (requires it not be permanently closed)
+function reopenPeriod(year, month) {
+  setPeriodStatus(year, month, 'Open');
+}
+function putPeriodOnHold(year, month) {
+  // By default allow GL + assets while on hold (adjustments)
+  setPeriodStatus(year, month, 'On Hold', ['gl','assets']);
+}
+function permanentlyClosePeriod(year, month) {
+  if (!confirm('Permanently close this period? This CANNOT be undone.')) return;
+  setPeriodStatus(year, month, 'Permanently Closed');
+}
+
+// Reopen a closed fiscal year
+function reopenFY(year) {
+  const years = S.get('fiscalYears') || [];
+  const fy = years.find(y => y.year === year);
+  if (!fy || fy.status === 'Permanently Closed') { toast('Cannot reopen','error'); return; }
+  fy.status = 'Open';
+  if (fy.periods) fy.periods.forEach(p => { if(p.status==='Closed'){p.status='Open';p.locked=false;} });
+  S.set('fiscalYears', years);
+  if (typeof appendAuditLog==='function') appendAuditLog('gl','FY_REOPEN',`FY-${year}`,{year});
+  renderFiscalYear();
+  toast(`FY ${year} reopened.`, 'success');
+}
+
+function checkPeriod(date, module) { return checkPeriodD365(date, module); }
+function _checkPeriodOLD(date) {
   const d = new Date(date);
   const yr = d.getFullYear();
   let years = S.get('fiscalYears') || [];
@@ -9605,7 +9922,7 @@ function renderBudgetVsActual() {
   const fromDate = document.getElementById("bvaFrom")?.value || (_yr2+"-01-01");
   const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
   buildPeriodOpts("bvaPeriod","renderBudgetVsActual()");
-  const t   = _tb(); const cur = t.cur;
+  const t   = _tb(asOfDate, fromDate); const cur = t.cur;
   const b   = S.get('budgets') || {};
   const f   = n => fC(Math.abs(n||0), cur);
   const rows = [
@@ -10268,15 +10585,12 @@ function showScreen(co) {
 
 })();function buildPeriodOpts(selId) {
   const el = document.getElementById(selId);
-  if (!el) return;
-  if (!el.value) {
-    const now = new Date();
-    const today = now.toISOString().slice(0,10);
-    // "From" fields default to start of current year
-    // "To" / single-date fields default to today
-    const isFrom = selId.toLowerCase().includes('from');
-    el.value = isFrom ? now.getFullYear() + '-01-01' : today;
-  }
+  if (!el || el.value) return; // already has a value
+  const now  = new Date();
+  const td   = now.toISOString().slice(0,10);
+  const yr   = now.getFullYear();
+  // From fields default to start of current year; To/Period fields default to today
+  el.value = selId.toLowerCase().includes('from') ? yr + '-01-01' : td;
 }
 
 function getPeriod(selId) {
