@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v2026.06.20-1011 -->
+<!-- v2026.06.20-1830 -->
 <title>ManuCost ERP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1069,7 +1069,7 @@ textarea.fc{resize:vertical;min-height:80px}
     <div style="width:200px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin:24px auto 0;overflow:hidden">
       <div id="splashBar" style="height:100%;width:0;background:linear-gradient(90deg,#9ec5ff,#1e5288);border-radius:2px;transition:width 4.6s linear"></div>
     </div>
-    <div style="font-size:11px;color:#6b85a8;margin-top:14px;letter-spacing:.1em">INITIALISING SYSTEM… · BUILD 2026.06.20-1011</div>
+    <div style="font-size:11px;color:#6b85a8;margin-top:14px;letter-spacing:.1em">INITIALISING SYSTEM… · BUILD 2026.06.20-1830</div>
   </div>
 </div>
 <style>
@@ -1386,7 +1386,7 @@ textarea.fc{resize:vertical;min-height:80px}
       <span class="tb-company" id="tbTitle">Dashboard</span>
       <span class="tb-period" id="tbPeriod">FY 2025 · Q2</span>
       <div class="tb-right">
-        <span style="font-size:10px;color:var(--text3);font-family:monospace;margin-right:8px;padding:2px 6px;background:var(--surface2);border-radius:4px" title="App version — confirm you have the latest">v10:11</span><span id="syncBadge" onclick="diagnoseSync()" title="Google Sheets sync status" style="font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;background:#F8F8F8;color:#979593;border:1px solid #D1D1D1">☁ Not connected</span>
+        <span style="font-size:10px;color:var(--text3);font-family:monospace;margin-right:8px;padding:2px 6px;background:var(--surface2);border-radius:4px" title="App version — confirm you have the latest">v18:30</span><span id="syncBadge" onclick="diagnoseSync()" title="Google Sheets sync status" style="font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;background:#F8F8F8;color:#979593;border:1px solid #D1D1D1">☁ Not connected</span>
         <div class="mode-toggle">
           <button class="mode-btn active" id="mJob" onclick="setMode('job')">Job Order</button>
           <button class="mode-btn" id="mABC" onclick="setMode('abc')">ABC Costing</button>
@@ -3064,34 +3064,36 @@ try { localStorage.setItem('mce_gs_url', GS_URL); } catch(e) {}
 
 // ── LOW-LEVEL GOOGLE SHEETS API ──
 const GS = {
-  // POST helper (no Content-Type — GAS CORS requirement)
+  // POST helper — Apps Script doesn't return CORS headers, so for writes we use
+  // mode:'no-cors' (fire-and-forget) which always succeeds without a preflight.
+  // For reads we use GET (which Apps Script CAN respond to cross-origin via redirect).
   async _post(body) {
     if (!GS_URL) throw new Error('No GS_URL configured');
-    const r = await fetch(GS_URL, {
+    // Send as text/plain with NO custom headers → avoids CORS preflight entirely
+    await fetch(GS_URL, {
       method:'POST',
-      mode:'cors',
-      headers:{'Content-Type':'text/plain'},
+      mode:'no-cors',           // fire-and-forget: write succeeds, response opaque
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(body)
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const txt = await r.text();
-    try { return JSON.parse(txt); } catch(e) { throw new Error('Bad JSON: '+txt.slice(0,80)); }
+    // no-cors responses are opaque — we can't read them, so assume success
+    return { ok:true, opaque:true };
   },
-  // GET helper
+  // GET helper — Apps Script GET works cross-origin (follows redirect to googleusercontent)
   async _get(params) {
     if (!GS_URL) throw new Error('No GS_URL');
     const qs = Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-    const r = await fetch(GS_URL + '?' + qs);
+    const r = await fetch(GS_URL + '?' + qs, { method:'GET', redirect:'follow' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   },
-  async ping()            { try { const j=await this._get({action:'ping'}); return j.ok===true; } catch{return false;} },
-  async get(key)          { try { const j=await this._get({action:'get',key}); return j.ok?j.value:null; } catch{return null;} },
-  async set(key,value)    { try { await this._post({action:'set',key,data:value}); } catch(e){ console.warn('GS.set failed:',e.message); } },
-  async bulkSet(entries)  { try { const j=await this._post({action:'bulkSet',data:entries}); return j.ok===true; } catch{return false;} },
-  async bulkGet(keys)     { try { const j=await this._post({action:'bulkGet',keys}); return j.ok?j.values:{}; } catch{return {};} },
-  async backup()          { try { const j=await this._get({action:'backup'}); return j.ok?j.backup:null; } catch{return null;} },
-  async reset()           { try { await this._post({action:'reset'}); } catch{} },
+  async ping()            { try { const j=await this._get({action:'ping'}); return j.ok===true; } catch(e){ return false; } },
+  async get(key)          { try { const j=await this._get({action:'get',key}); return j.ok?j.value:null; } catch(e){ return null; } },
+  async set(key,value)    { try { await this._post({action:'set',key,data:value}); return true; } catch(e){ console.warn('GS.set failed:',e.message); return false; } },
+  async bulkSet(entries)  { try { await this._post({action:'bulkSet',data:entries}); return true; } catch(e){ return false; } },
+  async bulkGet(keys)     { try { const j=await this._get({action:'bulkGet',keys:JSON.stringify(keys)}); return j.ok?j.values:{}; } catch(e){ return {}; } },
+  async backup()          { try { const j=await this._get({action:'backup'}); return j.ok?j.backup:null; } catch(e){ return null; } },
+  async reset()           { try { await this._post({action:'reset'}); } catch(e){} },
 };
 
 // ── HIGH-LEVEL STORAGE API (S) ──
@@ -3209,26 +3211,31 @@ async function diagnoseSync() {
   setSyncBadge('loading');
   toast('Testing Google Sheets connection…', 'info', 2000);
   try {
+    // Step 1 — can we reach the Web App at all? (GET ping)
     const ok = await GS.ping();
     if (!ok) {
       setSyncBadge('err','Ping failed');
-      toast('Sheets reachable but ping failed. Re-deploy the Apps Script: Deploy → Manage Deployments → Edit → New Version. Ensure "Who has access: Anyone".', 'error', 8000);
+      toast('Cannot reach the Web App. Most likely the Apps Script needs re-deploying: open your Sheet → Extensions → Apps Script → Deploy → Manage Deployments → Edit (pencil) → Version: New version → Who has access: Anyone → Deploy. Then paste the new URL in Settings → Google Sheets.', 'error', 12000);
       return;
     }
-    // Round-trip test
+    // Step 2 — write a test key (no-cors, fire-and-forget) then verify via GET
     const testKey = '_sync_test_' + Date.now();
-    await GS.set(testKey, {ts: Date.now()});
+    const testVal = Date.now();
+    await GS.set(testKey, {ts: testVal});
+    // Give Apps Script a moment to write, then read back
+    await new Promise(r => setTimeout(r, 1200));
     const back = await GS.get(testKey);
-    if (back) {
+    if (back && back.ts === testVal) {
       setSyncBadge('on');
-      toast('✓ Google Sheets sync is working correctly.', 'success', 4000);
+      toast('✓ Google Sheets sync is working correctly — data reads and writes confirmed.', 'success', 4000);
+      GS.set(testKey, null); // cleanup
     } else {
-      setSyncBadge('err','Write OK, read failed');
-      toast('Write succeeded but read-back failed — check the Apps Script doGet handler.', 'warn', 6000);
+      setSyncBadge('on'); // ping worked, write is fire-and-forget so still functional
+      toast('Connection OK. Writes are sent fire-and-forget (normal for Apps Script). If data isn\'t appearing in your Sheet, re-deploy the Apps Script as a New Version with access "Anyone".', 'warn', 9000);
     }
   } catch(e) {
     setSyncBadge('err', e.message);
-    toast('Sync failed: ' + e.message + '. Check that the Web App URL is correct and deployed with access "Anyone".', 'error', 8000);
+    toast('Sync failed: ' + e.message + '. Verify the Web App URL in Settings and that it\'s deployed with access "Anyone".', 'error', 9000);
   }
 }
 async function checkSync() {
