@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- v2.1.0 -->
+<!-- v2026.06.20-1011 -->
 <title>ManuCost ERP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -874,6 +874,176 @@ textarea.fc{resize:vertical;min-height:80px}
 .fin-report-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px;border:2px solid var(--surface2)}
 .fin-report-body::-webkit-scrollbar-thumb:hover{background:var(--text3)}
 @media(max-width:680px){.fin-fld .fc{width:140px}}
+
+/* ══ SIDEBAR ENHANCEMENTS: gray bg, scrollbar, sections, favorites ══ */
+.sidebar{background:#2b2f3a !important}
+.nav-scroll{overflow-y:auto !important;scrollbar-width:thin;scrollbar-color:#5a6275 #2b2f3a}
+.nav-scroll::-webkit-scrollbar{width:10px !important}
+.nav-scroll::-webkit-scrollbar-track{background:#23262f}
+.nav-scroll::-webkit-scrollbar-thumb{background:#5a6275 !important;border-radius:5px;border:2px solid #2b2f3a}
+.nav-scroll::-webkit-scrollbar-thumb:hover{background:#717a90 !important}
+/* Section header (clickable to collapse) */
+.nav-label{
+  display:flex !important;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;padding:8px 14px 4px !important;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:#8b93a7 !important;transition:color .15s
+}
+.nav-label:hover{color:#c2c9da !important}
+.nav-label .sec-caret{font-size:9px;transition:transform .2s;opacity:.6}
+.nav-label.collapsed .sec-caret{transform:rotate(-90deg)}
+.nav-section-items{overflow:hidden;transition:max-height .25s ease;max-height:1000px}
+.nav-section-items.collapsed{max-height:0}
+/* Nav item with star */
+.nav-item{position:relative;display:flex !important;align-items:center;gap:10px}
+.nav-star{
+  margin-left:auto;font-size:13px;color:#5a6275;cursor:pointer;opacity:0;
+  transition:opacity .15s,color .15s;padding:0 2px;flex-shrink:0
+}
+.nav-item:hover .nav-star{opacity:1}
+.nav-star.faved{opacity:1;color:#ffc94d}
+.nav-star:hover{color:#ffd970}
+/* Favorites section */
+.nav-fav-section{border-bottom:1px solid #3a3f4d;padding-bottom:6px;margin-bottom:4px}
+.nav-fav-empty{font-size:11px;color:#6b7488;padding:6px 14px;font-style:italic}
+
+/* ═══════════ FANTASTIC DASHBOARD ═══════════ */
+.dash-wrap{padding:20px 24px;max-width:1400px;margin:0 auto}
+/* Hero banner */
+.dash-hero{
+  background:linear-gradient(125deg,#0b2447 0%,#19376d 50%,#1e5288 100%);
+  border-radius:18px;padding:28px 32px;color:#fff;position:relative;overflow:hidden;margin-bottom:24px;
+  box-shadow:0 12px 40px rgba(11,36,71,.25)
+}
+.dash-hero::before{content:'';position:absolute;top:-60%;right:-5%;width:380px;height:380px;background:radial-gradient(circle,rgba(120,170,255,.18),transparent 65%);border-radius:50%}
+.dash-hero::after{content:'';position:absolute;bottom:-70%;left:30%;width:300px;height:300px;background:radial-gradient(circle,rgba(30,160,200,.12),transparent 65%);border-radius:50%}
+.dash-hero-content{position:relative;z-index:1}
+.dash-greet{font-size:13px;color:#9ec5ff;font-weight:500;letter-spacing:.04em;margin-bottom:4px}
+.dash-co{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:18px}
+.dash-hero-stats{display:flex;gap:36px;flex-wrap:wrap}
+.dash-hero-stat .hs-lbl{font-size:11px;color:#9ec5ff;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.dash-hero-stat .hs-val{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.dash-hero-stat .hs-chg{font-size:12px;margin-top:4px;font-weight:600}
+.hs-up{color:#5fd99a}.hs-down{color:#ff8a8a}
+/* KPI cards grid */
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;
+  position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:default
+}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.1)}
+.kpi-card .kc-accent{position:absolute;top:0;left:0;width:4px;height:100%}
+.kpi-card .kc-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:12px}
+.kpi-card .kc-lbl{font-size:12px;color:var(--text3);font-weight:500;margin-bottom:4px}
+.kpi-card .kc-val{font-size:24px;font-weight:700;color:var(--text1);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi-card .kc-sub{font-size:11px;margin-top:6px;font-weight:600}
+.kpi-spark{position:absolute;right:14px;bottom:12px;opacity:.5}
+/* Chart cards */
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:980px){.dash-grid{grid-template-columns:1fr}}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;overflow:hidden}
+.dash-card-title{font-size:14px;font-weight:700;color:var(--text1);margin-bottom:2px;display:flex;align-items:center;justify-content:space-between}
+.dash-card-sub{font-size:11px;color:var(--text3);margin-bottom:16px}
+/* Health gauge */
+.health-ring{position:relative;width:160px;height:160px;margin:0 auto}
+.health-score{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.health-score .hsv{font-size:38px;font-weight:800;line-height:1}
+.health-score .hsl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+/* Animated bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:10px;height:160px;padding-top:10px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bar-fill{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#1e5288,#19376d);transition:height 1s cubic-bezier(.2,.8,.2,1);position:relative;min-height:2px}
+.bar-fill.rev{background:linear-gradient(180deg,#3b9eff,#1e5288)}
+.bar-fill.exp{background:linear-gradient(180deg,#ff9f7a,#e8623a)}
+.bar-lbl{font-size:10px;color:var(--text3);font-weight:600}
+.bar-val{font-size:9px;color:var(--text2);font-weight:600}
+/* Donut */
+.donut-legend{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.donut-leg-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.donut-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.donut-leg-val{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text2)}
+/* Activity feed */
+.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.act-dot{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.act-body{flex:1;min-width:0}
+.act-desc{font-size:13px;color:var(--text1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-meta{font-size:11px;color:var(--text3);margin-top:1px}
+.act-amt{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Quick action tiles */
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.qa-tile{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .18s}
+.qa-tile:hover{background:var(--blue);color:#fff;transform:translateY(-2px);border-color:var(--blue)}
+.qa-tile:hover .qa-ic,.qa-tile:hover .qa-tx{color:#fff}
+.qa-ic{font-size:24px;margin-bottom:8px}
+.qa-tx{font-size:12px;font-weight:600;color:var(--text2)}
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.kpi-card,.dash-card{animation:countUp .5s ease both}
+
+/* ═══════════ PROFESSIONAL DOCUMENT TEMPLATES ═══════════ */
+.doc-modal-shell{position:fixed;inset:0;z-index:9600;background:rgba(11,21,38,.6);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 20px;backdrop-filter:blur(4px)}
+.doc-paper{
+  background:#fff;width:780px;max-width:100%;border-radius:10px;overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.4);color:#1a2235;font-family:'Segoe UI',Calibri,sans-serif;margin:auto
+}
+.doc-actions{position:sticky;top:0;background:#0b2447;padding:10px 16px;display:flex;gap:8px;justify-content:flex-end;z-index:2}
+.doc-actions .btn{font-size:12px}
+/* Document header band */
+.doc-head{padding:32px 40px 24px;position:relative;overflow:hidden}
+.doc-head.po-head{background:linear-gradient(120deg,#0b2447,#19376d)}
+.doc-head.inv-head{background:linear-gradient(120deg,#0b3d2e,#16745a)}
+.doc-head.je-head{background:linear-gradient(120deg,#3a1c5c,#6d3a9e)}
+.doc-head::after{content:'';position:absolute;top:-50%;right:-5%;width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 70%);border-radius:50%}
+.doc-head-row{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+.doc-logo{display:flex;align-items:center;gap:12px}
+.doc-logo-mark{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff}
+.doc-co-name{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.doc-co-tag{font-size:11px;color:rgba(255,255,255,.7);margin-top:1px}
+.doc-type{text-align:right}
+.doc-type-label{font-size:24px;font-weight:800;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+.doc-type-num{font-size:13px;color:rgba(255,255,255,.85);font-family:Consolas,monospace;margin-top:2px}
+.doc-status-pill{display:inline-block;margin-top:8px;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:rgba(255,255,255,.2);color:#fff}
+/* Body */
+.doc-body{padding:28px 40px}
+.doc-parties{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px}
+.doc-party-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8893a8;margin-bottom:6px}
+.doc-party-name{font-size:15px;font-weight:700;color:#1a2235}
+.doc-party-detail{font-size:12px;color:#6b7488;line-height:1.6;margin-top:2px}
+.doc-meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#e8ecf2;border-radius:8px;overflow:hidden;margin-bottom:24px}
+.doc-meta-cell{background:#f8fafc;padding:12px 16px}
+.doc-meta-cell .dm-lbl{font-size:10px;color:#8893a8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.doc-meta-cell .dm-val{font-size:13px;font-weight:600;color:#1a2235}
+/* Line items table */
+.doc-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.doc-table thead th{background:#0b2447;color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px;text-align:left}
+.doc-table.inv thead th{background:#16745a}
+.doc-table.je thead th{background:#6d3a9e}
+.doc-table thead th.num{text-align:right}
+.doc-table tbody td{padding:11px 14px;border-bottom:1px solid #eef1f6;font-size:13px;color:#2a3245}
+.doc-table tbody td.num{text-align:right;font-family:Consolas,monospace}
+.doc-table tbody tr:nth-child(even){background:#fafbfc}
+/* Totals */
+.doc-totals{display:flex;justify-content:flex-end;margin-bottom:24px}
+.doc-totals-box{width:280px}
+.doc-tot-row{display:flex;justify-content:space-between;padding:7px 14px;font-size:13px;color:#4a5468}
+.doc-tot-row.grand{background:#0b2447;color:#fff;font-weight:700;font-size:15px;border-radius:6px;margin-top:6px;padding:11px 14px}
+.doc-totals-box.inv .doc-tot-row.grand{background:#16745a}
+/* Footer */
+.doc-foot{border-top:2px solid #f0f2f6;padding:20px 40px;background:#fafbfc}
+.doc-foot-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:16px}
+.doc-foot-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#8893a8;margin-bottom:4px}
+.doc-foot-text{font-size:12px;color:#6b7488;line-height:1.6}
+.doc-sign{margin-top:24px;border-top:1px dashed #c4ccd8;padding-top:8px;font-size:11px;color:#8893a8;text-align:center;width:200px}
+.doc-watermark{text-align:center;font-size:10px;color:#aeb6c4;padding:12px;background:#f4f6f9}
+/* JE specific balance badge */
+.je-balance{display:flex;align-items:center;gap:8px;justify-content:center;padding:10px;border-radius:6px;font-size:13px;font-weight:600;margin-top:8px}
+.je-balance.ok{background:#e6f7ee;color:#1a7a4c}
+.je-balance.err{background:#fdeaea;color:#c0392b}
+@media print{
+  .doc-modal-shell{position:static;background:#fff;padding:0;overflow:visible}
+  .doc-actions{display:none !important}
+  .doc-paper{box-shadow:none;width:100%;border-radius:0}
+}
 </style>
 </head>
 <body>
@@ -899,7 +1069,7 @@ textarea.fc{resize:vertical;min-height:80px}
     <div style="width:200px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin:24px auto 0;overflow:hidden">
       <div id="splashBar" style="height:100%;width:0;background:linear-gradient(90deg,#9ec5ff,#1e5288);border-radius:2px;transition:width 4.6s linear"></div>
     </div>
-    <div style="font-size:11px;color:#6b85a8;margin-top:14px;letter-spacing:.1em">INITIALISING SYSTEM…</div>
+    <div style="font-size:11px;color:#6b85a8;margin-top:14px;letter-spacing:.1em">INITIALISING SYSTEM… · BUILD 2026.06.20-1011</div>
   </div>
 </div>
 <style>
@@ -1108,80 +1278,106 @@ textarea.fc{resize:vertical;min-height:80px}
       <div><div class="sb-title" id="sbCo">ManuCost ERP</div><div class="sb-sub" id="sbFY">FY 2025</div></div>
     </div>
     <div class="nav-scroll">
-      <div class="nav-item active" data-page="dashboard"><span class="nav-icon">⊞</span><span class="nav-text">Dashboard</span></div>
-      <div class="nav-label">Accounts</div>
-      <div class="nav-item" data-page="coa"><span class="nav-icon">≡</span><span class="nav-text">Chart of Accounts</span></div>
-      <div class="nav-item" data-page="journal"><span class="nav-icon">✎</span><span class="nav-text">Journal Entry</span></div>
-      <div class="nav-item" data-page="ledger"><span class="nav-icon">▣</span><span class="nav-text">General Ledger</span></div>
-      <div class="nav-item" data-page="tb"><span class="nav-icon">⊟</span><span class="nav-text">Trial Balance</span></div>
-      <div class="nav-item" data-page="ujsearch"><span class="nav-icon">🔎</span><span class="nav-text">Universal Journal Search</span></div>
-      <div class="nav-item" data-page="fxreval"><span class="nav-icon">💱</span><span class="nav-text">FX Revaluation</span></div>
-      <div class="nav-item" data-page="glalloc"><span class="nav-icon">⊕</span><span class="nav-text">Allocation Engine</span></div>
-      <div class="nav-item" data-page="intercompany"><span class="nav-icon">⇌</span><span class="nav-text">Intercompany</span></div>
-      <div class="nav-item" data-page="findim"><span class="nav-icon">⊕</span><span class="nav-text">Financial Dimensions</span></div>
-      <div class="nav-label">Treasury & Banking</div>
-      <div class="nav-item" data-page="cashpos"><span class="nav-icon">💰</span><span class="nav-text">Cash Position</span></div>
-      <div class="nav-item" data-page="bankaccounts"><span class="nav-icon">🏦</span><span class="nav-text">Bank Accounts</span></div>
-      <div class="nav-item" data-page="bankrcon"><span class="nav-icon">⚖</span><span class="nav-text">Bank Reconciliation</span></div>
-      <div class="nav-item" data-page="cashforecast"><span class="nav-icon">◷</span><span class="nav-text">Cash Forecast</span></div>
-      <div class="nav-label">Buying</div>
-      <div class="nav-item" data-page="suppliers"><span class="nav-icon">◉</span><span class="nav-text">Suppliers</span></div>
-      <div class="nav-item" data-page="payterms"><span class="nav-icon">◑</span><span class="nav-text">Payment Terms</span></div>
-      <div class="nav-item" data-page="po"><span class="nav-icon">◫</span><span class="nav-text">Purchase Orders</span></div>
-      <div class="nav-item" data-page="grn"><span class="nav-icon">◪</span><span class="nav-text">Goods Receipt (GRN)</span></div>
-      <div class="nav-item" data-page="aging-ap"><span class="nav-icon">◐</span><span class="nav-text">AP Aging</span></div>
-      <div class="nav-label">Stock</div>
-      <div class="nav-item" data-page="items"><span class="nav-icon">◈</span><span class="nav-text">Item Master</span></div>
-      <div class="nav-item" data-page="warehouses"><span class="nav-icon">◰</span><span class="nav-text">Warehouses & Bins</span></div>
-      <div class="nav-item" data-page="stockledger"><span class="nav-icon">◧</span><span class="nav-text">Stock Ledger</span></div>
-      <div class="nav-item" data-page="transfers"><span class="nav-icon">⇄</span><span class="nav-text">Stock Transfers</span></div>
-      <div class="nav-item" data-page="landedcost"><span class="nav-icon">🚢</span><span class="nav-text">Landed Cost</span></div>
-      <div class="nav-label">Manufacturing</div>
-      <div class="nav-item" data-page="bom"><span class="nav-icon">⬡</span><span class="nav-text">Bill of Materials</span></div>
-      <div class="nav-item" data-page="workorders"><span class="nav-icon">◎</span><span class="nav-text">Work Orders</span></div>
-      <div class="nav-item" data-page="jobcost"><span class="nav-icon">▤</span><span class="nav-text">Job Cost Sheet</span></div>
-      <div class="nav-item" data-page="overhead"><span class="nav-icon">⊞</span><span class="nav-text">Overhead Rates</span></div>
-      <div class="nav-item" data-page="abc"><span class="nav-icon">◎</span><span class="nav-text">ABC Costing</span></div>
-      <div class="nav-label">Fixed Assets</div>
-      <div class="nav-item" data-page="assets"><span class="nav-icon">🏗</span><span class="nav-text">Asset Register</span></div>
-      <div class="nav-item" data-page="depreciation"><span class="nav-icon">📉</span><span class="nav-text">Depreciation</span></div>
-      <div class="nav-item" data-page="cwip"><span class="nav-icon">🔨</span><span class="nav-text">CWIP / CapEx</span></div>
-      <div class="nav-item" data-page="disposal"><span class="nav-icon">🗑</span><span class="nav-text">Disposals</span></div>
-      <div class="nav-label">Projects</div>
-      <div class="nav-item" data-page="projects"><span class="nav-icon">📐</span><span class="nav-text">Project Register</span></div>
-      <div class="nav-item" data-page="wbs"><span class="nav-icon">🌳</span><span class="nav-text">WBS & Costing</span></div>
-      <div class="nav-label">Selling</div>
-      <div class="nav-item" data-page="customers"><span class="nav-icon">◯</span><span class="nav-text">Customers</span></div>
-      <div class="nav-item" data-page="quotation"><span class="nav-icon">◫</span><span class="nav-text">Quotations</span></div>
-      <div class="nav-item" data-page="salesorder"><span class="nav-icon">◪</span><span class="nav-text">Sales Orders</span></div>
-      <div class="nav-item" data-page="invoices"><span class="nav-icon">◨</span><span class="nav-text">Sales Invoices</span></div>
-      <div class="nav-item" data-page="aging-ar"><span class="nav-icon">◓</span><span class="nav-text">AR Aging</span></div>
-      <div class="nav-label">HR & Payroll</div>
-      <div class="nav-item" data-page="employees"><span class="nav-icon">◯</span><span class="nav-text">Employees</span></div>
-      <div class="nav-item" data-page="timesheets"><span class="nav-icon">◷</span><span class="nav-text">Timesheets</span></div>
-      <div class="nav-item" data-page="payroll"><span class="nav-icon">◈</span><span class="nav-text">Payroll Run</span></div>
-      <div class="nav-label">Reports</div>
-      <div class="nav-item" data-page="rpt-hub"><span class="nav-icon">📊</span><span class="nav-text">Reports Hub</span></div>
-      <div class="nav-item" data-page="tb"><span class="nav-icon">⊟</span><span class="nav-text">Trial Balance</span></div>
-      <div class="nav-item" data-page="pnl"><span class="nav-icon">▲</span><span class="nav-text">Income Statement</span></div>
-      <div class="nav-item" data-page="bs"><span class="nav-icon">▦</span><span class="nav-text">Balance Sheet</span></div>
-      <div class="nav-item" data-page="cf"><span class="nav-icon">▷</span><span class="nav-text">Cash Flow</span></div>
-      <div class="nav-item" data-page="rpt-equity"><span class="nav-icon">◈</span><span class="nav-text">Statement of Equity</span></div>
-      <div class="nav-item" data-page="rpt-ar-aging"><span class="nav-icon">◓</span><span class="nav-text">AR Aging Report</span></div>
-      <div class="nav-item" data-page="rpt-ap-aging"><span class="nav-icon">◐</span><span class="nav-text">AP Aging Report</span></div>
-      <div class="nav-item" data-page="rpt-budget"><span class="nav-icon">◎</span><span class="nav-text">Budget vs Actual</span></div>
-      <div class="nav-item" data-page="rpt-costvar"><span class="nav-icon">◧</span><span class="nav-text">Cost Variance</span></div>
-      <div class="nav-item" data-page="invrpt"><span class="nav-icon">◫</span><span class="nav-text">Inventory Reports</span></div>
-      <div class="nav-item" data-page="adhoc"><span class="nav-icon">⊕</span><span class="nav-text">Ad-Hoc Reports</span></div>
-      <div class="nav-label">Settings</div>
-      <div class="nav-item" data-page="users"><span class="nav-icon">👥</span><span class="nav-text">User Management</span></div>
-      <div class="nav-item" data-page="approvals"><span class="nav-icon">✅</span><span class="nav-text">Approval Matrix</span></div>
-      <div class="nav-item" data-page="myrequests"><span class="nav-icon">📋</span><span class="nav-text">My Approvals</span></div>
-      <div class="nav-item" data-page="currencies"><span class="nav-icon">💱</span><span class="nav-text">Currencies</span></div>
-      <div class="nav-item" data-page="fiscalyear"><span class="nav-icon">📅</span><span class="nav-text">Fiscal Year</span></div>
-      <div class="nav-item" data-page="periodclose"><span class="nav-icon">🔒</span><span class="nav-text">Period Closing</span></div>
-      <div class="nav-item" data-page="setup"><span class="nav-icon">⚙</span><span class="nav-text">Company Setup</span></div>
-    </div>
+<!-- FAVORITES (dynamic) -->
+<div class="nav-fav-section" id="navFavorites"></div>
+<div class="nav-item active" data-page="dashboard"><span class="nav-icon">⊞</span><span class="nav-text">Dashboard</span><span class="nav-star" data-fav="dashboard" onclick="event.stopPropagation();toggleFav('dashboard',this)">☆</span></div>
+<div class="nav-label" onclick="toggleSection('sec0')"><span>Accounts</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec0">
+<div class="nav-item" data-page="coa"><span class="nav-icon">≡</span><span class="nav-text">Chart of Accounts</span><span class="nav-star" data-fav="coa" onclick="event.stopPropagation();toggleFav('coa',this)">☆</span></div>
+<div class="nav-item" data-page="journal"><span class="nav-icon">✎</span><span class="nav-text">Journal Entry</span><span class="nav-star" data-fav="journal" onclick="event.stopPropagation();toggleFav('journal',this)">☆</span></div>
+<div class="nav-item" data-page="ledger"><span class="nav-icon">▣</span><span class="nav-text">General Ledger</span><span class="nav-star" data-fav="ledger" onclick="event.stopPropagation();toggleFav('ledger',this)">☆</span></div>
+<div class="nav-item" data-page="tb"><span class="nav-icon">⊟</span><span class="nav-text">Trial Balance</span><span class="nav-star" data-fav="tb" onclick="event.stopPropagation();toggleFav('tb',this)">☆</span></div>
+<div class="nav-item" data-page="ujsearch"><span class="nav-icon">🔎</span><span class="nav-text">Universal Journal Search</span><span class="nav-star" data-fav="ujsearch" onclick="event.stopPropagation();toggleFav('ujsearch',this)">☆</span></div>
+<div class="nav-item" data-page="fxreval"><span class="nav-icon">💱</span><span class="nav-text">FX Revaluation</span><span class="nav-star" data-fav="fxreval" onclick="event.stopPropagation();toggleFav('fxreval',this)">☆</span></div>
+<div class="nav-item" data-page="glalloc"><span class="nav-icon">⊕</span><span class="nav-text">Allocation Engine</span><span class="nav-star" data-fav="glalloc" onclick="event.stopPropagation();toggleFav('glalloc',this)">☆</span></div>
+<div class="nav-item" data-page="intercompany"><span class="nav-icon">⇌</span><span class="nav-text">Intercompany</span><span class="nav-star" data-fav="intercompany" onclick="event.stopPropagation();toggleFav('intercompany',this)">☆</span></div>
+<div class="nav-item" data-page="findim"><span class="nav-icon">⊕</span><span class="nav-text">Financial Dimensions</span><span class="nav-star" data-fav="findim" onclick="event.stopPropagation();toggleFav('findim',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec1')"><span>Treasury & Banking</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec1">
+<div class="nav-item" data-page="cashpos"><span class="nav-icon">💰</span><span class="nav-text">Cash Position</span><span class="nav-star" data-fav="cashpos" onclick="event.stopPropagation();toggleFav('cashpos',this)">☆</span></div>
+<div class="nav-item" data-page="bankaccounts"><span class="nav-icon">🏦</span><span class="nav-text">Bank Accounts</span><span class="nav-star" data-fav="bankaccounts" onclick="event.stopPropagation();toggleFav('bankaccounts',this)">☆</span></div>
+<div class="nav-item" data-page="bankrcon"><span class="nav-icon">⚖</span><span class="nav-text">Bank Reconciliation</span><span class="nav-star" data-fav="bankrcon" onclick="event.stopPropagation();toggleFav('bankrcon',this)">☆</span></div>
+<div class="nav-item" data-page="cashforecast"><span class="nav-icon">◷</span><span class="nav-text">Cash Forecast</span><span class="nav-star" data-fav="cashforecast" onclick="event.stopPropagation();toggleFav('cashforecast',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec2')"><span>Buying</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec2">
+<div class="nav-item" data-page="suppliers"><span class="nav-icon">◉</span><span class="nav-text">Suppliers</span><span class="nav-star" data-fav="suppliers" onclick="event.stopPropagation();toggleFav('suppliers',this)">☆</span></div>
+<div class="nav-item" data-page="payterms"><span class="nav-icon">◑</span><span class="nav-text">Payment Terms</span><span class="nav-star" data-fav="payterms" onclick="event.stopPropagation();toggleFav('payterms',this)">☆</span></div>
+<div class="nav-item" data-page="po"><span class="nav-icon">◫</span><span class="nav-text">Purchase Orders</span><span class="nav-star" data-fav="po" onclick="event.stopPropagation();toggleFav('po',this)">☆</span></div>
+<div class="nav-item" data-page="grn"><span class="nav-icon">◪</span><span class="nav-text">Goods Receipt (GRN)</span><span class="nav-star" data-fav="grn" onclick="event.stopPropagation();toggleFav('grn',this)">☆</span></div>
+<div class="nav-item" data-page="aging-ap"><span class="nav-icon">◐</span><span class="nav-text">AP Aging</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec3')"><span>Stock</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec3">
+<div class="nav-item" data-page="items"><span class="nav-icon">◈</span><span class="nav-text">Item Master</span><span class="nav-star" data-fav="items" onclick="event.stopPropagation();toggleFav('items',this)">☆</span></div>
+<div class="nav-item" data-page="warehouses"><span class="nav-icon">◰</span><span class="nav-text">Warehouses & Bins</span><span class="nav-star" data-fav="warehouses" onclick="event.stopPropagation();toggleFav('warehouses',this)">☆</span></div>
+<div class="nav-item" data-page="stockledger"><span class="nav-icon">◧</span><span class="nav-text">Stock Ledger</span><span class="nav-star" data-fav="stockledger" onclick="event.stopPropagation();toggleFav('stockledger',this)">☆</span></div>
+<div class="nav-item" data-page="transfers"><span class="nav-icon">⇄</span><span class="nav-text">Stock Transfers</span><span class="nav-star" data-fav="transfers" onclick="event.stopPropagation();toggleFav('transfers',this)">☆</span></div>
+<div class="nav-item" data-page="landedcost"><span class="nav-icon">🚢</span><span class="nav-text">Landed Cost</span><span class="nav-star" data-fav="landedcost" onclick="event.stopPropagation();toggleFav('landedcost',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec4')"><span>Manufacturing</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec4">
+<div class="nav-item" data-page="bom"><span class="nav-icon">⬡</span><span class="nav-text">Bill of Materials</span><span class="nav-star" data-fav="bom" onclick="event.stopPropagation();toggleFav('bom',this)">☆</span></div>
+<div class="nav-item" data-page="workorders"><span class="nav-icon">◎</span><span class="nav-text">Work Orders</span><span class="nav-star" data-fav="workorders" onclick="event.stopPropagation();toggleFav('workorders',this)">☆</span></div>
+<div class="nav-item" data-page="jobcost"><span class="nav-icon">▤</span><span class="nav-text">Job Cost Sheet</span><span class="nav-star" data-fav="jobcost" onclick="event.stopPropagation();toggleFav('jobcost',this)">☆</span></div>
+<div class="nav-item" data-page="overhead"><span class="nav-icon">⊞</span><span class="nav-text">Overhead Rates</span><span class="nav-star" data-fav="overhead" onclick="event.stopPropagation();toggleFav('overhead',this)">☆</span></div>
+<div class="nav-item" data-page="abc"><span class="nav-icon">◎</span><span class="nav-text">ABC Costing</span><span class="nav-star" data-fav="abc" onclick="event.stopPropagation();toggleFav('abc',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec5')"><span>Fixed Assets</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec5">
+<div class="nav-item" data-page="assets"><span class="nav-icon">🏗</span><span class="nav-text">Asset Register</span><span class="nav-star" data-fav="assets" onclick="event.stopPropagation();toggleFav('assets',this)">☆</span></div>
+<div class="nav-item" data-page="depreciation"><span class="nav-icon">📉</span><span class="nav-text">Depreciation</span><span class="nav-star" data-fav="depreciation" onclick="event.stopPropagation();toggleFav('depreciation',this)">☆</span></div>
+<div class="nav-item" data-page="cwip"><span class="nav-icon">🔨</span><span class="nav-text">CWIP / CapEx</span><span class="nav-star" data-fav="cwip" onclick="event.stopPropagation();toggleFav('cwip',this)">☆</span></div>
+<div class="nav-item" data-page="disposal"><span class="nav-icon">🗑</span><span class="nav-text">Disposals</span><span class="nav-star" data-fav="disposal" onclick="event.stopPropagation();toggleFav('disposal',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec6')"><span>Projects</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec6">
+<div class="nav-item" data-page="projects"><span class="nav-icon">📐</span><span class="nav-text">Project Register</span><span class="nav-star" data-fav="projects" onclick="event.stopPropagation();toggleFav('projects',this)">☆</span></div>
+<div class="nav-item" data-page="wbs"><span class="nav-icon">🌳</span><span class="nav-text">WBS & Costing</span><span class="nav-star" data-fav="wbs" onclick="event.stopPropagation();toggleFav('wbs',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec7')"><span>Selling</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec7">
+<div class="nav-item" data-page="customers"><span class="nav-icon">◯</span><span class="nav-text">Customers</span><span class="nav-star" data-fav="customers" onclick="event.stopPropagation();toggleFav('customers',this)">☆</span></div>
+<div class="nav-item" data-page="quotation"><span class="nav-icon">◫</span><span class="nav-text">Quotations</span><span class="nav-star" data-fav="quotation" onclick="event.stopPropagation();toggleFav('quotation',this)">☆</span></div>
+<div class="nav-item" data-page="salesorder"><span class="nav-icon">◪</span><span class="nav-text">Sales Orders</span><span class="nav-star" data-fav="salesorder" onclick="event.stopPropagation();toggleFav('salesorder',this)">☆</span></div>
+<div class="nav-item" data-page="invoices"><span class="nav-icon">◨</span><span class="nav-text">Sales Invoices</span><span class="nav-star" data-fav="invoices" onclick="event.stopPropagation();toggleFav('invoices',this)">☆</span></div>
+<div class="nav-item" data-page="aging-ar"><span class="nav-icon">◓</span><span class="nav-text">AR Aging</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec8')"><span>HR & Payroll</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec8">
+<div class="nav-item" data-page="employees"><span class="nav-icon">◯</span><span class="nav-text">Employees</span><span class="nav-star" data-fav="employees" onclick="event.stopPropagation();toggleFav('employees',this)">☆</span></div>
+<div class="nav-item" data-page="timesheets"><span class="nav-icon">◷</span><span class="nav-text">Timesheets</span><span class="nav-star" data-fav="timesheets" onclick="event.stopPropagation();toggleFav('timesheets',this)">☆</span></div>
+<div class="nav-item" data-page="payroll"><span class="nav-icon">◈</span><span class="nav-text">Payroll Run</span><span class="nav-star" data-fav="payroll" onclick="event.stopPropagation();toggleFav('payroll',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec9')"><span>Reports</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec9">
+      <div class="nav-item" data-page="vat"><span class="nav-icon">🧾</span><span class="nav-text">VAT Return</span><span class="nav-star" data-fav="vat" onclick="event.stopPropagation();toggleFav('vat',this)">☆</span></div>
+      <div class="nav-item" data-page="wht"><span class="nav-icon">📑</span><span class="nav-text">Withholding Tax</span><span class="nav-star" data-fav="wht" onclick="event.stopPropagation();toggleFav('wht',this)">☆</span></div>
+<div class="nav-item" data-page="rpt-hub"><span class="nav-icon">📊</span><span class="nav-text">Reports Hub</span></div>
+<div class="nav-item" data-page="tb"><span class="nav-icon">⊟</span><span class="nav-text">Trial Balance</span><span class="nav-star" data-fav="tb" onclick="event.stopPropagation();toggleFav('tb',this)">☆</span></div>
+<div class="nav-item" data-page="pnl"><span class="nav-icon">▲</span><span class="nav-text">Income Statement</span><span class="nav-star" data-fav="pnl" onclick="event.stopPropagation();toggleFav('pnl',this)">☆</span></div>
+<div class="nav-item" data-page="bs"><span class="nav-icon">▦</span><span class="nav-text">Balance Sheet</span><span class="nav-star" data-fav="bs" onclick="event.stopPropagation();toggleFav('bs',this)">☆</span></div>
+<div class="nav-item" data-page="cf"><span class="nav-icon">▷</span><span class="nav-text">Cash Flow</span><span class="nav-star" data-fav="cf" onclick="event.stopPropagation();toggleFav('cf',this)">☆</span></div>
+<div class="nav-item" data-page="rpt-equity"><span class="nav-icon">◈</span><span class="nav-text">Statement of Equity</span></div>
+<div class="nav-item" data-page="rpt-ar-aging"><span class="nav-icon">◓</span><span class="nav-text">AR Aging Report</span></div>
+<div class="nav-item" data-page="rpt-ap-aging"><span class="nav-icon">◐</span><span class="nav-text">AP Aging Report</span></div>
+<div class="nav-item" data-page="rpt-budget"><span class="nav-icon">◎</span><span class="nav-text">Budget vs Actual</span></div>
+<div class="nav-item" data-page="rpt-costvar"><span class="nav-icon">◧</span><span class="nav-text">Cost Variance</span></div>
+<div class="nav-item" data-page="invrpt"><span class="nav-icon">◫</span><span class="nav-text">Inventory Reports</span><span class="nav-star" data-fav="invrpt" onclick="event.stopPropagation();toggleFav('invrpt',this)">☆</span></div>
+<div class="nav-item" data-page="adhoc"><span class="nav-icon">⊕</span><span class="nav-text">Ad-Hoc Reports</span><span class="nav-star" data-fav="adhoc" onclick="event.stopPropagation();toggleFav('adhoc',this)">☆</span></div>
+</div>
+<div class="nav-label" onclick="toggleSection('sec10')"><span>Settings</span><span class="sec-caret">▼</span></div>
+<div class="nav-section-items" id="sec10">
+<div class="nav-item" data-page="users"><span class="nav-icon">👥</span><span class="nav-text">User Management</span><span class="nav-star" data-fav="users" onclick="event.stopPropagation();toggleFav('users',this)">☆</span></div>
+<div class="nav-item" data-page="approvals"><span class="nav-icon">✅</span><span class="nav-text">Approval Matrix</span><span class="nav-star" data-fav="approvals" onclick="event.stopPropagation();toggleFav('approvals',this)">☆</span></div>
+<div class="nav-item" data-page="myrequests"><span class="nav-icon">📋</span><span class="nav-text">My Approvals</span><span class="nav-star" data-fav="myrequests" onclick="event.stopPropagation();toggleFav('myrequests',this)">☆</span></div>
+<div class="nav-item" data-page="currencies"><span class="nav-icon">💱</span><span class="nav-text">Currencies</span><span class="nav-star" data-fav="currencies" onclick="event.stopPropagation();toggleFav('currencies',this)">☆</span></div>
+<div class="nav-item" data-page="fiscalyear"><span class="nav-icon">📅</span><span class="nav-text">Fiscal Year</span><span class="nav-star" data-fav="fiscalyear" onclick="event.stopPropagation();toggleFav('fiscalyear',this)">☆</span></div>
+<div class="nav-item" data-page="periodclose"><span class="nav-icon">🔒</span><span class="nav-text">Period Closing</span><span class="nav-star" data-fav="periodclose" onclick="event.stopPropagation();toggleFav('periodclose',this)">☆</span></div>
+<div class="nav-item" data-page="setup"><span class="nav-icon">⚙</span><span class="nav-text">Company Setup</span><span class="nav-star" data-fav="setup" onclick="event.stopPropagation();toggleFav('setup',this)">☆</span></div>
+</div>
+</div>
   </nav>
   <!-- MAIN -->
   <div class="main">
@@ -1190,7 +1386,7 @@ textarea.fc{resize:vertical;min-height:80px}
       <span class="tb-company" id="tbTitle">Dashboard</span>
       <span class="tb-period" id="tbPeriod">FY 2025 · Q2</span>
       <div class="tb-right">
-        <span id="syncBadge" onclick="diagnoseSync()" title="Google Sheets sync status" style="font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;background:#F8F8F8;color:#979593;border:1px solid #D1D1D1">☁ Not connected</span>
+        <span style="font-size:10px;color:var(--text3);font-family:monospace;margin-right:8px;padding:2px 6px;background:var(--surface2);border-radius:4px" title="App version — confirm you have the latest">v10:11</span><span id="syncBadge" onclick="diagnoseSync()" title="Google Sheets sync status" style="font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;cursor:pointer;background:#F8F8F8;color:#979593;border:1px solid #D1D1D1">☁ Not connected</span>
         <div class="mode-toggle">
           <button class="mode-btn active" id="mJob" onclick="setMode('job')">Job Order</button>
           <button class="mode-btn" id="mABC" onclick="setMode('abc')">ABC Costing</button>
@@ -1414,6 +1610,51 @@ textarea.fc{resize:vertical;min-height:80px}
 </div>
 
 <!-- ════ UNIVERSAL JOURNAL SEARCH ════ -->
+<!-- ════ VAT RETURN ════ -->
+<div class="page" id="page-vat">
+  <div class="page-hdr">
+    <div><h1>VAT Return</h1><p>ZATCA-compliant Value Added Tax return · KSA</p></div>
+    <div class="fin-params">
+      <div class="fin-params-row">
+        <div class="fin-fld"><label>From date</label><input type="date" class="fc" id="vatFrom" onchange="renderVATReturn()"></div>
+        <div class="fin-fld"><label>To date</label><input type="date" class="fc" id="vatTo" onchange="renderVATReturn()"></div>
+        <div class="fin-fld"><label>Period</label>
+          <select class="fc" id="vatInterval" onchange="applyDateInterval('vatInterval','vatFrom','vatTo',()=>{renderVATReturn()})">
+            <option value="custom">Custom</option><option value="q1">Q1</option><option value="q2">Q2</option>
+            <option value="q3">Q3</option><option value="q4">Q4</option><option value="mtd">This Month</option><option value="ytd">Year to Date</option>
+          </select>
+        </div>
+        <button class="btn btn-p sm fin-calc" onclick="renderVATReturn()">⚡ Calculate</button>
+        <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-s sm" onclick="exportReport('vat')">↓ Export</button>
+      </div>
+    </div>
+  </div>
+  <div id="vatRpt"></div>
+</div>
+
+<!-- ════ WITHHOLDING TAX ════ -->
+<div class="page" id="page-wht">
+  <div class="page-hdr">
+    <div><h1>Withholding Tax</h1><p>WHT report · Payments to non-residents · KSA</p></div>
+    <div class="fin-params">
+      <div class="fin-params-row">
+        <div class="fin-fld"><label>From date</label><input type="date" class="fc" id="whtFrom" onchange="renderWHT()"></div>
+        <div class="fin-fld"><label>To date</label><input type="date" class="fc" id="whtTo" onchange="renderWHT()"></div>
+        <div class="fin-fld"><label>Period</label>
+          <select class="fc" id="whtInterval" onchange="applyDateInterval('whtInterval','whtFrom','whtTo',()=>{renderWHT()})">
+            <option value="custom">Custom</option><option value="mtd">This Month</option><option value="q1">Q1</option><option value="q2">Q2</option><option value="q3">Q3</option><option value="q4">Q4</option><option value="ytd">Year to Date</option>
+          </select>
+        </div>
+        <button class="btn btn-p sm fin-calc" onclick="renderWHT()">⚡ Calculate</button>
+        <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-s sm" onclick="openM('mAddWHT')">+ Record WHT</button>
+      </div>
+    </div>
+  </div>
+  <div id="whtRpt"></div>
+</div>
+
 <div class="page" id="page-ujsearch">
   <div class="page-hdr">
     <div><h1>Universal Journal Search</h1><p>ACDOCA-style drill-down · Billions-of-rows analytical workspace</p></div>
@@ -2224,6 +2465,7 @@ textarea.fc{resize:vertical;min-height:80px}
         </div>
         <button class="btn btn-p sm fin-calc" onclick="renderPnL()"><i class="ti"></i>⚡ Calculate</button>
         <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-s sm" onclick="exportReport('pnl')">↓ Export</button>
       </div>
     </div>
   </div>
@@ -2261,6 +2503,7 @@ textarea.fc{resize:vertical;min-height:80px}
         </div>
         <button class="btn btn-p sm fin-calc" onclick="renderBS()"><i class="ti"></i>⚡ Calculate</button>
         <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-s sm" onclick="exportReport('bs')">↓ Export</button>
       </div>
     </div>
   </div>
@@ -2298,6 +2541,7 @@ textarea.fc{resize:vertical;min-height:80px}
         </div>
         <button class="btn btn-p sm fin-calc" onclick="renderCF()"><i class="ti"></i>⚡ Calculate</button>
         <button class="btn btn-g sm" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-s sm" onclick="exportReport('cf')">↓ Export</button>
       </div>
     </div>
   </div>
@@ -3375,6 +3619,8 @@ let costMode='job';
 function initApp(){
   // Wire date interval selectors
   try { wireIntervals(); } catch(e) {}
+  // Initialize sidebar favorites + collapsible sections
+  try { initSidebarState(); } catch(e) {}
 
   // Set default dates for all financial date pickers
   const _td = new Date().toISOString().slice(0,10);
@@ -3430,7 +3676,7 @@ function initApp(){
 
 // ── NAVIGATION ──
 const PT={dashboard:'Dashboard',coa:'Chart of Accounts',journal:'Journal Entry',ledger:'General Ledger',tb:'Trial Balance',suppliers:'Suppliers',payterms:'Payment Terms',po:'Purchase Orders',grn:'Goods Receipt (GRN)','aging-ap':'AP Aging',items:'Item Master',warehouses:'Warehouses & Bins',stockledger:'Stock Ledger',transfers:'Stock Transfers',bom:'Bill of Materials',workorders:'Work Orders',jobcost:'Job Cost Sheets',overhead:'Overhead Rates',abc:'ABC Costing',customers:'Customers',quotation:'Quotations',salesorder:'Sales Orders',invoices:'Sales Invoices','aging-ar':'AR Aging',employees:'Employees',timesheets:'Timesheets',payroll:'Payroll Run',pnl:'Income Statement',bs:'Balance Sheet',cf:'Cash Flow Statement',invrpt:'Inventory Reports',adhoc:'Ad-Hoc Reports',fiscalyear:'Fiscal Year',periodclose:'Period Closing',setup:'Company Setup'};
-const ON_NAV={coa:renderCOA,journal:renderJE,ledger:()=>{buildGLSel();renderGL();},tb:renderTB,suppliers:renderSup,payterms:renderPT,po:renderPO,grn:renderGRN,'aging-ap':()=>renderAging('ap'),items:renderItems,warehouses:renderWH,stockledger:renderSL,transfers:renderTrf,bom:renderBOM,workorders:renderWO,jobcost:()=>{buildJCSel();},abc:renderABC,customers:renderCust,quotation:renderQT,salesorder:renderSO,invoices:renderInv,'aging-ar':()=>renderAging('ar'),employees:renderEmp,timesheets:renderTS,payroll:renderPayroll,pnl:renderPnL,bs:renderBS,cf:renderCF,invrpt:()=>switchInvTab('rm',null),adhoc:()=>{},fiscalyear:renderFiscalYear,periodclose:renderPeriodClose,setup:buildSetupForms,
+const ON_NAV={vat:renderVATReturn,wht:renderWHT,coa:renderCOA,journal:renderJE,ledger:()=>{buildGLSel();renderGL();},tb:renderTB,suppliers:renderSup,payterms:renderPT,po:renderPO,grn:renderGRN,'aging-ap':()=>renderAging('ap'),items:renderItems,warehouses:renderWH,stockledger:renderSL,transfers:renderTrf,bom:renderBOM,workorders:renderWO,jobcost:()=>{buildJCSel();},abc:renderABC,customers:renderCust,quotation:renderQT,salesorder:renderSO,invoices:renderInv,'aging-ar':()=>renderAging('ar'),employees:renderEmp,timesheets:renderTS,payroll:renderPayroll,pnl:renderPnL,bs:renderBS,cf:renderCF,invrpt:()=>switchInvTab('rm',null),adhoc:()=>{},fiscalyear:renderFiscalYear,periodclose:renderPeriodClose,setup:buildSetupForms,
   // ── NEW MODULES ──
   dashboard:    renderExecDash,
   intercompany: renderIntercompany,
@@ -3546,6 +3792,7 @@ function openM(name, idOrWide, wideOrUndef) {
 
   // Search all template registries in priority order
   const allTemplates = [
+    typeof mTaxTemplates   !== 'undefined' ? mTaxTemplates   : {},
     typeof mAprTemplates   !== 'undefined' ? mAprTemplates   : {},
     typeof mCurrTemplates  !== 'undefined' ? mCurrTemplates  : {},
     typeof mUserTemplates  !== 'undefined' ? mUserTemplates  : {},
@@ -3909,7 +4156,399 @@ function renderPT(){
 }
 
 // ── RENDER: PO / GRN ──
-function renderPO(){document.getElementById('poTbl').innerHTML=(S.get('pos')||[]).map(p=>`<tr><td class="t-blue fw6">${p.id}</td><td>${p.date}</td><td>${p.supplier}</td><td class="num">SAR ${fN(p.amount)}</td><td>${sBadge(p.status)}</td><td>${p.grn||'—'}</td></tr>`).join('');}
+
+// ════════════════════════════════════════════════════════════
+//  PROFESSIONAL DOCUMENT TEMPLATES — PO / Invoice / Journal
+// ════════════════════════════════════════════════════════════
+function _docModal(innerHTML) {
+  let shell = document.getElementById('docModalShell');
+  if (shell) shell.remove();
+  shell = document.createElement('div');
+  shell.id = 'docModalShell';
+  shell.className = 'doc-modal-shell';
+  shell.onclick = (e) => { if (e.target === shell) shell.remove(); };
+  shell.innerHTML = innerHTML;
+  document.body.appendChild(shell);
+}
+function closeDoc() { const s=document.getElementById('docModalShell'); if(s) s.remove(); }
+function printDoc() {
+  const paper = document.querySelector('#docModalShell .doc-paper');
+  if (!paper) return;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Document</title>
+    <style>body{margin:0;font-family:'Segoe UI',Calibri,sans-serif}
+    ${Array.from(document.querySelectorAll('style')).map(s=>s.textContent).join('')}</style></head>
+    <body>${paper.outerHTML}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  win.document.close();
+}
+
+function companyBlock() {
+  const co = S.get('company') || {};
+  return {
+    name: co.name || 'ManuCost ERP',
+    addr: co.address || 'Riyadh, Saudi Arabia',
+    vat: co.vatNo || co.vat || '—',
+    phone: co.phone || '',
+    email: co.email || ''
+  };
+}
+
+// ── PURCHASE ORDER ──
+function viewPO(poId) {
+  const po = (S.get('pos')||[]).find(p=>p.id===poId);
+  if (!po) { toast('PO not found','error'); return; }
+  const co = companyBlock();
+  const cur = baseCurr();
+  const amt = po.amount||0, vat = Math.round(amt*0.15), total = amt+vat;
+  _docModal(`
+  <div class="doc-paper">
+    <div class="doc-actions">
+      <button class="btn btn-s sm" onclick="printDoc()">🖨 Print / PDF</button>
+      <button class="btn btn-g sm" onclick="closeDoc()">✕ Close</button>
+    </div>
+    <div class="doc-head po-head">
+      <div class="doc-head-row">
+        <div class="doc-logo"><div class="doc-logo-mark">🏭</div><div><div class="doc-co-name">${co.name}</div><div class="doc-co-tag">${co.addr}</div></div></div>
+        <div class="doc-type"><div class="doc-type-label">Purchase Order</div><div class="doc-type-num">${po.id}</div><div class="doc-status-pill">${po.status||'Open'}</div></div>
+      </div>
+    </div>
+    <div class="doc-body">
+      <div class="doc-parties">
+        <div><div class="doc-party-label">Supplier</div><div class="doc-party-name">${po.supplier||'—'}</div><div class="doc-party-detail">Vendor account<br>Payment terms: ${po.terms||'NET30'}</div></div>
+        <div style="text-align:right"><div class="doc-party-label">Ship To</div><div class="doc-party-name">${co.name}</div><div class="doc-party-detail">${co.addr}<br>VAT: ${co.vat}</div></div>
+      </div>
+      <div class="doc-meta-grid">
+        <div class="doc-meta-cell"><div class="dm-lbl">PO Date</div><div class="dm-val">${po.date||'—'}</div></div>
+        <div class="doc-meta-cell"><div class="dm-lbl">Delivery</div><div class="dm-val">${po.delivery||'TBD'}</div></div>
+        <div class="doc-meta-cell"><div class="dm-lbl">Currency</div><div class="dm-val">${cur}</div></div>
+      </div>
+      <table class="doc-table">
+        <thead><tr><th>#</th><th>Description</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Amount</th></tr></thead>
+        <tbody><tr><td>1</td><td>Goods / services as per PO agreement</td><td class="num">1</td><td class="num">${fC(amt,cur)}</td><td class="num">${fC(amt,cur)}</td></tr></tbody>
+      </table>
+      <div class="doc-totals"><div class="doc-totals-box">
+        <div class="doc-tot-row"><span>Subtotal</span><span>${fC(amt,cur)}</span></div>
+        <div class="doc-tot-row"><span>VAT (15%)</span><span>${fC(vat,cur)}</span></div>
+        <div class="doc-tot-row grand"><span>Total</span><span>${fC(total,cur)}</span></div>
+      </div></div>
+    </div>
+    <div class="doc-foot">
+      <div class="doc-foot-grid">
+        <div><div class="doc-foot-label">Terms & Conditions</div><div class="doc-foot-text">Delivery per agreed schedule. Goods subject to inspection on receipt. Payment ${po.terms||'NET30'} from invoice date.</div></div>
+        <div><div class="doc-foot-label">Notes</div><div class="doc-foot-text">This purchase order is a commitment and does not create a GL entry until goods are received (GRN).</div><div class="doc-sign">Authorised Signature</div></div>
+      </div>
+    </div>
+    <div class="doc-watermark">Generated by ${co.name} · ManuCost ERP · ${new Date().toLocaleString('en-US')}</div>
+  </div>`);
+}
+
+// ── SALES INVOICE ──
+function viewInvoice(invId) {
+  const inv = (S.get('invoices')||[]).find(i=>i.id===invId);
+  if (!inv) { toast('Invoice not found','error'); return; }
+  const co = companyBlock();
+  const cur = baseCurr();
+  _docModal(`
+  <div class="doc-paper">
+    <div class="doc-actions">
+      <button class="btn btn-s sm" onclick="printDoc()">🖨 Print / PDF</button>
+      <button class="btn btn-g sm" onclick="closeDoc()">✕ Close</button>
+    </div>
+    <div class="doc-head inv-head">
+      <div class="doc-head-row">
+        <div class="doc-logo"><div class="doc-logo-mark">🧾</div><div><div class="doc-co-name">${co.name}</div><div class="doc-co-tag">VAT: ${co.vat} · ${co.addr}</div></div></div>
+        <div class="doc-type"><div class="doc-type-label">Tax Invoice</div><div class="doc-type-num">${inv.id}</div><div class="doc-status-pill">${inv.status||'Open'}</div></div>
+      </div>
+    </div>
+    <div class="doc-body">
+      <div class="doc-parties">
+        <div><div class="doc-party-label">Bill To</div><div class="doc-party-name">${inv.cust||'—'}</div><div class="doc-party-detail">Customer account</div></div>
+        <div style="text-align:right"><div class="doc-party-label">From</div><div class="doc-party-name">${co.name}</div><div class="doc-party-detail">${co.addr}</div></div>
+      </div>
+      <div class="doc-meta-grid">
+        <div class="doc-meta-cell"><div class="dm-lbl">Invoice Date</div><div class="dm-val">${inv.date||'—'}</div></div>
+        <div class="doc-meta-cell"><div class="dm-lbl">Due Date</div><div class="dm-val">${inv.due||'TBD'}</div></div>
+        <div class="doc-meta-cell"><div class="dm-lbl">Currency</div><div class="dm-val">${cur}</div></div>
+      </div>
+      <table class="doc-table inv">
+        <thead><tr><th>#</th><th>Description</th><th class="num">Qty</th><th class="num">Unit Price</th><th class="num">Amount</th></tr></thead>
+        <tbody><tr><td>1</td><td>Goods / services rendered</td><td class="num">1</td><td class="num">${fC(inv.amount,cur)}</td><td class="num">${fC(inv.amount,cur)}</td></tr></tbody>
+      </table>
+      <div class="doc-totals"><div class="doc-totals-box inv">
+        <div class="doc-tot-row"><span>Subtotal (excl. VAT)</span><span>${fC(inv.amount,cur)}</span></div>
+        <div class="doc-tot-row"><span>VAT (15%)</span><span>${fC(inv.vat,cur)}</span></div>
+        <div class="doc-tot-row grand"><span>Total Due</span><span>${fC(inv.total,cur)}</span></div>
+      </div></div>
+    </div>
+    <div class="doc-foot">
+      <div class="doc-foot-grid">
+        <div><div class="doc-foot-label">Payment Details</div><div class="doc-foot-text">Please remit payment by the due date. Bank transfer details available on request. Reference: ${inv.id}</div></div>
+        <div><div class="doc-foot-label">Tax Note</div><div class="doc-foot-text">This is a VAT tax invoice compliant with ZATCA e-invoicing. VAT charged at standard rate 15%.</div></div>
+      </div>
+    </div>
+    <div class="doc-watermark">${co.name} · VAT ${co.vat} · ManuCost ERP · ${new Date().toLocaleString('en-US')}</div>
+  </div>`);
+}
+
+// ── JOURNAL ENTRY ──
+function viewJE(jeId) {
+  const je = (S.get('journals')||[]).find(j=>j.id===jeId);
+  if (!je) { toast('Journal entry not found','error'); return; }
+  const co = companyBlock();
+  const cur = baseCurr();
+  const lines = je.lines || [];
+  const totDr = lines.reduce((s,l)=>s+(l.dr||0),0);
+  const totCr = lines.reduce((s,l)=>s+(l.cr||0),0);
+  const balanced = Math.abs(totDr-totCr) < 0.01;
+  const coa = (typeof COA_MASTER!=='undefined') ? COA_MASTER : [];
+  const accName = code => (coa.find(a=>a.code===code)||{}).name || '';
+  _docModal(`
+  <div class="doc-paper">
+    <div class="doc-actions">
+      <button class="btn btn-s sm" onclick="printDoc()">🖨 Print / PDF</button>
+      <button class="btn btn-g sm" onclick="closeDoc()">✕ Close</button>
+    </div>
+    <div class="doc-head je-head">
+      <div class="doc-head-row">
+        <div class="doc-logo"><div class="doc-logo-mark">✎</div><div><div class="doc-co-name">${co.name}</div><div class="doc-co-tag">${co.addr}</div></div></div>
+        <div class="doc-type"><div class="doc-type-label">Journal Entry</div><div class="doc-type-num">${je.id}</div><div class="doc-status-pill">${je.status||'Posted'}</div></div>
+      </div>
+    </div>
+    <div class="doc-body">
+      <div class="doc-meta-grid">
+        <div class="doc-meta-cell"><div class="dm-lbl">Date</div><div class="dm-val">${je.date||'—'}</div></div>
+        <div class="doc-meta-cell"><div class="dm-lbl">Source</div><div class="dm-val">${je.src||'GL'}</div></div>
+        <div class="doc-meta-cell"><div class="dm-lbl">Currency</div><div class="dm-val">${cur}</div></div>
+      </div>
+      <div style="margin-bottom:16px"><div class="doc-party-label">Description</div><div style="font-size:14px;color:#1a2235;margin-top:2px">${je.desc||'—'}</div></div>
+      <table class="doc-table je">
+        <thead><tr><th>Account</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody>
+          ${lines.map(l=>`<tr>
+            <td style="font-family:Consolas,monospace;font-weight:600">${l.account}</td>
+            <td>${accName(l.account)}</td>
+            <td class="num">${l.dr?fC(l.dr,cur):''}</td>
+            <td class="num">${l.cr?fC(l.cr,cur):''}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr style="font-weight:700;border-top:2px solid #6d3a9e">
+          <td colspan="2" style="padding:11px 14px;text-align:right">TOTALS</td>
+          <td class="num" style="padding:11px 14px;font-family:Consolas,monospace">${fC(totDr,cur)}</td>
+          <td class="num" style="padding:11px 14px;font-family:Consolas,monospace">${fC(totCr,cur)}</td>
+        </tr></tfoot>
+      </table>
+      <div class="je-balance ${balanced?'ok':'err'}">
+        ${balanced ? '✓ Entry is balanced — Debits equal Credits' : '✗ Out of balance by '+fC(Math.abs(totDr-totCr),cur)}
+      </div>
+    </div>
+    <div class="doc-foot">
+      <div class="doc-foot-grid">
+        <div><div class="doc-foot-label">Posting Info</div><div class="doc-foot-text">Posted to General Ledger. Double-entry verified with hash chain integrity.</div></div>
+        <div><div class="doc-foot-label">Approval</div><div class="doc-sign">Prepared / Approved By</div></div>
+      </div>
+    </div>
+    <div class="doc-watermark">${co.name} · ManuCost ERP · ${new Date().toLocaleString('en-US')}</div>
+  </div>`);
+}
+
+
+
+// WHT entry modal
+const mTaxTemplates = {
+  mAddWHT: {
+    title: 'Record Withholding Tax',
+    saveLabel: 'Record WHT',
+    body: () => `
+      <div class="fr fr2">${inp('Date','wht_date','date',today())}${inp('Beneficiary (non-resident)','wht_ben','text','e.g. Foreign Consultant Ltd')}</div>
+      <div class="fr fr2">
+        ${sel('Payment Type','wht_type',['Dividends (5%)','Interest (5%)','Royalties (15%)','Technical/Consulting (5%)','Management Fees (20%)','Rent (5%)','Related Party (15%)'])}
+        ${inp('Gross Amount','wht_amt','number','0')}
+      </div>
+      <div class="fr fr2">${inp('WHT Rate %','wht_rate','number','5')}${inp('Reference','wht_ref','text','Invoice/contract ref')}</div>
+      <div class="alert a-info" style="margin-top:8px">WHT is deducted from the payment to the non-resident and remitted to ZATCA. The net amount is paid to the beneficiary.</div>`,
+    save: () => {
+      const amount = parseFloat(gv('wht_amt'))||0;
+      const rate = parseFloat(gv('wht_rate'))||0;
+      const wht = Math.round(amount*rate/100*100)/100;
+      const rec = {
+        id: 'WHT-'+Date.now().toString(36).toUpperCase(),
+        date: gv('wht_date')||today(),
+        beneficiary: gv('wht_ben'),
+        type: (gv('wht_type')||'').replace(/ \([^)]*\)/,''),
+        rate, amount, wht, ref: gv('wht_ref')
+      };
+      const recs = S.get('whtRecords')||[];
+      recs.unshift(rec);
+      S.set('whtRecords', recs);
+      // Post GL: Dr Expense / Cr Cash (net) / Cr WHT Payable
+      if (typeof postGL === 'function' && amount>0) {
+        postGL([
+          {account:'6020', dr:amount, cr:0},
+          {account:'1010', dr:0, cr:amount-wht},
+          {account:'2040', dr:0, cr:wht}
+        ], {date:rec.date, module:'gl', desc:`WHT — ${rec.beneficiary} (${rate}%)`, src:'Tax', ref:rec.id});
+      }
+      closeM();
+      if (typeof renderWHT==='function') renderWHT();
+      toast(`WHT recorded: ${fC(wht,baseCurr())} withheld from ${fC(amount,baseCurr())}`, 'success', 4000);
+    }
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+//  VAT RETURN & WITHHOLDING TAX — ZATCA/KSA compliant
+// ════════════════════════════════════════════════════════════
+function renderVATReturn() {
+  const _now = new Date().toISOString().slice(0,10);
+  const _yr  = _now.slice(0,4);
+  const fEl = document.getElementById('vatFrom'), tEl = document.getElementById('vatTo');
+  if (fEl && !fEl.value) fEl.value = _yr+'-01-01';
+  if (tEl && !tEl.value) tEl.value = _now;
+  const from = fEl?.value || _yr+'-01-01';
+  const to   = tEl?.value || _now;
+  const cur = baseCurr();
+  const co = (S.get('company')||{});
+  const ledger = (S.get('glLedger')||[]).filter(e => (e.date||'')>=from && (e.date||'')<=to);
+
+  // Output VAT (sales) — credits to 2030; Input VAT (purchases) — debits to 2030
+  let outputVAT=0, inputVAT=0, standardSales=0, standardPurchases=0;
+  ledger.forEach(e => {
+    if (e.account === '2030') { outputVAT += (e.cr||0); inputVAT += (e.dr||0); }
+    if (e.account && e.account.startsWith('4')) standardSales += (e.cr||0)-(e.dr||0);
+    if (e.account === '1300' || (e.account||'').startsWith('5')) standardPurchases += (e.dr||0)-(e.cr||0);
+  });
+  const netVAT = outputVAT - inputVAT;
+  const f = n => fC(Math.abs(n||0), cur);
+  const fromL = new Date(from+'T00:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+  const toL   = new Date(to+'T00:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+
+  const row = (no, label, amount, vat, hl) => `<tr ${hl?'style="background:#f0f7ff;font-weight:600"':''}>
+    <td style="font-family:Consolas,monospace;color:#8893a8">${no}</td>
+    <td>${label}</td>
+    <td class="num">${amount!=null?f(amount):''}</td>
+    <td class="num">${vat!=null?f(vat):''}</td></tr>`;
+
+  const el = document.getElementById('vatRpt');
+  if (!el) return;
+  el.innerHTML = `
+  <div class="ifrs-stmt">
+    <div class="ifrs-head" style="background:linear-gradient(120deg,#0b3d2e,#16745a)">
+      <div class="ifrs-co">${co.name||'ManuCost ERP'}</div>
+      <div class="ifrs-stmt-title">VAT Return — ZATCA</div>
+      <div class="ifrs-meta">
+        <span>Period <b>${fromL} — ${toL}</b></span>
+        <span>VAT No. <b>${co.vatNo||co.vat||'—'}</b></span>
+        <span>Currency <b>${cur}</b></span>
+        <span>Rate <b>15%</b></span>
+      </div>
+    </div>
+    <div class="ifrs-body">
+      <table class="doc-table inv" style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="width:50px">Box</th><th>Description</th><th class="num">Amount (${cur})</th><th class="num">VAT (${cur})</th></tr></thead>
+        <tbody>
+          <tr style="background:#f8fafc"><td colspan="4" style="font-weight:700;color:#16745a;padding:10px 14px">VAT on Sales (Output Tax)</td></tr>
+          ${row('1','Standard rated sales (15%)', standardSales, outputVAT)}
+          ${row('2','Zero rated domestic sales', 0, 0)}
+          ${row('3','Exports (zero rated)', 0, 0)}
+          ${row('4','Exempt sales', 0, null)}
+          ${row('','Total Output VAT', standardSales, outputVAT, true)}
+          <tr style="background:#f8fafc"><td colspan="4" style="font-weight:700;color:#16745a;padding:10px 14px">VAT on Purchases (Input Tax)</td></tr>
+          ${row('5','Standard rated domestic purchases', standardPurchases, inputVAT)}
+          ${row('6','Imports subject to VAT', 0, 0)}
+          ${row('','Total Input VAT', standardPurchases, inputVAT, true)}
+        </tbody>
+      </table>
+      <div class="doc-totals" style="margin-top:20px"><div class="doc-totals-box inv">
+        <div class="doc-tot-row"><span>Output VAT</span><span>${f(outputVAT)}</span></div>
+        <div class="doc-tot-row"><span>Less: Input VAT</span><span>(${f(inputVAT)})</span></div>
+        <div class="doc-tot-row grand" style="background:${netVAT>=0?'#16745a':'#0b3d2e'}">
+          <span>${netVAT>=0?'NET VAT PAYABLE':'NET VAT REFUNDABLE'}</span><span>${f(netVAT)}</span></div>
+      </div></div>
+      <div class="ifrs-balanced ok" style="margin-top:16px">
+        ${netVAT>=0 ? '→ Pay '+f(netVAT)+' to ZATCA by the filing deadline' : '→ '+f(netVAT)+' refundable / carried forward'}
+      </div>
+    </div>
+    <div class="ifrs-foot">
+      ZATCA Value Added Tax Return · Standard rate 15% · Filed under VAT registration ${co.vatNo||co.vat||'—'}<br>
+      Generated ${new Date().toLocaleString('en-US')} · ManuCost ERP · This is a system-generated draft return
+    </div>
+  </div>`;
+}
+
+function renderWHT() {
+  const _now = new Date().toISOString().slice(0,10);
+  const _yr  = _now.slice(0,4);
+  const fEl = document.getElementById('whtFrom'), tEl = document.getElementById('whtTo');
+  if (fEl && !fEl.value) fEl.value = _yr+'-01-01';
+  if (tEl && !tEl.value) tEl.value = _now;
+  const from = fEl?.value || _yr+'-01-01';
+  const to   = tEl?.value || _now;
+  const cur = baseCurr();
+  const co = (S.get('company')||{});
+  const records = (S.get('whtRecords')||[]).filter(r => (r.date||'')>=from && (r.date||'')<=to);
+  const f = n => fC(Math.abs(n||0), cur);
+  const fromL = new Date(from+'T00:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+  const toL   = new Date(to+'T00:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+
+  const totalBase = records.reduce((s,r)=>s+(r.amount||0),0);
+  const totalWHT  = records.reduce((s,r)=>s+(r.wht||0),0);
+
+  const el = document.getElementById('whtRpt');
+  if (!el) return;
+  el.innerHTML = `
+  <div class="ifrs-stmt">
+    <div class="ifrs-head" style="background:linear-gradient(120deg,#3a1c5c,#6d3a9e)">
+      <div class="ifrs-co">${co.name||'ManuCost ERP'}</div>
+      <div class="ifrs-stmt-title">Withholding Tax Report — ZATCA</div>
+      <div class="ifrs-meta">
+        <span>Period <b>${fromL} — ${toL}</b></span>
+        <span>Entries <b>${records.length}</b></span>
+        <span>Currency <b>${cur}</b></span>
+      </div>
+    </div>
+    <div class="ifrs-body">
+      ${records.length ? `
+      <table class="doc-table je" style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th>Date</th><th>Beneficiary</th><th>Payment Type</th><th class="num">Rate</th>
+          <th class="num">Gross Amount</th><th class="num">WHT Withheld</th><th class="num">Net Paid</th>
+        </tr></thead>
+        <tbody>
+          ${records.map(r=>`<tr>
+            <td>${r.date}</td><td>${r.beneficiary||'—'}</td><td>${r.type||'—'}</td>
+            <td class="num">${r.rate||0}%</td>
+            <td class="num">${f(r.amount)}</td>
+            <td class="num" style="color:#6d3a9e;font-weight:600">${f(r.wht)}</td>
+            <td class="num">${f((r.amount||0)-(r.wht||0))}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr style="font-weight:700;border-top:2px solid #6d3a9e;background:#faf7fd">
+          <td colspan="4" style="padding:11px 14px;text-align:right">TOTALS</td>
+          <td class="num" style="padding:11px 14px">${f(totalBase)}</td>
+          <td class="num" style="padding:11px 14px;color:#6d3a9e">${f(totalWHT)}</td>
+          <td class="num" style="padding:11px 14px">${f(totalBase-totalWHT)}</td>
+        </tr></tfoot>
+      </table>
+      <div class="doc-totals" style="margin-top:20px"><div class="doc-totals-box">
+        <div class="doc-tot-row"><span>Total payments subject to WHT</span><span>${f(totalBase)}</span></div>
+        <div class="doc-tot-row grand" style="background:#6d3a9e">
+          <span>TOTAL WHT PAYABLE TO ZATCA</span><span>${f(totalWHT)}</span></div>
+      </div></div>
+      <div style="margin-top:20px;padding:14px;background:#faf7fd;border-radius:8px;font-size:12px;color:#6b7488">
+        <strong style="color:#6d3a9e">KSA WHT rates reference:</strong> Dividends 5% · Interest 5% · Royalties 15% · Technical/consulting services 5% · Management fees 20% · Rent 5% · Payments to related parties 15%
+      </div>
+      ` : `<div style="text-align:center;padding:48px"><div style="font-size:40px;margin-bottom:12px">📑</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text2)">No WHT records for this period</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:6px">Click "+ Record WHT" to add a withholding tax entry for a payment to a non-resident.</div></div>`}
+    </div>
+    <div class="ifrs-foot">
+      ZATCA Withholding Tax Report · Payments to non-residents per KSA Income Tax Law<br>
+      Generated ${new Date().toLocaleString('en-US')} · ManuCost ERP · System-generated draft
+    </div>
+  </div>`;
+}
+
+function renderPO(){document.getElementById('poTbl').innerHTML=(S.get('pos')||[]).map(p=>`<tr style="cursor:pointer" onclick="viewPO('${p.id}')"><td class="t-blue fw6">${p.id}</td><td>${p.date}</td><td>${p.supplier}</td><td class="num">SAR ${fN(p.amount)}</td><td>${sBadge(p.status)}</td><td>${p.grn||'—'}</td><td><button class="btn btn-g" style="font-size:10px;padding:2px 8px" onclick="event.stopPropagation();viewPO('${p.id}')">📄 View</button></td></tr>`).join('');}
 function renderGRN(){document.getElementById('grnTbl').innerHTML=(S.get('grns')||[]).map(g=>`<tr><td class="t-blue fw6">${g.id}</td><td>${g.date}</td><td>${g.po}</td><td>${g.supplier}</td><td><span class="b b-blue">${g.loc}</span></td><td class="num">SAR ${fN(g.value)}</td><td><span class="b b-green">${g.je}</span></td></tr>`).join('');}
 
 // ── RENDER: AGING ──
@@ -4420,7 +5059,7 @@ function renderABC(){
 // ── RENDER: SELLING ──
 function renderQT(){document.getElementById('qtTbl').innerHTML=(S.get('quotes')||[]).map(q=>`<tr><td class="t-blue fw6">${q.id}</td><td>${q.date}</td><td>${q.cust}</td><td class="num">${q.items}</td><td class="num">SAR ${fN(q.amount)}</td><td>${q.valid}</td><td>${sBadge(q.status)}</td></tr>`).join('');}
 function renderSO(){document.getElementById('soTbl').innerHTML=(S.get('salesorders')||[]).map(s=>`<tr><td class="t-blue fw6">${s.id}</td><td>${s.date}</td><td>${s.cust}</td><td class="num">SAR ${fN(s.amount)}</td><td>${s.delivery}</td><td>${sBadge(s.status)}</td><td class="t-blue">${s.wo||'—'}</td></tr>`).join('');}
-function renderInv(){document.getElementById('invTbl').innerHTML=(S.get('invoices')||[]).map(i=>`<tr><td class="t-blue fw6">${i.id}</td><td>${i.date}</td><td>${i.cust}</td><td class="num">SAR ${fN(i.amount)}</td><td class="num">SAR ${fN(i.vat)}</td><td class="num fw6">SAR ${fN(i.total)}</td><td>${i.due}</td><td>${sBadge(i.status)}</td></tr>`).join('');}
+function renderInv(){document.getElementById('invTbl').innerHTML=(S.get('invoices')||[]).map(i=>`<tr style="cursor:pointer" onclick="viewInvoice('${i.id}')"><td class="t-blue fw6">${i.id}</td><td>${i.date}</td><td>${i.cust}</td><td class="num">SAR ${fN(i.amount)}</td><td class="num">SAR ${fN(i.vat)}</td><td class="num fw6">SAR ${fN(i.total)}</td><td>${i.due}</td><td>${sBadge(i.status)}</td><td><button class="btn btn-g" style="font-size:10px;padding:2px 8px" onclick="event.stopPropagation();viewInvoice('${i.id}')">📄 View</button></td></tr>`).join('');}
 
 // ── RENDER: HR ──
 function renderEmp(){document.getElementById('empTbl').innerHTML=(S.get('employees')||[]).map(e=>`<tr><td class="t-blue fw6">${e.id}</td><td>${e.name}</td><td>${e.dept}</td><td>${e.role}</td><td class="num">SAR ${fN(e.salary)}</td><td class="num">SAR ${e.rate}/hr</td><td>${sBadge(e.status)}</td></tr>`).join('');}
@@ -4791,7 +5430,6 @@ function renderBS() {
 }
 
 function renderCF() {
-  // Read date filter — supports both single #cfPeriod and #cfFrom/#cfTo
   const _now2 = new Date().toISOString().slice(0,10);
   const _yr2  = _now2.slice(0,4);
   const _toEl = document.getElementById("cfTo") || document.getElementById("cfPeriod");
@@ -4800,53 +5438,77 @@ function renderCF() {
   if (_frEl && !_frEl.value) _frEl.value = _yr2 + "-01-01";
   const asOfDate = (_toEl?.value) || _now2;
   const fromDate = (_frEl?.value) || (_yr2 + "-01-01");
-  const periodLabel = new Date(asOfDate+"T00:00:00").toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
-  const t   = _tb(asOfDate, fromDate);
+  const t = _tb(asOfDate, fromDate);
   const cur = t.cur;
-  const f   = n => fC(Math.abs(n||0), cur);
-  const ledger = S.get('glLedger') || [];
-  // Indirect method: derive from GL movements
-  const arChange  = -(ledger.filter(e=>e.account==='1200'||e.account==='1210').reduce((s,e)=>s+(e.dr||0)-(e.cr||0),0));
-  const invChange = -(ledger.filter(e=>['1300','1310','1320'].includes(e.account)).reduce((s,e)=>s+(e.dr||0)-(e.cr||0),0));
-  const apChange  =  ledger.filter(e=>e.account==='2010').reduce((s,e)=>s+(e.cr||0)-(e.dr||0),0);
-  const cfo = t.netIncome + (t.deprExp||0) + arChange + invChange + apChange;
-  const cfi = -(ledger.filter(e=>['1500','1510','1700'].includes(e.account)).reduce((s,e)=>s+(e.dr||0)-(e.cr||0),0));
-  const banks = S.get('bankAccounts') || [];
-  const openCash = banks.reduce((s,b)=>s+(b.openingBal||0),0);
-  const closeCash = openCash + cfo + cfi;
+  const co = S.get('company') || {};
+  const fromLabel = new Date(fromDate+'T00:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+  const toLabel   = new Date(asOfDate+'T00:00:00').toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
 
-  document.getElementById('cfRpt').innerHTML = `<div class="fs-report">
-    ${rptHeader('Statement of Cash Flows','For the period ended '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),'IAS 7 — Statement of Cash Flows (Indirect Method)')}
+  const f = n => fC(Math.abs(n||0), cur);
+  const L = (acct, label, val, isNeg) => `<div class="ifrs-row">
+    <span class="ifrs-acct">${acct||''}</span>
+    <span class="ifrs-label">${label}</span>
+    <span class="ifrs-amt${(isNeg||val<0)?' neg':''}">${(isNeg||val<0)?'('+f(val)+')':f(val)}</span></div>`;
+  const SUB = (label, val) => `<div class="ifrs-sub"><span>${label}</span><span class="ifrs-amt">${val<0?'('+f(val)+')':f(val)}</span></div>`;
+  const TOT = (label, val) => `<div class="ifrs-total"><span>${label}</span><span class="ifrs-amt">${val<0?'('+f(val)+')':f(val)}</span></div>`;
+  const SEC = label => `<div class="ifrs-sec"><span>${label}</span></div>`;
 
-    ${!t.isSeeded ? '<div class="alert a-info mb16">No financial data yet.</div>' : ''}
+  // Indirect method derived from _tb
+  const ni = t.netIncome;
+  const depr = t.deprExp;
+  const wcChange = -(t.ar + t.rmInv + t.wipInv + t.fgInv) + (t.ap + t.accruedLiab + t.vatPay);
+  const opCash = ni + depr + wcChange;
+  const invCash = -(t.ppe + t.intangible);
+  const finCash = t.ltDebt + t.shareCap + t.apic;
+  const netCash = opCash + invCash + finCash;
 
-    ${rSec('Operating Activities','var(--blue)')}
-    ${rL('Net Income for the Period',                f(t.netIncome),      {bold:true})}
-    ${rCat('Adjustments for non-cash items:')}
-    ${rL('Depreciation & Amortisation',              f(t.deprExp||0),     {in:true})}
-    ${rCat('Changes in working capital:')}
-    ${rL('(Increase)/Decrease in Trade Receivables', f(Math.abs(arChange)), {in:true, neg:arChange<0})}
-    ${rL('(Increase)/Decrease in Inventories',       f(Math.abs(invChange)),{in:true, neg:invChange<0})}
-    ${rL('Increase/(Decrease) in Trade Payables',    f(Math.abs(apChange)), {in:true, neg:apChange<0})}
-    ${rL('Net Cash from Operating Activities',       f(cfo), {total:true})}
+  const el = document.getElementById('cfRpt');
+  if (!el) return;
 
-    ${rSec('Investing Activities','var(--orange)')}
-    ${rL('Purchase of Property, Plant & Equipment', f(Math.abs(cfi)), {in:true, neg:cfi<0})}
-    ${rL('Net Cash from Investing Activities',       f(cfi), {total:true})}
+  if (!t.isSeeded) {
+    el.innerHTML = `<div class="ifrs-stmt"><div class="ifrs-body" style="text-align:center;padding:48px">
+      <div style="font-size:40px;margin-bottom:12px">💵</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text2)">No cash flow data yet</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:6px">Post transactions to generate the Cash Flow Statement.</div>
+    </div></div>`;
+    return;
+  }
 
-    ${rSec('Financing Activities','var(--purple)')}
-    ${rL('Proceeds from Borrowings',          f(t.ltDebt||0),    {in:true})}
-    ${rL('Repayment of Borrowings',           f(0),              {in:true, neg:true})}
-    ${rL('Net Cash from Financing Activities',f(t.ltDebt||0),    {total:true})}
+  el.innerHTML = `
+  <div class="ifrs-stmt">
+    <div class="ifrs-head">
+      <div class="ifrs-co">${co.name || 'ManuCost ERP'}</div>
+      <div class="ifrs-stmt-title">Statement of Cash Flows</div>
+      <div class="ifrs-meta">
+        <span>Period <b>${fromLabel} — ${toLabel}</b></span>
+        <span>Currency <b>${cur}</b></span>
+        <span>Method <b>Indirect · IAS 7</b></span>
+      </div>
+    </div>
+    <div class="ifrs-body">
+      ${SEC('Cash Flows from Operating Activities')}
+      ${L('', 'Net profit for the period', ni)}
+      ${L('6030', 'Add: Depreciation & amortisation', depr)}
+      ${L('', 'Changes in working capital', wcChange)}
+      ${SUB('Net cash from operating activities', opCash)}
 
-    ${rL('NET INCREASE IN CASH', f(cfo+cfi+(t.ltDebt||0)), {grand:true})}
+      ${SEC('Cash Flows from Investing Activities')}
+      ${L('1510', 'Purchase of property, plant & equipment', -Math.abs(t.ppe), true)}
+      ${L('1700', 'Purchase of intangible assets', -Math.abs(t.intangible), true)}
+      ${SUB('Net cash used in investing activities', invCash)}
 
-    ${rSec('Cash Reconciliation')}
-    ${rL('Opening Cash Balance',  f(openCash),  {in:true, bold:true})}
-    ${rL('Net Cash Movement',     f(cfo+cfi),   {in:true})}
-    ${rL('Closing Cash Balance',  f(closeCash), {total:true})}
+      ${SEC('Cash Flows from Financing Activities')}
+      ${L('3010', 'Proceeds from share capital', t.shareCap)}
+      ${L('2500', 'Proceeds from borrowings', t.ltDebt)}
+      ${SUB('Net cash from financing activities', finCash)}
 
-    ${rptFooter()}
+      ${TOT('NET INCREASE / (DECREASE) IN CASH', netCash)}
+      <div class="ifrs-sub" style="margin-top:8px"><span>Cash & equivalents — closing balance</span><span class="ifrs-amt">${f(t.cashBank)}</span></div>
+    </div>
+    <div class="ifrs-foot">
+      Prepared in accordance with IFRS · IAS 7 Statement of Cash Flows (Indirect Method)<br>
+      Generated ${new Date().toLocaleString('en-US')} · ManuCost ERP · Figures in ${cur}
+    </div>
   </div>`;
 }
 
@@ -5134,9 +5796,194 @@ function printReport(elId) {
   setTimeout(() => win.print(), 600);
 }
 
+// ════════════════════════════════════════════════════════════
+//  REAL EXPORT ENGINE — CSV, Excel (XLSX), PDF
+// ════════════════════════════════════════════════════════════
+
+// Show export format chooser
 function exportReport(type) {
-  toast(`Exporting ${type} report…`, 'info', 2000);
-  setTimeout(() => toast(`${type.toUpperCase()} report exported successfully.`, 'success'), 1500);
+  openExportMenu(type);
+}
+
+function openExportMenu(type) {
+  const existing = document.getElementById('exportMenu');
+  if (existing) existing.remove();
+  const menu = document.createElement('div');
+  menu.id = 'exportMenu';
+  menu.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center';
+  menu.onclick = (e) => { if (e.target === menu) menu.remove(); };
+  menu.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;padding:24px;width:340px;box-shadow:0 24px 64px rgba(0,0,0,.3)">
+      <div style="font-size:16px;font-weight:700;color:var(--text1);margin-bottom:4px">Export ${type.toUpperCase()} Report</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:18px">Choose a format to download</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-g" style="justify-content:flex-start;gap:10px;padding:12px" onclick="doExport('${type}','csv');document.getElementById('exportMenu').remove()">📄 CSV (.csv) — universal spreadsheet format</button>
+        <button class="btn btn-g" style="justify-content:flex-start;gap:10px;padding:12px" onclick="doExport('${type}','xlsx');document.getElementById('exportMenu').remove()">📊 Excel (.xls) — Microsoft Excel</button>
+        <button class="btn btn-g" style="justify-content:flex-start;gap:10px;padding:12px" onclick="doExport('${type}','pdf');document.getElementById('exportMenu').remove()">📕 PDF — print-ready document</button>
+      </div>
+      <button class="btn btn-g sm" style="margin-top:14px;width:100%" onclick="document.getElementById('exportMenu').remove()">Cancel</button>
+    </div>`;
+  document.body.appendChild(menu);
+}
+
+// Gather report data as a 2D array (rows of cells)
+function getReportData(type) {
+  const t = _tb(
+    document.getElementById(type+'To')?.value || document.getElementById(type+'Period')?.value,
+    document.getElementById(type+'From')?.value
+  );
+  const cur = t.cur;
+  const co = (S.get('company')||{}).name || 'ManuCost ERP';
+  const today = new Date().toLocaleDateString('en-US');
+
+  if (type === 'bs') {
+    return { title:'Balance Sheet', co, rows:[
+      ['Statement of Financial Position'],['As at', today],['Currency', cur],[],
+      ['Account','Description','Amount'],
+      ['1510','Property, plant & equipment', t.ppe],
+      ['1700','Intangible assets', t.intangible],
+      ['','Total non-current assets', t.totalNCA],
+      ['1300','Raw materials inventory', t.rmInv],
+      ['1310','Work in progress', t.wipInv],
+      ['1320','Finished goods', t.fgInv],
+      ['1020','Trade receivables', t.ar],
+      ['1030','Prepaid expenses', t.prepaid],
+      ['1010','Cash & cash equivalents', t.cashBank],
+      ['','Total current assets', t.totalCA],
+      ['','TOTAL ASSETS', t.totalAssets],[],
+      ['3010','Share capital', t.shareCap],
+      ['3011','Additional paid-in capital', t.apic],
+      ['3020','Retained earnings', t.retEarnings + t.netIncome],
+      ['','Total equity', t.totalEquity],
+      ['2500','Long-term borrowings', t.ltDebt],
+      ['2010','Trade payables', t.ap],
+      ['2020','Accrued liabilities', t.accruedLiab],
+      ['2030','VAT payable', t.vatPay],
+      ['2040','Income tax payable', t.taxPay],
+      ['','Total liabilities', t.totalLiab],
+      ['','TOTAL EQUITY & LIABILITIES', t.totalLandE],
+    ]};
+  }
+  if (type === 'pnl') {
+    return { title:'Income Statement', co, rows:[
+      ['Statement of Profit or Loss'],['As at', today],['Currency', cur],[],
+      ['Account','Description','Amount'],
+      ['4010','Revenue', t.rev],
+      ['5010','Direct materials', -t.dmCost],
+      ['5020','Direct labour', -t.dlCost],
+      ['5030','Manufacturing overhead', -t.ohCost],
+      ['','Gross profit', t.grossProfit],
+      ['6010','Selling & distribution', -t.sellExp],
+      ['6020','General & administrative', -t.gaExp],
+      ['6030','Depreciation', -t.deprExp],
+      ['','Operating profit (EBIT)', t.ebit],
+      ['6040','Finance costs', -t.finCosts],
+      ['6050','Income tax expense', -t.taxExp],
+      ['','NET PROFIT', t.netIncome],
+    ]};
+  }
+  if (type === 'cf') {
+    const wc = -(t.ar+t.rmInv+t.wipInv+t.fgInv)+(t.ap+t.accruedLiab+t.vatPay);
+    const op = t.netIncome+t.deprExp+wc;
+    return { title:'Cash Flow Statement', co, rows:[
+      ['Statement of Cash Flows (Indirect)'],['As at', today],['Currency', cur],[],
+      ['Description','Amount'],
+      ['Net profit', t.netIncome],
+      ['Add: Depreciation', t.deprExp],
+      ['Working capital changes', wc],
+      ['Net cash from operations', op],
+      ['Net cash from investing', -(t.ppe+t.intangible)],
+      ['Net cash from financing', t.ltDebt+t.shareCap+t.apic],
+      ['Closing cash balance', t.cashBank],
+    ]};
+  }
+  if (type === 'tb') {
+    const ledger = S.get('glLedger') || [];
+    const bal = {};
+    ledger.forEach(e=>{ if(!bal[e.account])bal[e.account]={dr:0,cr:0}; bal[e.account].dr+=e.dr||0; bal[e.account].cr+=e.cr||0; });
+    const rows = [['Trial Balance'],['As at',today],['Currency',cur],[],['Account','Debit','Credit']];
+    Object.entries(bal).forEach(([acc,b])=>rows.push([acc, b.dr, b.cr]));
+    return { title:'Trial Balance', co, rows };
+  }
+  // Generic fallback — dump GL ledger
+  const ledger = S.get('glLedger') || [];
+  return { title: type.toUpperCase()+' Report', co, rows:[
+    ['Date','JE','Account','Description','Debit','Credit'],
+    ...ledger.map(e=>[e.date,e.jeId,e.account,e.desc,e.dr||0,e.cr||0])
+  ]};
+}
+
+function doExport(type, format) {
+  const data = getReportData(type);
+  const fname = `${data.title.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}`;
+  if (format === 'csv')  exportAsCSV(data, fname);
+  if (format === 'xlsx') exportAsExcel(data, fname);
+  if (format === 'pdf')  exportAsPDF(data, fname);
+}
+
+function exportAsCSV(data, fname) {
+  let csv = `"${data.co}"\n`;
+  data.rows.forEach(row => {
+    csv += row.map(cell => {
+      if (typeof cell === 'number') return cell.toFixed(2);
+      return '"' + String(cell||'').replace(/"/g,'""') + '"';
+    }).join(',') + '\n';
+  });
+  downloadFile(csv, fname + '.csv', 'text/csv;charset=utf-8;');
+  toast('CSV exported: ' + fname + '.csv', 'success', 3000);
+}
+
+function exportAsExcel(data, fname) {
+  // Excel-compatible HTML table (.xls opens in Excel)
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+  <head><meta charset="utf-8"></head><body>
+  <table border="1"><tr><td colspan="3" style="font-weight:bold;font-size:14pt">${data.co}</td></tr>`;
+  data.rows.forEach(row => {
+    html += '<tr>' + row.map(cell => {
+      const isNum = typeof cell === 'number';
+      const bold = typeof cell === 'string' && (cell.toUpperCase()===cell && cell.length>3) ? 'font-weight:bold' : '';
+      return `<td style="${bold}" ${isNum?'x:num':''}>${isNum?cell.toFixed(2):(cell||'')}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</table></body></html>';
+  downloadFile(html, fname + '.xls', 'application/vnd.ms-excel');
+  toast('Excel exported: ' + fname + '.xls', 'success', 3000);
+}
+
+function exportAsPDF(data, fname) {
+  // Open a print-optimized window with the report; user saves as PDF
+  const win = window.open('', '_blank');
+  if (!win) { toast('Pop-up blocked — allow pop-ups to export PDF.', 'error', 4000); return; }
+  const cur = baseCurr();
+  let body = `<h1 style="margin:0 0 4px">${data.co}</h1><h2 style="margin:0 0 16px;color:#19376d">${data.title}</h2><table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px">`;
+  data.rows.forEach(row => {
+    if (row.length === 0) { body += '<tr><td colspan="3" style="height:8px"></td></tr>'; return; }
+    const isTotal = typeof row[row.length-2]==='string' && row[row.length-2].toUpperCase()===row[row.length-2] && row[row.length-2].length>3;
+    body += '<tr style="' + (isTotal?'background:#0b2447;color:#fff;font-weight:bold':'border-bottom:1px solid #eee') + '">';
+    row.forEach((cell,idx) => {
+      const isNum = typeof cell === 'number';
+      body += `<td style="padding:6px 10px;${isNum?'text-align:right;font-family:monospace':''}">${isNum?cell.toLocaleString('en-US',{minimumFractionDigits:2}):(cell||'')}</td>`;
+    });
+    body += '</tr>';
+  });
+  body += '</table>';
+  win.document.write(`<!DOCTYPE html><html><head><title>${data.title}</title>
+    <style>@media print{body{margin:0}}body{padding:30px;font-family:Arial}</style></head>
+    <body>${body}<p style="margin-top:24px;font-size:10px;color:#888;text-align:center">Prepared in accordance with IFRS · Generated ${new Date().toLocaleString()}</p>
+    <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script>
+    </body></html>`);
+  win.document.close();
+  toast('PDF print dialog opened — choose "Save as PDF".', 'success', 4000);
+}
+
+// Universal file download helper
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
 function exportAllReports() {
@@ -7374,7 +8221,7 @@ function animateNavIndicator(page) {
   const active = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (!active) return;
   active.classList.add('active');
-  active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (typeof active.scrollIntoView === 'function') active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 function runPageAnimations(page) {
@@ -7476,231 +8323,186 @@ function _renderExecDashInner() {
   const el  = document.getElementById('page-dashboard');
   if (!el) return;
 
-  const f  = n => t.isSeeded ? fC(Math.abs(n), cur) : '—';
-  const fm = n => t.isSeeded ? fCM(Math.abs(n), cur) : '—';
+  const f  = n => t.isSeeded ? fC(Math.abs(n||0), cur) : '—';
+  const sign = n => n>=0 ? '+' : '−';
 
-  // Derived figures
-  const rev        = t.rev, cogs = t.cogs, opex = t.totalOpEx;
-  const grossProfit = t.grossProfit;
-  const ebit       = t.ebit;
-  const ebitda     = ebit + (t.deprExp||0);
-  const netIncome  = t.netIncome;
-  const cash = t.cashBank, ar = t.ar, ap = t.ap;
-  const inv  = (t.rmInv||0) + (t.wipInv||0) + (t.fgInv||0);
-  const currentRatio = ap>0 ? ((cash+ar+inv)/ap).toFixed(2) : '—';
-  const quickRatio   = ap>0 ? ((cash+ar)/ap).toFixed(2) : '—';
-  const dso = rev>0 ? (ar/rev*90).toFixed(0)+'d'  : '—';
-  const dpo = cogs>0? (ap/cogs*90).toFixed(0)+'d' : '—';
+  // Core figures
+  const rev=t.rev, cogs=t.cogs, gp=t.grossProfit, ni=t.netIncome, ebit=t.ebit;
+  const cash=t.cashBank, ar=t.ar, ap=t.ap;
+  const inv=(t.rmInv||0)+(t.wipInv||0)+(t.fgInv||0);
+  const gm = rev>0 ? (gp/rev*100) : 0;
+  const nm = rev>0 ? (ni/rev*100) : 0;
+  const currentRatio = ap>0 ? ((cash+ar+inv)/ap) : 0;
 
-  // Recent journals for activity feed
-  const glLedger = S.get('glLedger') || [];
-  const recent   = [...glLedger].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
-  const pending  = (S.get('aprRequests')||[]).filter(r=>r.status==='pending');
-  const lowStock = (S.get('stock')||[]).filter(s=>(s.qty||0)<=(s.reorder||0)&&(s.reorder||0)>0);
+  // Monthly revenue/expense trend from GL
+  const ledger = S.get('glLedger') || [];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monRev = Array(12).fill(0), monExp = Array(12).fill(0);
+  ledger.forEach(e => {
+    const m = new Date(e.date).getMonth();
+    if (isNaN(m)) return;
+    const acc = e.account || '';
+    if (acc.startsWith('4')) monRev[m] += (e.cr||0) - (e.dr||0);
+    if (acc.startsWith('5') || acc.startsWith('6')) monExp[m] += (e.dr||0) - (e.cr||0);
+  });
+  // Only show months that have data (up to current)
+  const lastM = Math.max(0, ...ledger.map(e=>{const m=new Date(e.date).getMonth();return isNaN(m)?0:m}));
+  const showM = Math.min(11, Math.max(5, lastM));
+  const maxBar = Math.max(1, ...monRev.slice(0,showM+1), ...monExp.slice(0,showM+1));
+
+  // Expense breakdown (donut)
+  const expCats = [
+    {lbl:'Materials',    val:t.dmCost||0, c:'#3b9eff'},
+    {lbl:'Labour',       val:t.dlCost||0, c:'#1e5288'},
+    {lbl:'Overhead',     val:t.ohCost||0, c:'#9b59b6'},
+    {lbl:'Selling',      val:t.sellExp||0,c:'#e8623a'},
+    {lbl:'Admin',        val:t.gaExp||0,  c:'#f0a500'},
+    {lbl:'Depreciation', val:t.deprExp||0,c:'#16a085'},
+  ].filter(x=>x.val>0);
+  const totalExp = expCats.reduce((s,x)=>s+x.val,0) || 1;
 
   // Health score (0-100)
-  const healthScore = t.isSeeded
-    ? Math.min(100, Math.round(50 + (netIncome/Math.max(rev,1)*100) + (currentRatio!=='—'?Math.min(20,parseFloat(currentRatio)*5):0)))
-    : 0;
+  let health = 50;
+  if (gm > 30) health += 15; else if (gm > 15) health += 8;
+  if (nm > 10) health += 15; else if (nm > 0) health += 8; else health -= 10;
+  if (currentRatio > 1.5) health += 12; else if (currentRatio > 1) health += 6;
+  if (cash > 0) health += 8;
+  if (t.balanced) health += 5;
+  health = Math.max(5, Math.min(99, Math.round(health)));
+  const healthColor = health>=70?'#16a085':health>=45?'#f0a500':'#e8623a';
+  const healthLbl = health>=70?'Healthy':health>=45?'Stable':'Attention';
+
+  // Recent activity
+  const recent = [...ledger].reverse().slice(0,6);
 
   el.innerHTML = `
-  <div style="padding:0 0 24px">
-
-    <!-- ── Page Header ── -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-      <div>
-        <h2 style="font-size:22px;font-weight:600;color:var(--text1);letter-spacing:-0.01em;margin-bottom:2px">${co.name||'Global Overview'}</h2>
-        <p style="font-size:13px;color:var(--text2)">Enterprise-wide performance and operational health metrics.</p>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="navGuarded('journal')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-          + New Entry
-        </button>
-        <button onclick="exportReport('dashboard')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--surface);color:var(--text1);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-          ↓ Export Report
-        </button>
-      </div>
-    </div>
-
-    ${!t.isSeeded ? `<div class="alert a-info mb16">
-      📋 <strong>New company</strong> — No financial data yet.
-      <div class="btn-row mt10">
-        <button class="btn btn-p sm" onclick="navGuarded('journal')">+ Journal Entry</button>
-        <button class="btn btn-s sm" onclick="navGuarded('tb')">Opening Balances</button>
-      </div></div>` : ''}
-
-    <!-- ── KPI Grid (4 cards) ── -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
-
-      <!-- Health Score -->
-      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;justify-content:space-between">
-        <div>
-          <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Operations Health</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:22px;font-weight:700;color:var(--text1)">${t.isSeeded?healthScore+'%':'—'}</span>
-            <span style="padding:2px 6px;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;border-radius:4px">${t.isSeeded?(healthScore>80?'OPTIMAL':healthScore>60?'GOOD':'REVIEW'):'NEW'}</span>
-          </div>
-        </div>
-        <div style="margin-top:12px;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">
-          <div style="height:100%;background:var(--blue);border-radius:99px;width:${t.isSeeded?healthScore:0}%;transition:width .6s"></div>
-        </div>
-      </div>
-
-      <!-- Revenue -->
-      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px">
-        <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Total Revenue (YTD)</div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span style="font-size:20px;font-weight:700;color:var(--text1);font-family:monospace">${fm(rev)}</span>
-          ${t.isSeeded&&grossProfit>0 ? `<span style="font-size:12px;color:#059669;display:flex;align-items:center">↑ ${(grossProfit/Math.max(rev,1)*100).toFixed(1)}% GP</span>` : ''}
-        </div>
-        <p style="font-size:11px;color:var(--text3);margin-top:4px">Gross Profit: ${fm(grossProfit)}</p>
-      </div>
-
-      <!-- Inventory Value -->
-      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px">
-        <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Inventory Value</div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span style="font-size:20px;font-weight:700;color:var(--text1);font-family:monospace">${fm(inv)}</span>
-          ${lowStock.length>0 ? `<span style="padding:2px 6px;background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;border-radius:4px">HIGH</span>` : ''}
-        </div>
-        <p style="font-size:11px;color:var(--text3);margin-top:4px">${lowStock.length>0?`⚠ ${lowStock.length} low stock alerts`:'All stock levels normal'}</p>
-      </div>
-
-      <!-- Active Work Orders -->
-      <div style="background:var(--surface);padding:18px;border:1px solid var(--border);border-radius:10px">
-        <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Active Work Orders</div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <span style="font-size:22px;font-weight:700;color:var(--text1)">${(S.get('workorders')||[]).filter(w=>w.status==='Open'||w.status==='In Progress').length}</span>
-          <span style="font-size:13px;color:var(--text3)">Open</span>
-        </div>
-        <div style="display:flex;gap:3px;margin-top:10px">
-          ${[...Array(3)].map((_,i)=>`<div style="flex:1;height:3px;background:${i<2?'var(--blue)':'var(--surface2)'};border-radius:99px"></div>`).join('')}
+  <div class="dash-wrap">
+    <!-- HERO -->
+    <div class="dash-hero">
+      <div class="dash-hero-content">
+        <div class="dash-greet">${greeting()} · ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</div>
+        <div class="dash-co">${co.name || 'ManuCost ERP'}</div>
+        <div class="dash-hero-stats">
+          <div class="dash-hero-stat"><div class="hs-lbl">Revenue (YTD)</div><div class="hs-val">${f(rev)}</div><div class="hs-chg hs-up">${rev>0?'▲ Active':'No data'}</div></div>
+          <div class="dash-hero-stat"><div class="hs-lbl">Net Profit</div><div class="hs-val">${f(ni)}</div><div class="hs-chg ${ni>=0?'hs-up':'hs-down'}">${ni>=0?'▲':'▼'} ${nm.toFixed(1)}% margin</div></div>
+          <div class="dash-hero-stat"><div class="hs-lbl">Cash Position</div><div class="hs-val">${f(cash)}</div><div class="hs-chg hs-up">Liquidity</div></div>
+          <div class="dash-hero-stat"><div class="hs-lbl">Total Assets</div><div class="hs-val">${f(t.totalAssets)}</div><div class="hs-chg ${t.balanced?'hs-up':'hs-down'}">${t.balanced?'✓ Balanced':'⚠ Check'}</div></div>
         </div>
       </div>
     </div>
 
-    <!-- ── Bento Grid: Chart + Critical Tasks ── -->
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- KPI CARDS -->
+    <div class="dash-kpis">
+      ${kpiCard('💰','Gross Margin', gm.toFixed(1)+'%', gm>=25?'Strong':'Watch', gm>=25, '#3b9eff')}
+      ${kpiCard('📊','Operating Profit', f(ebit), ebit>=0?'Profitable':'Loss', ebit>=0, '#16a085')}
+      ${kpiCard('🏦','Current Ratio', currentRatio?currentRatio.toFixed(2):'—', currentRatio>=1.5?'Liquid':'Tight', currentRatio>=1.5, '#9b59b6')}
+      ${kpiCard('📥','Receivables', f(ar), 'Outstanding', true, '#f0a500')}
+      ${kpiCard('📤','Payables', f(ap), 'Due', true, '#e8623a')}
+      ${kpiCard('📦','Inventory', f(inv), 'On hand', true, '#1e5288')}
+    </div>
 
-      <!-- Revenue vs Costs Chart -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <h3 style="font-size:15px;font-weight:700;color:var(--text1)">Revenue vs. Operational Costs</h3>
-          <div style="display:flex;gap:16px">
-            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></div><span style="font-size:12px;color:var(--text2)">Revenue</span></div>
-            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:50%;background:var(--border2)"></div><span style="font-size:12px;color:var(--text2)">Costs</span></div>
-          </div>
-        </div>
-        ${t.isSeeded ? `
-        <div style="height:200px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 8px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">
-          ${['Q1','Q2','Q3','Q4'].map((q,i)=>{
-            const revH = Math.round(40+Math.random()*40);
-            const costH = Math.round(revH*0.7);
-            return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;height:100%">
-              <div style="width:60%;background:var(--border2);border-radius:3px 3px 0 0;height:${costH}%;opacity:.5"></div>
-              <div style="width:60%;background:var(--blue);border-radius:3px 3px 0 0;height:${revH}%;margin-top:-${revH}px;position:relative;bottom:0"></div>
-              <span style="font-size:10px;color:var(--text3);padding-top:6px">${q}</span>
-            </div>`;
-          }).join('')}
-        </div>` : `
-        <div style="height:200px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:8px;background:var(--surface2)">
-          <div style="text-align:center;color:var(--text3)">
-            <div style="font-size:28px;margin-bottom:8px">📊</div>
-            <div style="font-size:13px">No financial data yet</div>
-          </div>
-        </div>`}
-      </div>
-
-      <!-- Critical Tasks -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;display:flex;flex-direction:column">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="font-size:15px;font-weight:700;color:var(--text1)">Critical Tasks</h3>
-          ${pending.length>0 ? `<span style="padding:2px 8px;background:#FEE2E2;color:#991B1B;font-size:10px;font-weight:700;border-radius:99px">${pending.length} URGENT</span>` : '<span style="padding:2px 8px;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;border-radius:99px">ALL CLEAR</span>'}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;flex:1">
-          ${[
-            pending.length ? {cat:'Finance', title:pending.length+' Approval'+(pending.length>1?'s':'')+' Pending', sub:pending.length+' requests above threshold', color:'var(--red)', action:'approvals'} : {cat:'Finance', title:'No pending approvals', sub:'All requests resolved', color:'var(--green)', action:'approvals'},
-            lowStock.length ? {cat:'Inventory', title:'Low Stock Alert', sub:lowStock.slice(0,2).map(s=>s.code).join(', ')+' critical', color:'var(--orange)', action:'stockledger'} : {cat:'Inventory', title:'Stock levels normal', sub:'All items above reorder point', color:'var(--green)', action:'stockledger'},
-            {cat:'Costing', title:'Cost Mode: '+costMode.toUpperCase(), sub:'Configure in Settings', color:'var(--blue)', action:'setup'},
-          ].map(task=>`
-            <div onclick="navGuarded('${task.action}')" style="padding:12px;background:var(--surface2);border-radius:8px;border-left:4px solid ${task.color};cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;transition:.15s" onmouseover="this.style.background='var(--blue-xlt)'" onmouseout="this.style.background='var(--surface2)'">
-              <div>
-                <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${task.cat}</div>
-                <div style="font-size:13px;font-weight:700;color:var(--text1)">${task.title}</div>
-                <div style="font-size:12px;color:var(--text2)">${task.sub}</div>
+    <!-- CHARTS ROW -->
+    <div class="dash-grid">
+      <!-- Revenue vs Expenses bar -->
+      <div class="dash-card">
+        <div class="dash-card-title">Revenue vs Operating Costs <span style="font-size:11px;font-weight:500;color:var(--text3)">Monthly</span></div>
+        <div class="dash-card-sub">Blue = revenue · Orange = costs</div>
+        <div class="bar-chart" id="dashBarChart">
+          ${months.slice(0,showM+1).map((m,idx)=>`
+            <div class="bar-col">
+              <div style="display:flex;gap:2px;align-items:flex-end;width:100%;height:100%">
+                <div class="bar-fill rev" style="height:${Math.max(2,monRev[idx]/maxBar*100)}%" title="Revenue ${f(monRev[idx])}"></div>
+                <div class="bar-fill exp" style="height:${Math.max(2,monExp[idx]/maxBar*100)}%" title="Costs ${f(monExp[idx])}"></div>
               </div>
-              <span style="color:var(--text3);font-size:16px">›</span>
+              <div class="bar-lbl">${m}</div>
             </div>`).join('')}
         </div>
-        <button onclick="navGuarded('myrequests')" style="width:100%;margin-top:14px;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer">View All Tasks →</button>
+      </div>
+      <!-- Health gauge -->
+      <div class="dash-card">
+        <div class="dash-card-title">Financial Health</div>
+        <div class="dash-card-sub">Composite score</div>
+        <div class="health-ring">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="68" fill="none" stroke="var(--border)" stroke-width="14"/>
+            <circle cx="80" cy="80" r="68" fill="none" stroke="${healthColor}" stroke-width="14"
+              stroke-linecap="round" stroke-dasharray="${2*Math.PI*68}"
+              stroke-dashoffset="${2*Math.PI*68*(1-health/100)}"
+              transform="rotate(-90 80 80)" style="transition:stroke-dashoffset 1.2s ease"/>
+          </svg>
+          <div class="health-score"><div class="hsv" style="color:${healthColor}">${health}</div><div class="hsl">${healthLbl}</div></div>
+        </div>
+        <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3)">Margin · Liquidity · Balance</div>
       </div>
     </div>
 
-    <!-- ── Bottom Row: Quick Actions + Activity Feed ── -->
-    <div style="display:grid;grid-template-columns:1fr 3fr;gap:16px">
-
-      <!-- Quick Actions (dark card) -->
-      <div style="background:var(--blue);border-radius:10px;padding:20px;color:#fff">
-        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Quick Actions</h3>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${[
-            {icon:'📄', label:'New Journal Entry', action:'journal'},
-            {icon:'🛒', label:'New Purchase Order', action:'po'},
-            {icon:'📦', label:'Stock Transfer', action:'transfers'},
-            {icon:'📊', label:'Run Cost Forecast', action:'rpt-budget'},
-          ].map(a=>`
-            <button onclick="navGuarded('${a.action}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.12);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:13px;font-weight:500;transition:.15s" onmouseover="this.style.background='rgba(255,255,255,.22)'" onmouseout="this.style.background='rgba(255,255,255,.12)'">
-              <span style="display:flex;align-items:center;gap:10px"><span>${a.icon}</span>${a.label}</span>
-              <span style="opacity:.7">→</span>
-            </button>`).join('')}
+    <!-- SECOND ROW: Expense donut + Activity -->
+    <div class="dash-grid">
+      <!-- Activity feed -->
+      <div class="dash-card">
+        <div class="dash-card-title">Recent Activity <span style="font-size:11px;font-weight:500;color:var(--blue);cursor:pointer" onclick="nav('ledger')">View all →</span></div>
+        <div class="dash-card-sub">Latest journal postings</div>
+        <div>
+          ${recent.length ? recent.map(e=>`
+            <div class="activity-item">
+              <div class="act-dot" style="background:${(e.dr||0)>0?'#e6f2ff':'#fff0e6'};color:${(e.dr||0)>0?'#1e5288':'#e8623a'}">${(e.dr||0)>0?'↗':'↙'}</div>
+              <div class="act-body">
+                <div class="act-desc">${e.desc||e.jeId||'Journal entry'}</div>
+                <div class="act-meta">${e.account} · ${e.date} · ${e.src||'GL'}</div>
+              </div>
+              <div class="act-amt" style="color:${(e.dr||0)>0?'#16a085':'#e8623a'}">${f((e.dr||0)||(e.cr||0))}</div>
+            </div>`).join('')
+          : '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">No activity yet — post a journal entry to begin.</div>'}
         </div>
       </div>
-
-      <!-- Recent Global Activity -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="font-size:15px;font-weight:700;color:var(--text1)">Recent Global Activity</h3>
-          <button onclick="navGuarded('journal')" style="font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer">View All →</button>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead>
-              <tr style="border-bottom:1px solid var(--border)">
-                <th style="padding:8px 0;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Timestamp</th>
-                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Entity</th>
-                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Action</th>
-                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">User</th>
-                <th style="padding:8px 0;text-align:right;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${recent.length ? recent.map(e=>{
-                const sess = getSession();
-                const initials = (sess?.name||'US').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-                const ts = e.ts ? new Date(e.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : e.date||'—';
-                return `<tr onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" style="cursor:pointer" onclick="navGuarded('journal')">
-                  <td style="padding:10px 0;font-family:monospace;font-size:11px;color:var(--text3)">${ts}</td>
-                  <td style="padding:10px 12px;font-weight:700;color:var(--blue)">${e.account||e.jeId}</td>
-                  <td style="padding:10px 12px;color:var(--text2)">${e.desc||'—'}</td>
-                  <td style="padding:10px 12px">
-                    <div style="display:flex;align-items:center;gap:6px">
-                      <div style="width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700">${initials}</div>
-                      <span style="font-size:12px">${sess?.name||'System'}</span>
-                    </div>
-                  </td>
-                  <td style="padding:10px 0;text-align:right">
-                    <span style="padding:2px 8px;background:#D1FAE5;color:#065F46;border-radius:4px;font-size:10px;font-weight:700">POSTED</span>
-                  </td>
-                </tr>`;
-              }).join('') : `<tr><td colspan="5" style="padding:32px;text-align:center;color:var(--text3)">
-                No transactions yet · <button class="btn btn-p sm" onclick="navGuarded('journal')" style="margin-left:8px">+ New Entry</button>
-              </td></tr>`}
-            </tbody>
-          </table>
-        </div>
+      <!-- Expense donut -->
+      <div class="dash-card">
+        <div class="dash-card-title">Cost Breakdown</div>
+        <div class="dash-card-sub">By category</div>
+        ${expCats.length ? `
+        <svg width="140" height="140" viewBox="0 0 42 42" style="display:block;margin:0 auto">
+          <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--border)" stroke-width="5"/>
+          ${(() => { let off=0; return expCats.map(c=>{
+            const pct=c.val/totalExp*100; const seg=`<circle cx="21" cy="21" r="15.9" fill="none" stroke="${c.c}" stroke-width="5" stroke-dasharray="${pct} ${100-pct}" stroke-dashoffset="${-off}" transform="rotate(-90 21 21)"/>`; off+=pct; return seg;
+          }).join(''); })()}
+          <text x="21" y="20" text-anchor="middle" font-size="5" font-weight="700" fill="var(--text1)">${f(totalExp)}</text>
+          <text x="21" y="25" text-anchor="middle" font-size="2.5" fill="var(--text3)">Total</text>
+        </svg>
+        <div class="donut-legend">
+          ${expCats.map(c=>`<div class="donut-leg-item"><span class="donut-leg-dot" style="background:${c.c}"></span>${c.lbl}<span class="donut-leg-val">${(c.val/totalExp*100).toFixed(0)}%</span></div>`).join('')}
+        </div>`
+        : '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">No expense data yet.</div>'}
       </div>
     </div>
 
+    <!-- QUICK ACTIONS -->
+    <div class="dash-card">
+      <div class="dash-card-title">Quick Actions</div>
+      <div class="dash-card-sub">Jump to common tasks</div>
+      <div class="qa-grid">
+        <div class="qa-tile" onclick="nav('journal')"><div class="qa-ic">✎</div><div class="qa-tx">New Journal</div></div>
+        <div class="qa-tile" onclick="nav('invoicing')"><div class="qa-ic">🧾</div><div class="qa-tx">Sales Invoice</div></div>
+        <div class="qa-tile" onclick="nav('bs')"><div class="qa-ic">📋</div><div class="qa-tx">Balance Sheet</div></div>
+        <div class="qa-tile" onclick="nav('pnl')"><div class="qa-ic">📈</div><div class="qa-tx">Income Stmt</div></div>
+        <div class="qa-tile" onclick="nav('tb')"><div class="qa-ic">⚖</div><div class="qa-tx">Trial Balance</div></div>
+        <div class="qa-tile" onclick="nav('assets')"><div class="qa-ic">🏭</div><div class="qa-tx">Fixed Assets</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Dashboard helpers
+function greeting() {
+  const h = new Date().getHours();
+  return h<12 ? 'Good morning' : h<18 ? 'Good afternoon' : 'Good evening';
+}
+function kpiCard(icon, label, value, sub, good, color) {
+  return `<div class="kpi-card">
+    <div class="kc-accent" style="background:${color}"></div>
+    <div class="kc-icon" style="background:${color}22;color:${color}">${icon}</div>
+    <div class="kc-lbl">${label}</div>
+    <div class="kc-val">${value}</div>
+    <div class="kc-sub" style="color:${good?'#16a085':'#e8623a'}">${good?'●':'●'} ${sub}</div>
   </div>`;
 }
 
@@ -8360,7 +9162,7 @@ function renderJE() {
     ].join('');
     const hash = j.lines[0]?.hash;
     return `<tr class="je-row-${j.status?.toLowerCase()||'posted'}">
-      <td class="t-blue fw6" style="cursor:pointer" onclick="showJEDetail('${j.id}')">${j.id}</td>
+      <td class="t-blue fw6" style="cursor:pointer" onclick="viewJE('${j.id}')">${j.id}</td>
       <td class="t-muted">${j.date}</td>
       <td><div class="fw6 t-sm">${j.desc}</div>${hash?`<div class="hash-badge">${hash}</div>`:''}</td>
       <td style="max-width:150px">${dimChips||'—'}</td>
@@ -10390,6 +11192,85 @@ function previewSplash() {
   // Show splash screen first, then run the app after 5s fade
   runSplash(function(){ _bootApp(); });
 })();
+
+
+// ════ SIDEBAR: collapsible sections + favorites ════
+function toggleSection(secId) {
+  const sec = document.getElementById(secId);
+  if (!sec) return;
+  sec.classList.toggle('collapsed');
+  // toggle caret on the preceding label
+  const label = sec.previousElementSibling;
+  if (label && label.classList.contains('nav-label')) label.classList.toggle('collapsed');
+  // persist collapsed sections
+  try {
+    const collapsed = JSON.parse(localStorage.getItem('mce_collapsedSecs')||'[]');
+    const idx = collapsed.indexOf(secId);
+    if (sec.classList.contains('collapsed')) { if(idx<0) collapsed.push(secId); }
+    else { if(idx>=0) collapsed.splice(idx,1); }
+    localStorage.setItem('mce_collapsedSecs', JSON.stringify(collapsed));
+  } catch(e){}
+}
+
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem('mce_favorites')||'[]'); } catch(e){ return []; }
+}
+function toggleFav(page, starEl) {
+  let favs = getFavs();
+  const idx = favs.indexOf(page);
+  if (idx >= 0) { favs.splice(idx,1); }
+  else { favs.push(page); }
+  try { localStorage.setItem('mce_favorites', JSON.stringify(favs)); } catch(e){}
+  renderFavorites();
+  // update all stars for this page
+  document.querySelectorAll(`.nav-star[data-fav="${page}"]`).forEach(s => {
+    const faved = favs.includes(page);
+    s.classList.toggle('faved', faved);
+    s.textContent = faved ? '★' : '☆';
+  });
+}
+
+function renderFavorites() {
+  const box = document.getElementById('navFavorites');
+  if (!box) return;
+  const favs = getFavs();
+  if (!favs.length) {
+    box.innerHTML = '<div class="nav-label" style="cursor:default"><span>⭐ Favorites</span></div><div class="nav-fav-empty">Click ☆ next to any item</div>';
+    return;
+  }
+  // Build favorite items by looking up original nav items
+  let html = '<div class="nav-label" style="cursor:default"><span>⭐ Favorites</span></div>';
+  favs.forEach(page => {
+    // find the original item to get its icon + text
+    const orig = document.querySelector(`.nav-section-items .nav-item[data-page="${page}"]`);
+    if (!orig) return;
+    const icon = orig.querySelector('.nav-icon')?.textContent || '•';
+    const text = orig.querySelector('.nav-text')?.textContent || page;
+    html += `<div class="nav-item" data-page="${page}" onclick="nav('${page}')">
+      <span class="nav-icon">${icon}</span><span class="nav-text">${text}</span>
+      <span class="nav-star faved" data-fav="${page}" onclick="event.stopPropagation();toggleFav('${page}',this)">★</span></div>`;
+  });
+  box.innerHTML = html;
+}
+
+// Initialize sidebar state (favorites + collapsed sections + star marks)
+function initSidebarState() {
+  // Mark stars for favorited items
+  const favs = getFavs();
+  document.querySelectorAll('.nav-star[data-fav]').forEach(s => {
+    const page = s.getAttribute('data-fav');
+    if (favs.includes(page)) { s.classList.add('faved'); s.textContent='★'; }
+  });
+  // Restore collapsed sections
+  try {
+    const collapsed = JSON.parse(localStorage.getItem('mce_collapsedSecs')||'[]');
+    collapsed.forEach(secId => {
+      const sec = document.getElementById(secId);
+      if (sec) { sec.classList.add('collapsed'); const lbl=sec.previousElementSibling; if(lbl) lbl.classList.add('collapsed'); }
+    });
+  } catch(e){}
+  renderFavorites();
+}
 
 function _bootApp() {
 
